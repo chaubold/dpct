@@ -1,4 +1,5 @@
 #include "graph.h"
+#include <assert.h>
 
 namespace dpct
 {
@@ -14,7 +15,8 @@ Graph::Configuration::Configuration(bool enableAppearance,
 {}
 
 Graph::Graph(const Graph::Configuration& config):
-	config_(config)
+	config_(config),
+	numNodes_(0)
 {
 	// connect the "special" nodes to source and sink
 	if(config_.withAppearance)
@@ -45,7 +47,8 @@ Graph::Graph(const Graph::Configuration& config):
 	}
 }
 
-Graph::NodePtr Graph::addNode(const std::vector<double>& cellCountScoreDelta,
+Graph::NodePtr Graph::addNode(size_t timestep,
+					const std::vector<double>& cellCountScoreDelta,
 					double appearanceScoreDelta,
 					double disappearanceScoreDelta,
 		 			bool connectToSource,
@@ -53,7 +56,12 @@ Graph::NodePtr Graph::addNode(const std::vector<double>& cellCountScoreDelta,
 		 			UserData* data)
 {
 	NodePtr node(new Node(cellCountScoreDelta, data));
-	nodes_.push_back(node);
+	while(nodesPerTimestep_.size() <= timestep)
+	{
+		nodesPerTimestep_.push_back(std::vector<NodePtr>());
+	}
+	nodesPerTimestep_[timestep].push_back(node);
+	numNodes_++;
 
 	// create appearance and division arcs if enabled and not in first time frame
 	if(config_.withAppearance && !connectToSource)
@@ -78,6 +86,30 @@ Graph::NodePtr Graph::addNode(const std::vector<double>& cellCountScoreDelta,
 			nullptr));
 		arcs_.push_back(arc);
 	}
+
+    // create arc from source if requested
+    if(connectToSource)
+    {
+        ArcPtr arc(new Arc(&sourceNode_,
+            node.get(),
+            Arc::Dummy,
+            0.0,
+            nullptr,
+            nullptr));
+        arcs_.push_back(arc);
+    }
+
+    // create arc to sink if requested
+    if(connectToSink)
+    {
+        ArcPtr arc(new Arc(node.get(),
+            &sinkNode_,
+            Arc::Dummy,
+            0.0,
+            nullptr,
+            nullptr));
+        arcs_.push_back(arc);
+    }
 
 	return node;
 }
@@ -113,6 +145,49 @@ Graph::ArcPtr Graph::allowMitosis(NodePtr parent,
 
 	arcs_.push_back(arc);
 	return arc;
+}
+
+void Graph::reset()
+{
+	std::cout << "Resetting graph" << std::endl;
+
+	for(NodeVectorVector::iterator v = nodesPerTimestep_.begin(); v != nodesPerTimestep_.end(); ++v)
+	{
+		for(NodeVector::iterator it = v->begin(); it != v->end(); ++it)
+		{
+			it->reset();
+		}
+	}
+
+	for(ArcVector::iterator it = arcs_.begin(); it != arcs_.end(); ++it)
+	{
+		it->reset();
+	}
+
+	sourceNode_.reset();
+	sinkNode_.reset();
+	appearanceNode_.reset();
+	disappearanceNode_.reset();
+	divisionNode_.reset();
+}
+
+void Graph::visitNodesInTimestep(size_t timestep, Graph::VisitorFunction func)
+{
+	assert(timestep < nodesPerTimestep_.size());
+
+	for(NodeVector::iterator it = nodesPerTimestep_[timestep].begin(); it != nodesPerTimestep_[timestep].end(); ++it)
+	{
+		func(it->get());
+    }
+}
+
+void Graph::visitSpecialNodes(Graph::VisitorFunction func)
+{
+    func(&sourceNode_);
+    func(&appearanceNode_);
+    func(&disappearanceNode_);
+    func(&divisionNode_);
+    func(&sinkNode_);
 }
 
 } // namespace dpct

@@ -1,6 +1,8 @@
 #ifndef DPCT_ARC_H
 #define DPCT_ARC_H
 
+#include <iostream>
+
 namespace dpct
 {
 
@@ -34,6 +36,17 @@ public:
 	double getCurrentScore() const { return currentScore_; }
 	bool isEnabled() const { return enabled_; }
 	const UserData* getUserData() const { return data_; }
+
+	void reset();
+	void update();
+
+	Node* getSourceNode() const { return sourceNode_; }
+	Node* getTargetNode() const { return targetNode_; }
+
+    std::string typeAsString();
+
+protected:
+	void updateEnabledState();
 
 protected:
 	// things every arc needs
