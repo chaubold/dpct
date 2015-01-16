@@ -41,7 +41,8 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/"
 # ------------------------------------------
 # add subdirectories
 if(WITH_TESTS)
-	add_subdirectory(tests)
+	enable_testing()
+	add_subdirectory(test)
 endif()
 
 if(WITH_PYTHON)

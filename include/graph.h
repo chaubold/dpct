@@ -3,6 +3,7 @@
 
 #include "node.h"
 #include "arc.h"
+#include "userdata.h"
 #include <memory>
 
 namespace dpct
@@ -38,18 +39,26 @@ public:
 	NodePtr addNode(const std::vector<double>& cellCountScoreDelta,
 					double appearanceScoreDelta = 0.0,
 					double disappearanceScoreDelta = 0.0,
-					double divisionScoreDelta = 0.0,
 		 			bool connectToSource = false,
 		 			bool connectToSink = false,
 		 			UserData* data = nullptr);
 
-	/// add an arc between used defined nodes. Nodes have to be created first! 
-	ArcPtr addArc(NodePtr source, 
+	// add an arc between used defined nodes. Nodes have to be created first! 
+	ArcPtr addMoveArc(NodePtr source, 
 				NodePtr target, 
-				Arc::Type type, 
-				double scoreDelta = 0.0,
-				NodePtr dependsOnCellInNode = nullptr,
+				double scoreDelta,
 				UserData* data = nullptr);
+
+	// mitosis happens along a move arc - or better two move arcs from a common
+	// parent. Needs to be explicitly added
+	ArcPtr allowMitosis(NodePtr parent,
+						NodePtr child,
+						double divisionScoreDelta);
+
+	// get number of arcs and user defined nodes
+	size_t getNumArcs() const { return arcs_.size(); }
+	size_t getNumNodes() const { return nodes_.size(); }
+	const Configuration getConfig() const { return config_; }
 
 protected:
 	Configuration config_;

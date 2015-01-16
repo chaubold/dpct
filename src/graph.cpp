@@ -15,12 +15,39 @@ Graph::Configuration::Configuration(bool enableAppearance,
 
 Graph::Graph(const Graph::Configuration& config):
 	config_(config)
-{}
+{
+	// connect the "special" nodes to source and sink
+	if(config_.withAppearance)
+	{
+		ArcPtr sourceToAppNode(new Arc(&sourceNode_, 
+			&appearanceNode_,
+			Arc::Dummy,
+			0.0));
+		arcs_.push_back(sourceToAppNode);
+	}
+
+	if(config_.withDivision)
+	{
+		ArcPtr sourceToDivisionNode(new Arc(&sourceNode_, 
+			&divisionNode_,
+			Arc::Dummy,
+			0.0));
+		arcs_.push_back(sourceToDivisionNode);
+	}
+
+	if(config_.withDisappearance)
+	{
+		ArcPtr disToSinkNode(new Arc(&disappearanceNode_, 
+			&sinkNode_,
+			Arc::Dummy,
+			0.0));
+		arcs_.push_back(disToSinkNode);
+	}
+}
 
 Graph::NodePtr Graph::addNode(const std::vector<double>& cellCountScoreDelta,
 					double appearanceScoreDelta,
 					double disappearanceScoreDelta,
-					double divisionScoreDelta,
 		 			bool connectToSource,
 		 			bool connectToSink,
 		 			UserData* data)
@@ -40,17 +67,6 @@ Graph::NodePtr Graph::addNode(const std::vector<double>& cellCountScoreDelta,
 		arcs_.push_back(arc);
 	}
 
-	if(config_.withDivision && !connectToSource)
-	{
-		ArcPtr arc(new Arc(&divisionNode_,
-			node.get(),
-			Arc::Division,
-			divisionScoreDelta,
-			node.get(),
-			nullptr));
-		arcs_.push_back(arc);
-	}
-
 	// create arc to disappearance if this is not the very last frame
 	if(config_.withDisappearance && !connectToSink)
 	{
@@ -66,11 +82,9 @@ Graph::NodePtr Graph::addNode(const std::vector<double>& cellCountScoreDelta,
 	return node;
 }
 
-Graph::ArcPtr Graph::addArc(NodePtr source, 
+Graph::ArcPtr Graph::addMoveArc(NodePtr source, 
 					NodePtr target, 
-					Arc::Type type, 
 					double scoreDelta,
-					NodePtr dependsOnCellInNode,
 					UserData* data)
 {
 	// assert(source in nodes_)
@@ -78,10 +92,24 @@ Graph::ArcPtr Graph::addArc(NodePtr source,
 
 	ArcPtr arc(new Arc(source.get(), 
 		target.get(),
-		type,
+		Arc::Move,
 		scoreDelta,
-		dependsOnCellInNode.get(),
+		nullptr,
 		data));
+
+	arcs_.push_back(arc);
+	return arc;
+}
+
+Graph::ArcPtr Graph::allowMitosis(NodePtr parent,
+						NodePtr child,
+						double divisionScoreDelta)
+{
+	ArcPtr arc(new Arc(&divisionNode_, 
+		child.get(),
+		Arc::Division,
+		divisionScoreDelta,
+		parent.get()));
 
 	arcs_.push_back(arc);
 	return arc;

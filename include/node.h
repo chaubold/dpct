@@ -19,6 +19,7 @@ public:
 	size_t getCellCount() const { return cellCount_; }
 	void registerInArc(Arc* arc);
 	void registerOutArc(Arc* arc);
+	const UserData* getUserData() const { return data_; }
 
 protected:
 	// things every node needs

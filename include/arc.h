@@ -33,6 +33,7 @@ public:
 
 	double getCurrentScore() const { return currentScore_; }
 	bool isEnabled() const { return enabled_; }
+	const UserData* getUserData() const { return data_; }
 
 protected:
 	// things every arc needs

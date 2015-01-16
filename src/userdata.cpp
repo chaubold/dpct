@@ -4,9 +4,14 @@
 namespace dpct
 {
 
-UserData::UserData()
+NameData::NameData(const std::string& name):
+	name_(name)
+{}
+
+std::ostream& operator<<(std::ostream& lhs, const NameData& rhs)
 {
-	throw std::runtime_error("UserData should not be used directly! Create your own subclass!");
+	lhs << rhs.getName();
+	return lhs;
 }
 
 } // namespace dpct
