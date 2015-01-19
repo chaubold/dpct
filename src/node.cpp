@@ -1,5 +1,6 @@
 #include <limits>
 #include <assert.h>
+#include <stdexcept>
 
 #include "node.h"
 #include "arc.h"
@@ -16,9 +17,13 @@ Node::Node(const std::vector<double>& cellCountScoreDelta,
     cellCount_(0),
     currentScore_(0.0)
 {
-    if(cellCountScoreDelta_.size() > 0)
+    if(cellCountScoreDelta_.size() > 1)
     {
-        currentScore_ = cellCountScoreDelta_[0];
+        currentScore_ = cellCountScoreDelta_[1] - cellCountScoreDelta_[0];
+    }
+    else if(cellCountScoreDelta_.size() == 1)
+    {
+        throw std::runtime_error("Node - Constructor: Cannot use a cellCountScoreDelta table with only one state, need at least two!");
     }
 }
 
@@ -56,9 +61,13 @@ void Node::increaseCellCount()
 
 double Node::getScoreDeltaForCurrentCellCount()
 {
-    if(cellCountScoreDelta_.size() > cellCount_)
+    if(cellCountScoreDelta_.size() > cellCount_ + 1)
     {
-        return cellCountScoreDelta_[cellCount_];
+        return cellCountScoreDelta_[cellCount_ + 1] - cellCountScoreDelta_[cellCount_];
+    }
+    else if(cellCountScoreDelta_.size() > 0)
+    {
+        return std::numeric_limits<double>::lowest();
     }
     else
     {

@@ -7,26 +7,47 @@
 
 using namespace dpct;
 
-BOOST_AUTO_TEST_CASE(minimal_test_magnusson)
-{
-    Graph::Configuration config(false, false, false, false);
-    Graph g(config);
+//BOOST_AUTO_TEST_CASE(minimal_test_magnusson)
+//{
+//    Graph::Configuration config(false, false, false, false);
+//    Graph g(config);
 
-    NameData nd_1("Timestep 1: Node 1");
-    Graph::NodePtr n1 = g.addNode(0, {3,-10}, 0.0, 0.0, true, false, &nd_1);
-    NameData nd_2("Timestep 2: Node 1");
-    Graph::NodePtr n2 = g.addNode(1, {3,-10}, 0.0, 0.0, false, true, &nd_2);
+//    NameData nd_1("Timestep 1: Node 1");
+//    Graph::NodePtr n1 = g.addNode(0, {0, 3,-10}, 0.0, 0.0, true, false, &nd_1);
+//    NameData nd_2("Timestep 2: Node 1");
+//    Graph::NodePtr n2 = g.addNode(1, {0, 3,-10}, 0.0, 0.0, false, true, &nd_2);
 
-    g.addMoveArc(n1, n2, 1.0);
+//    g.addMoveArc(n1, n2, 1.0);
 
-    Magnusson tracker(&g);
-    std::vector<TrackingAlgorithm::Path> paths;
-    double score = tracker.track(paths);
+//    Magnusson tracker(&g);
+//    std::vector<TrackingAlgorithm::Path> paths;
+//    double score = tracker.track(paths);
 
-    std::cout << "Tracker returned score " << score << std::endl;
-    BOOST_CHECK_EQUAL(score, 7.0);
-    BOOST_CHECK_EQUAL(paths.size(), 1);
-}
+//    std::cout << "Tracker returned score " << score << std::endl;
+//    BOOST_CHECK_EQUAL(score, 7.0);
+//    BOOST_CHECK_EQUAL(paths.size(), 1);
+//}
+
+//BOOST_AUTO_TEST_CASE(two_cell_test_magnusson)
+//{
+//    Graph::Configuration config(false, false, false, false);
+//    Graph g(config);
+
+//    NameData nd_1("Timestep 1: Node 1");
+//    Graph::NodePtr n1 = g.addNode(0, {0, 3, 5, -10}, 0.0, 0.0, true, false, &nd_1);
+//    NameData nd_2("Timestep 2: Node 1");
+//    Graph::NodePtr n2 = g.addNode(1, {0, 3, 4, -10}, 0.0, 0.0, false, true, &nd_2);
+
+//    g.addMoveArc(n1, n2, 1.0);
+
+//    Magnusson tracker(&g);
+//    std::vector<TrackingAlgorithm::Path> paths;
+//    double score = tracker.track(paths);
+
+//    std::cout << "Tracker returned score " << score << std::endl;
+//    BOOST_CHECK_EQUAL(score, 11.0);
+//    BOOST_CHECK_EQUAL(paths.size(), 2);
+//}
 
 BOOST_AUTO_TEST_CASE(test_full_magnusson)
 {
@@ -40,33 +61,33 @@ BOOST_AUTO_TEST_CASE(test_full_magnusson)
     // -----------------------------------------------------
     // Timestep 1
     NameData nd_1_1("Timestep 1: Node 1");
-    Graph::NodePtr n_1_1 = g.addNode(0, {3, -1}, appearanceScore, disappearanceScore,
+    Graph::NodePtr n_1_1 = g.addNode(0, {0, 3, 2}, appearanceScore, disappearanceScore,
                                         true, false, &nd_1_1);
 
     NameData nd_1_2("Timestep 1: Node 2");
-    Graph::NodePtr n_1_2 = g.addNode(0, {2, 5, -2}, appearanceScore, disappearanceScore,
+    Graph::NodePtr n_1_2 = g.addNode(0, {0, 2, 7}, appearanceScore, disappearanceScore,
                                         true, false, &nd_1_2);
 
     NameData nd_1_3("Timestep 1: Node 3");
-    Graph::NodePtr n_1_3 = g.addNode(0, {3, -5}, appearanceScore, disappearanceScore,
+    Graph::NodePtr n_1_3 = g.addNode(0, {0, 3, -2}, appearanceScore, disappearanceScore,
                                         true, false, &nd_1_3);
 
     // -----------------------------------------------------
     // Timestep 2
     NameData nd_2_1("Timestep 2: Node 1");
-    Graph::NodePtr n_2_1 = g.addNode(1, {4, -2}, appearanceScore, disappearanceScore,
+    Graph::NodePtr n_2_1 = g.addNode(1, {0, 4, 2}, appearanceScore, disappearanceScore,
                                         false, false, &nd_2_1);
 	
     NameData nd_2_2("Timestep 2: Node 2");
-    Graph::NodePtr n_2_2 = g.addNode(1, {2, -2}, appearanceScore, disappearanceScore,
+    Graph::NodePtr n_2_2 = g.addNode(1, {0, 2, 0}, appearanceScore, disappearanceScore,
                                         false, false, &nd_2_2);
 
     NameData nd_2_3("Timestep 2: Node 3");
-    Graph::NodePtr n_2_3 = g.addNode(1, {2, -4}, appearanceScore, disappearanceScore,
+    Graph::NodePtr n_2_3 = g.addNode(1, {0, 2, -2}, appearanceScore, disappearanceScore,
                                         false, false, &nd_2_3);
 
     NameData nd_2_4("Timestep 2: Node 4");
-    Graph::NodePtr n_2_4 = g.addNode(1, {2,-2}, appearanceScore, -1.0,
+    Graph::NodePtr n_2_4 = g.addNode(1, {0, 2, 0}, appearanceScore, -1.0,
                                         false, false, &nd_2_4);
 
     NameData ad_2_1("Arc 1");
@@ -78,15 +99,15 @@ BOOST_AUTO_TEST_CASE(test_full_magnusson)
     // -----------------------------------------------------
     // Timestep 3
     NameData nd_3_1("Timestep 3: Node 1");
-    Graph::NodePtr n_3_1 = g.addNode(2, {3, 2}, appearanceScore, disappearanceScore,
+    Graph::NodePtr n_3_1 = g.addNode(2, {0, 3, 5}, appearanceScore, disappearanceScore,
                                         false, false, &nd_3_1);
 
     NameData nd_3_2("Timestep 3: Node 2");
-    Graph::NodePtr n_3_2 = g.addNode(2, {2, 0}, appearanceScore, disappearanceScore,
+    Graph::NodePtr n_3_2 = g.addNode(2, {0, 2, 2}, appearanceScore, disappearanceScore,
                                         false, false, &nd_3_2);
 
     NameData nd_3_3("Timestep 3: Node 3");
-    Graph::NodePtr n_3_3 = g.addNode(2, {3, -3}, appearanceScore, disappearanceScore,
+    Graph::NodePtr n_3_3 = g.addNode(2, {0, 3, 0}, appearanceScore, disappearanceScore,
                                         false, false, &nd_3_3);
 
 
@@ -97,19 +118,19 @@ BOOST_AUTO_TEST_CASE(test_full_magnusson)
     // -----------------------------------------------------
     // Timestep 4
     NameData nd_4_1("Timestep 4: Node 1");
-    Graph::NodePtr n_4_1 = g.addNode(3, {4, -1}, appearanceScore, disappearanceScore,
+    Graph::NodePtr n_4_1 = g.addNode(3, {0, 4, 3}, appearanceScore, disappearanceScore,
                                         false, true, &nd_4_1);
 
     NameData nd_4_2("Timestep 4: Node 2");
-    Graph::NodePtr n_4_2 = g.addNode(3, {2, -1}, appearanceScore, disappearanceScore,
+    Graph::NodePtr n_4_2 = g.addNode(3, {0, 2, 1}, appearanceScore, disappearanceScore,
                                         false, true, &nd_4_2);
 
     NameData nd_4_3("Timestep 4: Node 3");
-    Graph::NodePtr n_4_3 = g.addNode(3, {2, -6}, appearanceScore, disappearanceScore,
+    Graph::NodePtr n_4_3 = g.addNode(3, {0, 2, -4}, appearanceScore, disappearanceScore,
                                         false, true, &nd_4_3);
 
     NameData nd_4_4("Timestep 4: Node 4");
-    Graph::NodePtr n_4_4 = g.addNode(3, {4, -2}, appearanceScore, disappearanceScore,
+    Graph::NodePtr n_4_4 = g.addNode(3, {0, 4, 2}, appearanceScore, disappearanceScore,
                                         false, true, &nd_4_4);
 
     g.addMoveArc(n_3_1, n_4_1, 0.0);

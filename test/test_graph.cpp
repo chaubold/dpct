@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(build_graph)
     Graph::NodePtr n_3_3 = g.addNode(2, {3, -3}, appearanceScore, disappearanceScore,
                                         false, false);
 
-    BOOST_CHECK_EQUAL(g.getNumArcs(), 24);
+    BOOST_CHECK_EQUAL(g.getNumArcs(), 27);
     BOOST_CHECK_EQUAL(g.getNumNodes(), 10);
 
     g.addMoveArc(n_2_1, n_3_1, 0.0);

@@ -69,7 +69,7 @@ void Arc::updateEnabledState()
 {
 	if(dependsOnCellInNode_ != nullptr)
 	{
-        if(enabled_ == false)
+        if(enabled_ == false && dependsOnCellInNode_->getCellCount() > 0)
             std::cout << "Enabling formerly disabled " << typeAsString() << "-arc" << std::endl;
 		enabled_ = dependsOnCellInNode_->getCellCount() > 0; // or == 1?
 	}
