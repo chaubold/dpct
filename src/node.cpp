@@ -93,7 +93,7 @@ void Node::updateBestInArcAndScore()
     for(ArcIt it = inArcs_.begin(); it != inArcs_.end(); ++it)
     {
         double cs = (*it)->getCurrentScore();
-        if(cs > bestScore && (*it)->isEnabled())
+        if((cs > bestScore || bestArc == nullptr) && (*it)->isEnabled())
         {
             bestScore = cs;
             bestArc = *it;

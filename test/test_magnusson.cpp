@@ -7,47 +7,82 @@
 
 using namespace dpct;
 
-//BOOST_AUTO_TEST_CASE(minimal_test_magnusson)
-//{
-//    Graph::Configuration config(false, false, false, false);
-//    Graph g(config);
+BOOST_AUTO_TEST_CASE(minimal_test_magnusson)
+{
+    Graph::Configuration config(false, false, false, false);
+    Graph g(config);
 
-//    NameData nd_1("Timestep 1: Node 1");
-//    Graph::NodePtr n1 = g.addNode(0, {0, 3,-10}, 0.0, 0.0, true, false, &nd_1);
-//    NameData nd_2("Timestep 2: Node 1");
-//    Graph::NodePtr n2 = g.addNode(1, {0, 3,-10}, 0.0, 0.0, false, true, &nd_2);
+    NameData nd_1("Timestep 1: Node 1");
+    Graph::NodePtr n1 = g.addNode(0, {0, 3,-10}, 0.0, 0.0, true, false, &nd_1);
+    NameData nd_2("Timestep 2: Node 1");
+    Graph::NodePtr n2 = g.addNode(1, {0, 3,-10}, 0.0, 0.0, false, true, &nd_2);
 
-//    g.addMoveArc(n1, n2, 1.0);
+    g.addMoveArc(n1, n2, 1.0);
 
-//    Magnusson tracker(&g);
-//    std::vector<TrackingAlgorithm::Path> paths;
-//    double score = tracker.track(paths);
+    Magnusson tracker(&g);
+    std::vector<TrackingAlgorithm::Path> paths;
+    double score = tracker.track(paths);
 
-//    std::cout << "Tracker returned score " << score << std::endl;
-//    BOOST_CHECK_EQUAL(score, 7.0);
-//    BOOST_CHECK_EQUAL(paths.size(), 1);
-//}
+    std::cout << "Tracker returned score " << score << std::endl;
+    BOOST_CHECK_EQUAL(score, 7.0);
+    BOOST_CHECK_EQUAL(paths.size(), 1);
+}
 
-//BOOST_AUTO_TEST_CASE(two_cell_test_magnusson)
-//{
-//    Graph::Configuration config(false, false, false, false);
-//    Graph g(config);
+BOOST_AUTO_TEST_CASE(two_cell_test_magnusson)
+{
+    Graph::Configuration config(false, false, false, false);
+    Graph g(config);
 
-//    NameData nd_1("Timestep 1: Node 1");
-//    Graph::NodePtr n1 = g.addNode(0, {0, 3, 5, -10}, 0.0, 0.0, true, false, &nd_1);
-//    NameData nd_2("Timestep 2: Node 1");
-//    Graph::NodePtr n2 = g.addNode(1, {0, 3, 4, -10}, 0.0, 0.0, false, true, &nd_2);
+    NameData nd_1("Timestep 1: Node 1");
+    Graph::NodePtr n1 = g.addNode(0, {0, 3, 5, -10}, 0.0, 0.0, true, false, &nd_1);
+    NameData nd_2("Timestep 2: Node 1");
+    Graph::NodePtr n2 = g.addNode(1, {0, 3, 4, -10}, 0.0, 0.0, false, true, &nd_2);
 
-//    g.addMoveArc(n1, n2, 1.0);
+    g.addMoveArc(n1, n2, 1.0);
 
-//    Magnusson tracker(&g);
-//    std::vector<TrackingAlgorithm::Path> paths;
-//    double score = tracker.track(paths);
+    Magnusson tracker(&g);
+    std::vector<TrackingAlgorithm::Path> paths;
+    double score = tracker.track(paths);
 
-//    std::cout << "Tracker returned score " << score << std::endl;
-//    BOOST_CHECK_EQUAL(score, 11.0);
-//    BOOST_CHECK_EQUAL(paths.size(), 2);
-//}
+    std::cout << "Tracker returned score " << score << std::endl;
+    BOOST_CHECK_EQUAL(score, 11.0);
+    BOOST_CHECK_EQUAL(paths.size(), 2);
+}
+
+BOOST_AUTO_TEST_CASE(magnusson_no_swap_failure_case)
+{
+    Graph::Configuration config(false, false, false, false);
+    Graph g(config);
+
+    NameData nd_1("Timestep 1: Node 1");
+    Graph::NodePtr n1 = g.addNode(0, {0, 1}, 0.0, 0.0, true, false, &nd_1);
+    NameData nd_2("Timestep 1: Node 2");
+    Graph::NodePtr n2 = g.addNode(0, {0, 1}, 0.0, 0.0, true, false, &nd_2);
+
+    NameData nd_3("Timestep 2: Node 1");
+    Graph::NodePtr n3 = g.addNode(1, {0, 5}, 0.0, 0.0, false, false, &nd_3);
+    NameData nd_4("Timestep 2: Node 2");
+    Graph::NodePtr n4 = g.addNode(1, {0, 15}, 0.0, 0.0, false, false, &nd_4);
+
+    NameData nd_5("Timestep 3: Node 1");
+    Graph::NodePtr n5 = g.addNode(2, {0, 2}, 0.0, 0.0, false, true, &nd_5);
+    NameData nd_6("Timestep 3: Node 2");
+    Graph::NodePtr n6 = g.addNode(2, {0, 1}, 0.0, 0.0, false, true, &nd_6);
+
+    g.addMoveArc(n1, n3, 0.0);
+    g.addMoveArc(n2, n4, 0.0);
+    g.addMoveArc(n3, n5, 4.0);
+    g.addMoveArc(n4, n5, 0.0);
+    g.addMoveArc(n4, n6, 0.0);
+
+    Magnusson tracker(&g);
+    std::vector<TrackingAlgorithm::Path> paths;
+    double score = tracker.track(paths);
+
+    std::cout << "Tracker returned score " << score << std::endl;
+    BOOST_CHECK_EQUAL(score, 18.0);
+    BOOST_CHECK_EQUAL(paths.size(), 1);
+}
 
 BOOST_AUTO_TEST_CASE(test_full_magnusson)
 {
