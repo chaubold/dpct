@@ -29,21 +29,37 @@ double Magnusson::track(std::vector<TrackingAlgorithm::Path>& paths)
 
     double scoreDelta = 0.0;
 
-    do
+    while(true)
     {
         // backtrack best path, increase cell counts -> invalidates scores!
         Path p;
         backtrack(&(graph_->getSinkNode()), p, std::bind(&Magnusson::increaseCellCount, this, _1));
-        paths.push_back(p);
-        std::cout << "Found path of length " << p.size() << " with score: " << p.back()->getCurrentScore() << std::endl;
+        std::cout << "Current best path of length " << p.size() << " has score: " << p.back()->getCurrentScore() << std::endl;
         printPath(p);
         scoreDelta = p.back()->getCurrentScore();
+
+        // only continue if this path adds to the overall score
+        if(scoreDelta < 0)
+        {
+            std::cout << "Path has negative reward, stopping here with a total number of " << paths.size() << " cells added" << std::endl;
+            break;
+        }
+
         score += scoreDelta;
+        paths.push_back(p);
 
         // update scores along that path and all nodes that go away from there
         Node* firstPathNode = p.front()->getTargetNode();
+        if(firstPathNode->getUserData() != nullptr)
+        {
+            std::cout << "Beginning update at node: " << *((NameData*)firstPathNode->getUserData()) << std::endl;
+        }
+        else
+        {
+            std::cout << "Beginning update at node " << firstPathNode << std::endl;
+        }
         breadthFirstSearchVisitor(firstPathNode, std::bind(&Magnusson::updateNode, this, _1));
-    } while(scoreDelta > 0 && paths.size() < 3);
+    };
 
     return score;
 }
@@ -61,7 +77,14 @@ void Magnusson::updateNode(Node* n)
 
 void Magnusson::increaseCellCount(Node* n)
 {
-    std::cout << "Increasing cell count of node " << n << std::endl;
+    if(n->getUserData() != nullptr)
+    {
+        std::cout << "Increasing cell count of node " << *((NameData*)n->getUserData()) << " = " << n << std::endl;
+    }
+    else
+    {
+        std::cout << "Increasing cell count of node " << n << std::endl;
+    }
 	n->increaseCellCount();
 }
 

@@ -25,6 +25,7 @@ public:
 
 	void registerInArc(Arc* arc);
 	void registerOutArc(Arc* arc);
+    void registerObserverArc(Arc* arc);
 	const UserData* getUserData() const { return data_; }
 
 	void reset();
@@ -38,11 +39,13 @@ public:
 
 protected:
     double getScoreDeltaForCurrentCellCount();
+    void notifyObserverArcs();
 
 protected:
 	// things every node needs
 	std::vector<Arc*> inArcs_;
 	std::vector<Arc*> outArcs_;
+    std::vector<Arc*> observerArcs_;
 	size_t cellCount_; // do we also need to store how many cells are already dividing?
 	Arc* bestInArc_;
 	std::vector<double> cellCountScoreDelta_;

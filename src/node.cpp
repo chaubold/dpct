@@ -3,6 +3,7 @@
 
 #include "node.h"
 #include "arc.h"
+#include "userdata.h"
 
 namespace dpct
 {
@@ -36,6 +37,11 @@ void Node::registerOutArc(Arc* arc)
     outArcs_.push_back(arc);
 }
 
+void Node::registerObserverArc(Arc *arc)
+{
+    observerArcs_.push_back(arc);
+}
+
 void Node::reset()
 {
     cellCount_ = 0;
@@ -45,6 +51,7 @@ void Node::reset()
 void Node::increaseCellCount()
 {
     cellCount_++;
+    notifyObserverArcs();
 }
 
 double Node::getScoreDeltaForCurrentCellCount()
@@ -59,16 +66,27 @@ double Node::getScoreDeltaForCurrentCellCount()
     }
 }
 
+void Node::notifyObserverArcs()
+{
+    for(ArcIt it = observerArcs_.begin(); it != observerArcs_.end(); ++it)
+    {
+        (*it)->update();
+    }
+}
+
 void Node::updateBestInArcAndScore()
 {
-    double bestScore = std::numeric_limits<double>::min();
+    double bestScore = std::numeric_limits<double>::lowest();
     Arc* bestArc = nullptr;
+
+    std::cout << "Updating node with " << inArcs_.size() << " inArcs and " << outArcs_.size() << " out arcs" << std::endl;
 
     for(ArcIt it = inArcs_.begin(); it != inArcs_.end(); ++it)
     {
-        if((*it)->getCurrentScore() > bestScore && (*it)->isEnabled())
+        double cs = (*it)->getCurrentScore();
+        if(cs > bestScore && (*it)->isEnabled())
         {
-            bestScore = (*it)->getCurrentScore();
+            bestScore = cs;
             bestArc = *it;
         }
     }
@@ -77,7 +95,14 @@ void Node::updateBestInArcAndScore()
     {
         currentScore_ = bestScore + getScoreDeltaForCurrentCellCount();
         bestInArc_ = bestArc;
-        std::cout << "Node update: score is now " << currentScore_ << std::endl;
+        if(data_ != nullptr)
+        {
+            std::cout << "Node (" << *((NameData*)data_) << ") update: score is now " << currentScore_ << std::endl;
+        }
+        else
+        {
+            std::cout << "Node update: score is now " << currentScore_ << std::endl;
+        }
     }
 }
 

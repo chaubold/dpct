@@ -32,6 +32,11 @@ Arc::Arc(Node* source,
 
 	sourceNode_->registerOutArc(this);
 	targetNode_->registerInArc(this);
+
+    if(dependsOnCellInNode_ != nullptr)
+    {
+        dependsOnCellInNode_->registerObserverArc(this);
+    }
 }
 
 void Arc::reset()
@@ -43,8 +48,8 @@ void Arc::reset()
 void Arc::update()
 {
 	currentScore_ = scoreDelta_ + sourceNode_->getCurrentScore();
-    std::cout << typeAsString() << "-Arc update: score is now " << currentScore_ << std::endl;
     updateEnabledState();
+    std::cout << typeAsString() << "-Arc update: score is now " << currentScore_ << " (enabled=" << (enabled_?"true":"false") << ")" << std::endl;
 }
 
 std::string Arc::typeAsString()
@@ -64,11 +69,13 @@ void Arc::updateEnabledState()
 {
 	if(dependsOnCellInNode_ != nullptr)
 	{
+        if(enabled_ == false)
+            std::cout << "Enabling formerly disabled " << typeAsString() << "-arc" << std::endl;
 		enabled_ = dependsOnCellInNode_->getCellCount() > 0; // or == 1?
 	}
 	else
 	{
-		enabled_ = true;
+        enabled_ = true;
 	}
 }
 
