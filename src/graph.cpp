@@ -1,17 +1,16 @@
 #include "graph.h"
 #include <assert.h>
+#include <iterator>
 
 namespace dpct
 {
 
 Graph::Configuration::Configuration(bool enableAppearance, 
 									bool enableDisappearance, 
-									bool enableDivision, 
-									bool enableSwap):
+                                    bool enableDivision):
 	withAppearance(enableAppearance),
 	withDisappearance(enableDisappearance),
-	withDivision(enableDivision),
-	withSwap(enableSwap)
+    withDivision(enableDivision)
 {}
 
 Graph::Graph(const Graph::Configuration& config):
@@ -53,7 +52,7 @@ Graph::NodePtr Graph::addNode(size_t timestep,
 					double disappearanceScoreDelta,
 		 			bool connectToSource,
 		 			bool connectToSink,
-		 			UserData* data)
+                    UserDataPtr data)
 {
 	NodePtr node(new Node(cellCountScoreDelta, data));
 	while(nodesPerTimestep_.size() <= timestep)
@@ -114,10 +113,10 @@ Graph::NodePtr Graph::addNode(size_t timestep,
 	return node;
 }
 
-Graph::ArcPtr Graph::addMoveArc(NodePtr source, 
-					NodePtr target, 
-					double scoreDelta,
-					UserData* data)
+Graph::ArcPtr Graph::addMoveArc(NodePtr source,
+                    NodePtr target,
+                    double scoreDelta,
+                    UserDataPtr data)
 {
 	// assert(source in nodes_)
 	// assert(target in nodes_)
@@ -144,7 +143,7 @@ Graph::ArcPtr Graph::allowMitosis(NodePtr parent,
 		parent.get()));
 
 	arcs_.push_back(arc);
-	return arc;
+    return arc;
 }
 
 void Graph::reset()

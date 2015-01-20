@@ -3,18 +3,19 @@
 
 #include <vector>
 #include <functional>
+#include <memory>
+
+#include "node.h"
+#include "arc.h"
+#include "graph.h"
 
 namespace dpct
 {
 
-class Graph;
-class Arc;
-class Node;
-
 class TrackingAlgorithm
 {
 public:
-	typedef std::vector<Arc*> Path;
+    typedef std::vector<Arc*> Path;
 	typedef std::function<void(Node*)> VisitorFunction;
 
 public:

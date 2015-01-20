@@ -8,7 +8,7 @@ using namespace dpct;
 
 BOOST_AUTO_TEST_CASE(build_graph)
 {
-    Graph::Configuration config(true, true, true, false);
+    Graph::Configuration config(true, true, true);
     Graph g(config);
     BOOST_CHECK_EQUAL(g.getNumArcs(), 3);
     BOOST_CHECK_EQUAL(g.getNumNodes(), 0);

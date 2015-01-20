@@ -53,7 +53,7 @@ void TrackingAlgorithm::printPath(TrackingAlgorithm::Path& p)
         std::stringstream s;
         if(n->getUserData() != nullptr)
         {
-            s << *((NameData*)n->getUserData()) << " = " << n;
+            s << n->getUserData() << " = " << n;
         }
         else
         {

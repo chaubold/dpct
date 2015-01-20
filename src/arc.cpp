@@ -28,8 +28,6 @@ Arc::Arc(Node* source,
 		assert(scoreDelta_ == 0.0);
 	}
 
-	updateEnabledState();
-
 	sourceNode_->registerOutArc(this);
 	targetNode_->registerInArc(this);
 
@@ -37,6 +35,8 @@ Arc::Arc(Node* source,
     {
         dependsOnCellInNode_->registerObserverArc(this);
     }
+
+    update();
 }
 
 void Arc::reset()

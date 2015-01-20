@@ -25,6 +25,8 @@ public:
 	void registerInArc(Arc* arc);
 	void registerOutArc(Arc* arc);
     void registerObserverArc(Arc* arc);
+    bool removeInArc(Arc* arc);
+    bool removeOutArc(Arc* arc);
 
 	void reset();
 	void updateBestInArcAndScore();

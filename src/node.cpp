@@ -31,11 +31,7 @@ Node::Node(const std::vector<double>& cellCountScoreDelta,
 void Node::registerInArc(Arc* arc)
 {
     inArcs_.push_back(arc);
-    if(arc->isEnabled() &&
-            (bestInArc_ == nullptr || arc->getCurrentScore() < bestInArc_->getCurrentScore()))
-    {
-        bestInArc_ = arc;
-    }
+    updateBestInArcAndScore();
 }
 
 void Node::registerOutArc(Arc* arc)
@@ -48,6 +44,29 @@ void Node::registerObserverArc(Arc *arc)
     observerArcs_.push_back(arc);
 }
 
+bool Node::removeInArc(Arc *arc)
+{
+    ArcIt it = std::find(inArcs_.begin(), inArcs_.end(), arc);
+    if(it != inArcs_.end())
+    {
+        inArcs_.erase(it);
+        updateBestInArcAndScore();
+        return true;
+    }
+    return false;
+}
+
+bool Node::removeOutArc(Arc *arc)
+{
+    ArcIt it = std::find(outArcs_.begin(), outArcs_.end(), arc);
+    if(it != outArcs_.end())
+    {
+        inArcs_.erase(it);
+        updateBestInArcAndScore();
+        return true;
+    }
+    return false;
+}
 void Node::reset()
 {
     cellCount_ = 0;

@@ -41,6 +41,7 @@ public:
 
 	Node* getSourceNode() const { return sourceNode_; }
 	Node* getTargetNode() const { return targetNode_; }
+    Type getType() const { return type_; }
     double getScoreDelta() const { return scoreDelta_; }
 
     std::string typeAsString();

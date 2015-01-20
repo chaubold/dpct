@@ -1,11 +1,12 @@
 #ifndef DPCT_GRAPH_H
 #define DPCT_GRAPH_H
 
+#include <memory>
+#include <functional>
+
 #include "node.h"
 #include "arc.h"
 #include "userdata.h"
-#include <memory>
-#include <functional>
 
 namespace dpct
 {
@@ -26,13 +27,11 @@ public:
 	public:
 		Configuration(bool enableAppearance, 
 					bool enableDisappearance, 
-					bool enableDivision, 
-					bool enableSwap);
+                    bool enableDivision);
 
  		bool withAppearance;
 		bool withDisappearance;
 		bool withDivision;
-		bool withSwap;
 	};
 
 public:
