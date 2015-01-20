@@ -4,29 +4,27 @@
 #include <vector>
 #include <cstddef>
 
+#include "userdata.h"
+
 namespace dpct
 {
 
 class Arc;
-class UserData;
 
-class Node
+class Node : public UserDataHolder
 {
 public:
 	typedef std::vector<Arc*>::iterator ArcIt;
 
 public:
 	Node(const std::vector<double>& cellCountScoreDelta = {},
-		 UserData* data = nullptr);
+         UserDataPtr data = UserDataPtr());
 
-	size_t getCellCount() const { return cellCount_; }
 	void increaseCellCount();
-	double getCurrentScore() const { return currentScore_; }
 
 	void registerInArc(Arc* arc);
 	void registerOutArc(Arc* arc);
     void registerObserverArc(Arc* arc);
-	const UserData* getUserData() const { return data_; }
 
 	void reset();
 	void updateBestInArcAndScore();
@@ -35,7 +33,9 @@ public:
 	ArcIt getInArcsEnd()    { return inArcs_.end(); }
 	ArcIt getOutArcsBegin() { return outArcs_.begin(); }
 	ArcIt getOutArcsEnd()   { return outArcs_.end(); }
-	Arc* getBestInArc() const { return bestInArc_; }
+    Arc*  getBestInArc() const { return bestInArc_; }
+    size_t getCellCount() const { return cellCount_; }
+    double getCurrentScore() const { return currentScore_; }
 
 protected:
     double getScoreDeltaForCurrentCellCount();
@@ -50,9 +50,6 @@ protected:
 	Arc* bestInArc_;
 	std::vector<double> cellCountScoreDelta_;
 	double currentScore_;
-
-	// how to store reference to hypotheses graph?
-    UserData* data_;
 };
 
 } // namespace dpct

@@ -19,45 +19,36 @@ BOOST_AUTO_TEST_CASE(build_graph)
 
     // -----------------------------------------------------
     // Timestep 1
-    NameData nd_1_1("Timestep 1: Node 1");
     Graph::NodePtr n_1_1 = g.addNode(0, {3, -1}, appearanceScore, disappearanceScore,
-                                        true, false, &nd_1_1);
-    // std::cout << "Inserted node: " << *(NameData*)(n_1_1->getUserData()) << std::endl;
+                                        true, false, std::make_shared<NameData>("Timestep 1: Node 1"));
 
-    NameData nd_1_2("Timestep 1: Node 2");
     Graph::NodePtr n_1_2 = g.addNode(0, {2, 5, -2}, appearanceScore, disappearanceScore,
-                                        true, false, &nd_1_2);
+                                        true, false, std::make_shared<NameData>("Timestep 1: Node 2"));
 
-    NameData nd_1_3("Timestep 1: Node 3");
     Graph::NodePtr n_1_3 = g.addNode(0, {3, -5}, appearanceScore, disappearanceScore,
-                                        true, false, &nd_1_3);
+                                        true, false, std::make_shared<NameData>("Timestep 1: Node 3"));
 
     BOOST_CHECK_EQUAL(g.getNumArcs(), 9);
     BOOST_CHECK_EQUAL(g.getNumNodes(), 3);
 
     // -----------------------------------------------------
     // Timestep 2
-    NameData nd_2_1("Timestep 2: Node 1");
     Graph::NodePtr n_2_1 = g.addNode(1, {4, -2}, appearanceScore, disappearanceScore,
-                                        false, false, &nd_2_1);
+                                        false, false, std::make_shared<NameData>("Timestep 2: Node 1"));
 
-    NameData nd_2_2("Timestep 2: Node 2");
     Graph::NodePtr n_2_2 = g.addNode(1, {2, -2}, appearanceScore, disappearanceScore,
-                                        false, false, &nd_2_2);
+                                        false, false, std::make_shared<NameData>("Timestep 2: Node 2"));
 
-    NameData nd_2_3("Timestep 2: Node 3");
     Graph::NodePtr n_2_3 = g.addNode(1, {2, -4}, appearanceScore, disappearanceScore,
-                                        false, false, &nd_2_3);
+                                        false, false, std::make_shared<NameData>("Timestep 2: Node 3"));
 
-    NameData nd_2_4("Timestep 2: Node 4");
     Graph::NodePtr n_2_4 = g.addNode(1, {2,-2}, appearanceScore, disappearanceScore,
-                                        false, false, &nd_2_4);
+                                        false, false, std::make_shared<NameData>("Timestep 2: Node 4"));
 
     BOOST_CHECK_EQUAL(g.getNumArcs(), 17);
     BOOST_CHECK_EQUAL(g.getNumNodes(), 7);
 
-    NameData ad_2_1("Arc 1");
-    g.addMoveArc(n_1_1, n_2_1, 0.0, &ad_2_1);
+    g.addMoveArc(n_1_1, n_2_1, 0.0, std::make_shared<NameData>("Arc 1"));
     g.addMoveArc(n_1_2, n_2_2, 0.0);
     g.addMoveArc(n_1_2, n_2_3, 0.0);
     g.addMoveArc(n_1_3, n_2_4, 0.0);

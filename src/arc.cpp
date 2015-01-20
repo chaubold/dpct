@@ -7,18 +7,18 @@ namespace dpct
 {
 
 Arc::Arc(Node* source,
-		 Node* target,
-		 Type type,
-		 double scoreDelta,
-		 Node* dependsOnCellInNode,
-		 UserData* data):
+         Node* target,
+         Type type,
+         double scoreDelta,
+         Node* dependsOnCellInNode,
+         UserDataPtr data):
+    UserDataHolder(data),
 	sourceNode_(source),
 	targetNode_(target),
 	type_(type),
 	scoreDelta_(scoreDelta),
 	currentScore_(scoreDelta),
-	dependsOnCellInNode_(dependsOnCellInNode),
-	data_(data)
+    dependsOnCellInNode_(dependsOnCellInNode)
 {
 	assert(source != nullptr);
 	assert(target != nullptr);

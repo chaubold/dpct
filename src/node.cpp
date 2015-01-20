@@ -1,6 +1,7 @@
 #include <limits>
 #include <assert.h>
 #include <stdexcept>
+#include <algorithm>
 
 #include "node.h"
 #include "arc.h"
@@ -10,9 +11,9 @@ namespace dpct
 {
 
 Node::Node(const std::vector<double>& cellCountScoreDelta,
-           UserData* data):
+           UserDataPtr data):
+    UserDataHolder(data),
     cellCountScoreDelta_(cellCountScoreDelta),
-    data_(data),
     bestInArc_(nullptr),
     cellCount_(0),
     currentScore_(0.0)
@@ -104,9 +105,9 @@ void Node::updateBestInArcAndScore()
     {
         currentScore_ = bestScore + getScoreDeltaForCurrentCellCount();
         bestInArc_ = bestArc;
-        if(data_ != nullptr)
+        if(getUserData())
         {
-            std::cout << "Node (" << *((NameData*)data_) << ") update: score is now " << currentScore_ << std::endl;
+            std::cout << "Node (" << *(std::static_pointer_cast<NameData>(getUserData())) << ") update: score is now " << currentScore_ << std::endl;
         }
         else
         {

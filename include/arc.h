@@ -2,14 +2,14 @@
 #define DPCT_ARC_H
 
 #include <iostream>
+#include "userdata.h"
 
 namespace dpct
 {
 
 class Node;
-class UserData;
 
-class Arc
+class Arc : public UserDataHolder
 {
 public:
 	enum Type{
@@ -30,18 +30,18 @@ public:
 		Type type,
 		double scoreDelta,
 		Node* dependsOnCellInNode = nullptr,
-		UserData* data = nullptr
+        UserDataPtr data = UserDataPtr()
 		);
 
 	double getCurrentScore() const { return currentScore_; }
 	bool isEnabled() const { return enabled_; }
-	const UserData* getUserData() const { return data_; }
 
 	void reset();
 	void update();
 
 	Node* getSourceNode() const { return sourceNode_; }
 	Node* getTargetNode() const { return targetNode_; }
+    double getScoreDelta() const { return scoreDelta_; }
 
     std::string typeAsString();
 
@@ -59,9 +59,6 @@ protected:
 
 	// dependencies for some arcs (e.g. divisions)
 	Node* dependsOnCellInNode_;
-
-	// how to store reference to hypotheses graph?
-	UserData* data_;
 };
 
 } // namespace dpct
