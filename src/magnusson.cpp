@@ -122,19 +122,24 @@ void Magnusson::insertSwapArcsForNewUsedPath(TrackingAlgorithm::Path &p)
     */
     for(Path::iterator it = p.begin(); it != p.end(); ++it)
     {
+        if((*it)->getType() == Arc::Appearance // only swap Moves (or swapped moves) for now
+                && (*it)->getType() == Arc::Disappearance
+                && (*it)->getType() == Arc::Division)
+            continue;
+
         Node *source = (*it)->getSourceNode();
         Node *target = (*it)->getTargetNode();
 
         for(Node::ArcIt outIt = source->getOutArcsBegin(); outIt != source->getOutArcsEnd(); ++outIt)
         {
             Node *alternativeTarget = (*outIt)->getTargetNode();
-            if(alternativeTarget == target)
+            if(alternativeTarget == target || graph_->isSpecialNode(alternativeTarget))
                 continue;
 
             for(Node::ArcIt inIt = target->getInArcsBegin(); inIt != target->getInArcsEnd(); ++inIt)
             {
                 Node *alternativeSource = (*inIt)->getSourceNode();
-                if(alternativeSource == source)
+                if(alternativeSource == source || graph_->isSpecialNode(alternativeSource))
                     continue;
 
                 // found a candidate
@@ -160,7 +165,19 @@ void Magnusson::insertSwapArcsForNewUsedPath(TrackingAlgorithm::Path &p)
                                           std::make_shared<MagnussonSwapArcUserData>(*it)
                                           ));
 
-                std::cout << "!!! Adding SWAP ARC between " << alternativeSource << " and " << alternativeTarget << " with score " << score << std::endl;
+                std::cout << "!!! Adding SWAP ARC between " ;
+                if(alternativeSource->getUserData())
+                    std::cout << alternativeSource->getUserData();
+                else
+                    std::cout << alternativeSource;
+                std::cout << " and ";
+
+                if(alternativeTarget->getUserData())
+                    std::cout << alternativeTarget->getUserData();
+                else
+                    std::cout << alternativeTarget;
+
+                std::cout << " with score " << score << std::endl;
 
                 swapArcs_.push_back(arc);
             }
@@ -176,6 +193,7 @@ void Magnusson::cleanUpUsedSwapArcs(TrackingAlgorithm::Path &p)
         if(arc->getType() == Arc::Swap)
         {
             Arc* arcToRemove = std::static_pointer_cast<MagnussonSwapArcUserData>(arc->getUserData())->getCutArc();
+
         }
     }
 }

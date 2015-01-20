@@ -103,11 +103,37 @@ BOOST_AUTO_TEST_CASE(magnusson_simple_swap_test)
     BOOST_CHECK_EQUAL(paths.size(), 2);
 }
 
-BOOST_AUTO_TEST_CASE(test_full_magnusson)
+BOOST_AUTO_TEST_CASE(magnusson_simple_swap_test_with_app_dis)
 {
-    Graph::Configuration config(true, true, true);
+    Graph::Configuration config(true, true, false);
     Graph g(config);
 
+    Graph::NodePtr n1 = g.addNode(0, {0, 1}, 0.0, 0.0, true, false, std::make_shared<NameData>("Timestep 1: Node 1"));
+    Graph::NodePtr n2 = g.addNode(0, {0, 1}, 0.0, 0.0, true, false, std::make_shared<NameData>("Timestep 1: Node 2"));
+
+    Graph::NodePtr n3 = g.addNode(1, {0, 5}, 0.0, 0.0, false, false, std::make_shared<NameData>("Timestep 2: Node 1"));
+    Graph::NodePtr n4 = g.addNode(1, {0, 15}, 0.0, 0.0, false, false, std::make_shared<NameData>("Timestep 2: Node 2"));
+
+    Graph::NodePtr n5 = g.addNode(2, {0, 2}, 0.0, 0.0, false, true, std::make_shared<NameData>("Timestep 3: Node 1"));
+    Graph::NodePtr n6 = g.addNode(2, {0, 1}, 0.0, 0.0, false, true, std::make_shared<NameData>("Timestep 3: Node 2"));
+
+    g.addMoveArc(n1, n3, 0.0);
+    g.addMoveArc(n2, n4, 0.0);
+    g.addMoveArc(n3, n5, 4.0);
+    g.addMoveArc(n4, n5, 0.0);
+    g.addMoveArc(n4, n6, 0.0);
+
+    Magnusson tracker(&g, true);
+    std::vector<TrackingAlgorithm::Path> paths;
+    double score = tracker.track(paths);
+
+    std::cout << "Tracker returned score " << score << std::endl;
+    BOOST_CHECK_EQUAL(score, 29.0);
+    BOOST_CHECK_EQUAL(paths.size(), 2);
+}
+
+void buildGraph(Graph& g)
+{
     double appearanceScore = -200;
     double disappearanceScore = -200;
     double divisionScore = -200;
@@ -127,7 +153,7 @@ BOOST_AUTO_TEST_CASE(test_full_magnusson)
     // Timestep 2
     Graph::NodePtr n_2_1 = g.addNode(1, {0, 4, 2}, appearanceScore, disappearanceScore,
                                         false, false, std::make_shared<NameData>("Timestep 2: Node 1"));
-	
+
     Graph::NodePtr n_2_2 = g.addNode(1, {0, 2, 0}, appearanceScore, disappearanceScore,
                                         false, false, std::make_shared<NameData>("Timestep 2: Node 2"));
 
@@ -183,10 +209,38 @@ BOOST_AUTO_TEST_CASE(test_full_magnusson)
     g.allowMitosis(n_3_3, n_4_3, 2);
 
     std::cout << "Done setting up graph" << std::endl;
+}
+
+BOOST_AUTO_TEST_CASE(test_full_magnusson_no_swap)
+{
+    Graph::Configuration config(true, true, true);
+    Graph g(config);
+
+    buildGraph(g);
 	
     // -----------------------------------------------------
     // Tracking
     Magnusson tracker(&g, false);
+    std::vector<TrackingAlgorithm::Path> paths;
+    double score = tracker.track(paths);
+
+    BOOST_CHECK_EQUAL(paths.size(), 5);
+    BOOST_CHECK_EQUAL(score, 44.0);
+
+    std::cout << "Tracker returned score " << score << std::endl;
+}
+
+
+BOOST_AUTO_TEST_CASE(test_full_magnusson_with_swap)
+{
+    Graph::Configuration config(true, true, true);
+    Graph g(config);
+
+    buildGraph(g);
+
+    // -----------------------------------------------------
+    // Tracking
+    Magnusson tracker(&g, true);
     std::vector<TrackingAlgorithm::Path> paths;
     double score = tracker.track(paths);
 

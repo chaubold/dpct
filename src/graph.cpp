@@ -15,7 +15,12 @@ Graph::Configuration::Configuration(bool enableAppearance,
 
 Graph::Graph(const Graph::Configuration& config):
 	config_(config),
-	numNodes_(0)
+    numNodes_(0),
+    sinkNode_({}, std::make_shared<NameData>("Sink")),
+    sourceNode_({}, std::make_shared<NameData>("Source")),
+    appearanceNode_({}, std::make_shared<NameData>("Appearance")),
+    disappearanceNode_({}, std::make_shared<NameData>("Disappearance")),
+    divisionNode_({}, std::make_shared<NameData>("Division"))
 {
 	// connect the "special" nodes to source and sink
 	if(config_.withAppearance)
@@ -187,6 +192,26 @@ void Graph::visitSpecialNodes(Graph::VisitorFunction func)
     func(&disappearanceNode_);
     func(&divisionNode_);
     func(&sinkNode_);
+}
+
+bool Graph::isSpecialNode(Node *n) const
+{
+    if(n == &sourceNode_)
+    	return true;
+
+    if(n == &appearanceNode_)
+    	return true;
+
+    if(n == &disappearanceNode_)
+    	return true;
+
+    if(n == &divisionNode_)
+    	return true;
+
+    if(n == &sinkNode_)
+    	return true;
+    
+    return false;
 }
 
 } // namespace dpct

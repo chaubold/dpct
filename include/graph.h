@@ -69,10 +69,11 @@ public:
 	const Configuration getConfig() const { return config_; }
 
 	// access for tracking algorithms
-	Node& getSourceNode() { return sourceNode_; }
-	Node& getSinkNode() { return sinkNode_; }
+    Node& getSourceNode() { return sourceNode_; }
+    Node& getSinkNode() { return sinkNode_; }
 	void visitNodesInTimestep(size_t timestep, VisitorFunction func);
     void visitSpecialNodes(VisitorFunction func);
+    bool isSpecialNode(Node *n) const;
 
 	void reset();
 
