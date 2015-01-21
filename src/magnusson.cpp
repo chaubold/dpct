@@ -66,6 +66,12 @@ double Magnusson::track(std::vector<TrackingAlgorithm::Path>& paths)
             std::cout << "Beginning update at node " << firstPathNode << std::endl;
         }
         breadthFirstSearchVisitor(firstPathNode, std::bind(&Magnusson::updateNode, this, _1));
+
+        // clean up used arcs
+        if(withSwap_)
+        {
+            cleanUpUsedSwapArcs(p, paths);
+        }
     };
 
     return score;
@@ -156,13 +162,13 @@ void Magnusson::insertSwapArcsForNewUsedPath(TrackingAlgorithm::Path &p)
 
                 // the swap arc does not depend on other nodes being part of a path,
                 // as this algorithm never removes cells and thus the previously populated nodes can be used in swaps.
-                // BUT: it needs to store a reference to the arc that it would cut, and this action is performed in cleanUpUsedSwapArcs()
+                // BUT: it needs to store a reference to the arc that it would cut, and the cleanup action is performed in cleanUpUsedSwapArcs()
                 Graph::ArcPtr arc(new Arc(alternativeSource,
                                           alternativeTarget,
                                           Arc::Swap,
                                           score,
                                           nullptr,
-                                          std::make_shared<MagnussonSwapArcUserData>(*it)
+                                          std::make_shared<MagnussonSwapArcUserData>(*it, *inIt, *outIt)
                                           ));
 
                 std::cout << "!!! Adding SWAP ARC between " ;
@@ -185,29 +191,88 @@ void Magnusson::insertSwapArcsForNewUsedPath(TrackingAlgorithm::Path &p)
     }
 }
 
-void Magnusson::cleanUpUsedSwapArcs(TrackingAlgorithm::Path &p)
+void Magnusson::cleanUpUsedSwapArcs(TrackingAlgorithm::Path &p, std::vector<Path>& paths)
 {
     // if a swap arc was used, we can find the path that was affected by this and create the two paths after swapping
-    for(auto arc : p)
+    bool foundSwapArc = true;
+    while(foundSwapArc)
     {
-        if(arc->getType() == Arc::Swap)
+        foundSwapArc = false;
+        for(Node::ArcIt p_it = p.begin(); p_it != p.end(); ++p_it)
         {
-            Arc* arcToRemove = std::static_pointer_cast<MagnussonSwapArcUserData>(arc->getUserData())->getCutArc();
+            Arc* arc = *p_it;
+            if(arc->getType() == Arc::Swap)
+            {
+                assert(arc->getUserData());
+                Arc* arcToRemove = std::static_pointer_cast<MagnussonSwapArcUserData>(arc->getUserData())->getCutArc();
+                Arc* replacementP = std::static_pointer_cast<MagnussonSwapArcUserData>(arc->getUserData())->getReplacementAArc();
+                Arc* replacementPath = std::static_pointer_cast<MagnussonSwapArcUserData>(arc->getUserData())->getReplacementBArc();
 
+                std::cout << "Trying to remove swap arc between " << arc->getSourceNode()->getUserData()->toString() << " and " << arc->getTargetNode()->getUserData()->toString() << std::endl;
+
+                for(Path& path : paths)
+                {
+                    for(Node::ArcIt path_it = path.begin(); path_it != path.end(); ++path_it)
+                    {
+                        Arc* a = *path_it;
+
+                        if(a == arcToRemove)
+                        {
+                            // found candidate. store part of original path that will be used by new path
+                            Path temp(path_it+1, path.end());
+
+                            // update original path by appending the replacement arc and the remainder of path P
+                            path.erase(path_it, path.end());
+                            path.push_back(replacementPath);
+                            path.insert(path.end(), p_it+1, p.end());
+
+                            // update path p
+                            p.erase(p_it, p.end());
+                            p.push_back(replacementP);
+                            p.insert(p.end(), temp.begin(), temp.end());
+
+                            foundSwapArc = true;
+                            break;
+                        }
+                    }
+
+                    if(foundSwapArc)
+                        break;
+                }
+
+                assert(foundSwapArc);
+
+                // remove swap arc from graph
+                removeArc(arc);
+                std::cout << "updated two paths. removed swap arc between " << arc->getSourceNode()->getUserData()->toString() << " and " << arc->getTargetNode()->getUserData()->toString() << std::endl;
+                for(Graph::ArcVector::iterator it = swapArcs_.begin(); it != swapArcs_.end(); ++it)
+                {
+                    if(it->get() == arc)
+                    {
+                        swapArcs_.erase(it);
+                        break;
+                    }
+                }
+                break;
+            }
         }
     }
 }
 
+void Magnusson::removeArc(Arc* a)
+{
+    // unregister it from source and target node
+    Node *source = a->getSourceNode();
+    Node *target = a->getTargetNode();
+    source->removeOutArc(a);
+    target->removeInArc(a);
+}
+
 void Magnusson::removeSwapArcs()
 {
-    // TODO:
-    for(auto a : swapArcs_)
+    for(Graph::ArcPtr a : swapArcs_)
     {
-        // unregister it from source and target node
-        Node *source = a->getSourceNode();
-        Node *target = a->getTargetNode();
-        source->removeOutArc(a.get());
-        target->removeInArc(a.get());
+        removeArc(a.get());
     }
     swapArcs_.clear();
 }

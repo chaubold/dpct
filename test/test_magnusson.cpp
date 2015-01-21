@@ -101,6 +101,16 @@ BOOST_AUTO_TEST_CASE(magnusson_simple_swap_test)
     std::cout << "Tracker returned score " << score << std::endl;
     BOOST_CHECK_EQUAL(score, 29.0);
     BOOST_CHECK_EQUAL(paths.size(), 2);
+
+    // check the paths
+    for(TrackingAlgorithm::Path& p : paths)
+    {
+        for(Arc* a : p)
+        {
+            BOOST_CHECK_NE(a->getType(), Arc::Swap);
+            BOOST_CHECK(a->getSourceNode() != n4.get() || a->getTargetNode() != n5.get());
+        }
+    }
 }
 
 BOOST_AUTO_TEST_CASE(magnusson_simple_swap_test_with_app_dis)

@@ -6,6 +6,39 @@
 
 using namespace dpct;
 
+BOOST_AUTO_TEST_CASE(node_arcs)
+{
+    Node n1;
+    Node n2;
+    BOOST_CHECK_EQUAL(std::distance(n1.getInArcsBegin(),  n1.getInArcsEnd()),  0);
+    BOOST_CHECK_EQUAL(std::distance(n1.getOutArcsBegin(), n1.getOutArcsEnd()), 0);
+
+    BOOST_CHECK_EQUAL(std::distance(n2.getInArcsBegin(),  n2.getInArcsEnd()),  0);
+    BOOST_CHECK_EQUAL(std::distance(n2.getOutArcsBegin(), n2.getOutArcsEnd()), 0);
+
+    Arc a(&n1, &n2, Arc::Move, 0.0);
+
+    BOOST_CHECK_EQUAL(std::distance(n1.getInArcsBegin(),  n1.getInArcsEnd()),  0);
+    BOOST_CHECK_EQUAL(std::distance(n1.getOutArcsBegin(), n1.getOutArcsEnd()), 1);
+
+    BOOST_CHECK_EQUAL(std::distance(n2.getInArcsBegin(),  n2.getInArcsEnd()),  1);
+    BOOST_CHECK_EQUAL(std::distance(n2.getOutArcsBegin(), n2.getOutArcsEnd()), 0);
+
+    a.getSourceNode()->removeOutArc(&a);
+    BOOST_CHECK_EQUAL(std::distance(n1.getInArcsBegin(),  n1.getInArcsEnd()),  0);
+    BOOST_CHECK_EQUAL(std::distance(n1.getOutArcsBegin(), n1.getOutArcsEnd()), 0);
+
+    BOOST_CHECK_EQUAL(std::distance(n2.getInArcsBegin(),  n2.getInArcsEnd()),  1);
+    BOOST_CHECK_EQUAL(std::distance(n2.getOutArcsBegin(), n2.getOutArcsEnd()), 0);
+
+    a.getTargetNode()->removeInArc(&a);
+    BOOST_CHECK_EQUAL(std::distance(n1.getInArcsBegin(),  n1.getInArcsEnd()),  0);
+    BOOST_CHECK_EQUAL(std::distance(n1.getOutArcsBegin(), n1.getOutArcsEnd()), 0);
+
+    BOOST_CHECK_EQUAL(std::distance(n2.getInArcsBegin(),  n2.getInArcsEnd()),  0);
+    BOOST_CHECK_EQUAL(std::distance(n2.getOutArcsBegin(), n2.getOutArcsEnd()), 0);
+}
+
 BOOST_AUTO_TEST_CASE(build_graph)
 {
     Graph::Configuration config(true, true, true);

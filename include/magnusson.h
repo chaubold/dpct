@@ -7,16 +7,28 @@
 namespace dpct
 {
 
-// each swap arc keeps track of the arc it would cut if used
+// each swap arc keeps track of the arc it would cut if used,
+// the arc that the path A that chose the swap arc would take,
+// and the arc that the previous path B will be redirected along
 class MagnussonSwapArcUserData : public UserData
 {
 public:
-    MagnussonSwapArcUserData(Arc* cutArc): arc_(cutArc) {}
+    MagnussonSwapArcUserData(Arc* cutArc,
+                             Arc* replacementA,
+                             Arc* replacementB):
+        arc_(cutArc),
+        replacementA_(replacementA),
+        replacementB_(replacementB)
+    {}
     Arc* getCutArc() const { return arc_; }
+    Arc* getReplacementAArc() const { return replacementA_; }
+    Arc* getReplacementBArc() const { return replacementB_; }
 
     virtual std::string toString() const { return "Magnusson Swap Arc"; }
 private:
     Arc* arc_;
+    Arc* replacementA_;
+    Arc* replacementB_;
 };
 
 // Klas Magnusson's cell tracking algorithm as in:
@@ -39,8 +51,9 @@ private:
     Graph::ArcVector swapArcs_;
     // swap arc methods
     void insertSwapArcsForNewUsedPath(Path& p);
-    void cleanUpUsedSwapArcs(Path& p);
+    void cleanUpUsedSwapArcs(Path& p, std::vector<Path> &paths);
     void removeSwapArcs();
+    void removeArc(Arc *a);
 };
 
 } // namespace dpct

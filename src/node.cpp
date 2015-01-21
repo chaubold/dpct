@@ -58,10 +58,11 @@ bool Node::removeInArc(Arc *arc)
 
 bool Node::removeOutArc(Arc *arc)
 {
+    std::cout << "Trying to remove out arc from a vector of size: " << outArcs_.size() << std::endl;
     ArcIt it = std::find(outArcs_.begin(), outArcs_.end(), arc);
     if(it != outArcs_.end())
     {
-        inArcs_.erase(it);
+        outArcs_.erase(it);
         updateBestInArcAndScore();
         return true;
     }
