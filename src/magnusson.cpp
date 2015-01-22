@@ -66,7 +66,14 @@ double Magnusson::track(std::vector<TrackingAlgorithm::Path>& paths)
         {
             DEBUG_MSG("Beginning update at node " << firstPathNode);
         }
-        breadthFirstSearchVisitor(firstPathNode, std::bind(&Magnusson::updateNode, this, _1));
+        // breadthFirstSearchVisitor(firstPathNode, std::bind(&Magnusson::updateNode, this, _1));
+
+        // update scores from timestep 0 to the end
+        for(size_t t = 0; t < graph_->getNumTimesteps(); ++t)
+        {
+            graph_->visitNodesInTimestep(t, std::bind(&Magnusson::updateNode, this, _1));
+        }
+        graph_->visitSpecialNodes(std::bind(&Magnusson::updateNode, this, _1));
 
         // clean up used arcs
         if(withSwap_)
@@ -77,6 +84,7 @@ double Magnusson::track(std::vector<TrackingAlgorithm::Path>& paths)
         // add path to solution
         paths.push_back(p);
         score += scoreDelta;
+        std::cout << "Added path with score " << scoreDelta << std::endl;
     };
 
     toc();
