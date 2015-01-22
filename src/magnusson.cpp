@@ -19,6 +19,7 @@ Magnusson::Magnusson(Graph* graph, bool withSwap, bool usedArcsScoreZero):
 
 double Magnusson::track(std::vector<TrackingAlgorithm::Path>& paths)
 {
+    tic();
 	paths.clear();
 	double score = 0;
 
@@ -76,6 +77,8 @@ double Magnusson::track(std::vector<TrackingAlgorithm::Path>& paths)
         score += scoreDelta;
     };
 
+    toc();
+
     return score;
 }
 
@@ -114,7 +117,7 @@ void Magnusson::backtrack(Node* start, TrackingAlgorithm::Path& p, TrackingAlgor
 		Arc* bestArc = current->getBestInArc();
 		assert(bestArc != nullptr);
 
-        if(usedArcsScoreZero_)
+        if(usedArcsScoreZero_ && bestArc->getType() == Arc::Move)
             bestArc->markUsed();
 		p.push_back(bestArc);
 		current = bestArc->getSourceNode();

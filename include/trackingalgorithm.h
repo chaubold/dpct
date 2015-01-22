@@ -4,6 +4,7 @@
 #include <vector>
 #include <functional>
 #include <memory>
+#include <chrono>
 
 #include "node.h"
 #include "arc.h"
@@ -27,8 +28,11 @@ public:
     void printPath(TrackingAlgorithm::Path &p);
 protected:
 	Graph* graph_;
+	std::chrono::time_point<std::chrono::high_resolution_clock> startTime_;
 
 	void breadthFirstSearchVisitor(Node* begin, VisitorFunction func);
+	void tic();
+	double toc(); // return time in seconds
 };
 
 } // namespace dpct

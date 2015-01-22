@@ -75,4 +75,17 @@ void TrackingAlgorithm::printPath(TrackingAlgorithm::Path& p)
     }
 }
 
+void TrackingAlgorithm::tic()
+{
+    startTime_ = std::chrono::high_resolution_clock::now();
+}
+
+double TrackingAlgorithm::toc() // return time in seconds
+{
+    std::chrono::time_point<std::chrono::high_resolution_clock> endTime = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed_seconds = endTime - startTime_;
+    std::cout << "Elapsed time: " << elapsed_seconds.count() << "sec" << std::endl;
+    return elapsed_seconds.count();
+}
+
 } // namespace dpct
