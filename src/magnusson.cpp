@@ -11,9 +11,10 @@ using std::placeholders::_1;
 namespace dpct
 {
 
-Magnusson::Magnusson(Graph* graph, bool withSwap):
+Magnusson::Magnusson(Graph* graph, bool withSwap, bool usedArcsScoreZero):
     TrackingAlgorithm(graph),
-    withSwap_(withSwap)
+    withSwap_(withSwap),
+    usedArcsScoreZero_(usedArcsScoreZero)
 {}
 
 double Magnusson::track(std::vector<TrackingAlgorithm::Path>& paths)
@@ -46,9 +47,6 @@ double Magnusson::track(std::vector<TrackingAlgorithm::Path>& paths)
             break;
         }
 
-        score += scoreDelta;
-        paths.push_back(p);
-
         // insert swap arcs
         if(withSwap_)
         {
@@ -72,6 +70,10 @@ double Magnusson::track(std::vector<TrackingAlgorithm::Path>& paths)
         {
             cleanUpUsedSwapArcs(p, paths);
         }
+
+        // add path to solution
+        paths.push_back(p);
+        score += scoreDelta;
     };
 
     return score;
@@ -112,6 +114,8 @@ void Magnusson::backtrack(Node* start, TrackingAlgorithm::Path& p, TrackingAlgor
 		Arc* bestArc = current->getBestInArc();
 		assert(bestArc != nullptr);
 
+        if(usedArcsScoreZero_)
+            bestArc->markUsed();
 		p.push_back(bestArc);
 		current = bestArc->getSourceNode();
 	}
@@ -230,6 +234,14 @@ void Magnusson::cleanUpUsedSwapArcs(TrackingAlgorithm::Path &p, std::vector<Path
                             p.erase(p_it, p.end());
                             p.push_back(replacementP);
                             p.insert(p.end(), temp.begin(), temp.end());
+
+                            if(usedArcsScoreZero_)
+                            {
+                                replacementPath->markUsed();
+                                replacementP->markUsed();
+                                // "unuse" the arc that was previously used
+                                arcToRemove->markUsed(false);
+                            }
 
                             foundSwapArc = true;
                             break;

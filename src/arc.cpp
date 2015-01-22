@@ -18,7 +18,8 @@ Arc::Arc(Node* source,
 	type_(type),
 	scoreDelta_(scoreDelta),
 	currentScore_(scoreDelta),
-    dependsOnCellInNode_(dependsOnCellInNode)
+    dependsOnCellInNode_(dependsOnCellInNode),
+    used_(false)
 {
 	assert(source != nullptr);
 	assert(target != nullptr);
@@ -41,13 +42,14 @@ Arc::Arc(Node* source,
 
 void Arc::reset()
 {
+    used_ = false;
 	currentScore_ = scoreDelta_;
 	updateEnabledState();
 }
 
 void Arc::update()
 {
-	currentScore_ = scoreDelta_ + sourceNode_->getCurrentScore();
+	currentScore_ = getScoreDelta() + sourceNode_->getCurrentScore();
     updateEnabledState();
     std::cout << typeAsString() << "-Arc update: score is now " << currentScore_ << " (enabled=" << (enabled_?"true":"false") << ")" << std::endl;
 }

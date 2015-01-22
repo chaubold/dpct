@@ -1,4 +1,4 @@
-#define BOOST_TEST_MODULE test_graph
+#define BOOST_TEST_MODULE test_magnusson
 
 #include <iostream>
 #include <boost/test/unit_test.hpp>
@@ -42,6 +42,25 @@ BOOST_AUTO_TEST_CASE(two_cell_test_magnusson)
 
     std::cout << "Tracker returned score " << score << std::endl;
     BOOST_CHECK_EQUAL(score, 11.0);
+    BOOST_CHECK_EQUAL(paths.size(), 2);
+}
+
+BOOST_AUTO_TEST_CASE(two_cell_test_arc_once_magnusson)
+{
+    Graph::Configuration config(false, false, false);
+    Graph g(config);
+
+    Graph::NodePtr n1 = g.addNode(0, {0, 3, 5, -10}, 0.0, 0.0, true, false, std::make_shared<NameData>("Timestep 1: Node 1"));
+    Graph::NodePtr n2 = g.addNode(1, {0, 3, 4, -10}, 0.0, 0.0, false, true, std::make_shared<NameData>("Timestep 2: Node 1"));
+
+    g.addMoveArc(n1, n2, 1.0);
+
+    Magnusson tracker(&g, false, true);
+    std::vector<TrackingAlgorithm::Path> paths;
+    double score = tracker.track(paths);
+
+    std::cout << "Tracker returned score " << score << std::endl;
+    BOOST_CHECK_EQUAL(score, 10.0);
     BOOST_CHECK_EQUAL(paths.size(), 2);
 }
 

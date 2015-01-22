@@ -37,7 +37,7 @@ private:
 class Magnusson : public TrackingAlgorithm
 {
 public:
-    Magnusson(Graph* graph, bool withSwap);
+    Magnusson(Graph* graph, bool withSwap, bool usedArcsScoreZero = false);
 
 	virtual double track(std::vector<Path>& paths);
 private:
@@ -48,6 +48,7 @@ private:
     //--------------------------------------
     // swap arc members
     bool withSwap_;
+    bool usedArcsScoreZero_;
     Graph::ArcVector swapArcs_;
     // swap arc methods
     void insertSwapArcsForNewUsedPath(Path& p);
