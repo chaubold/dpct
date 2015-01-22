@@ -1,10 +1,12 @@
 #include <functional>
 #include <algorithm>
 #include <assert.h>
+#include <sstream>
 
 #include "magnusson.h"
 #include "trackingalgorithm.h"
 #include "graph.h"
+#include "log.h"
 
 using std::placeholders::_1;
 
@@ -37,14 +39,14 @@ double Magnusson::track(std::vector<TrackingAlgorithm::Path>& paths)
         // backtrack best path, increase cell counts -> invalidates scores!
         Path p;
         backtrack(&(graph_->getSinkNode()), p, std::bind(&Magnusson::increaseCellCount, this, _1));
-        std::cout << "Current best path of length " << p.size() << " has score: " << p.back()->getCurrentScore() << std::endl;
+        DEBUG_MSG("Current best path of length " << p.size() << " has score: " << p.back()->getCurrentScore());
         printPath(p);
         scoreDelta = p.back()->getCurrentScore();
 
         // only continue if this path adds to the overall score
         if(scoreDelta < 0)
         {
-            std::cout << "Path has negative reward, stopping here with a total number of " << paths.size() << " cells added" << std::endl;
+            DEBUG_MSG("Path has negative reward, stopping here with a total number of " << paths.size() << " cells added");
             break;
         }
 
@@ -58,11 +60,11 @@ double Magnusson::track(std::vector<TrackingAlgorithm::Path>& paths)
         Node* firstPathNode = p.front()->getTargetNode();
         if(firstPathNode->getUserData())
         {
-            std::cout << "Beginning update at node: " << *(std::static_pointer_cast<NameData>(firstPathNode->getUserData())) << std::endl;
+            DEBUG_MSG("Beginning update at node: " << *(std::static_pointer_cast<NameData>(firstPathNode->getUserData())));
         }
         else
         {
-            std::cout << "Beginning update at node " << firstPathNode << std::endl;
+            DEBUG_MSG("Beginning update at node " << firstPathNode);
         }
         breadthFirstSearchVisitor(firstPathNode, std::bind(&Magnusson::updateNode, this, _1));
 
@@ -97,11 +99,11 @@ void Magnusson::increaseCellCount(Node* n)
 {
     if(n->getUserData())
     {
-        std::cout << "Increasing cell count of node " << *(std::static_pointer_cast<NameData>(n->getUserData())) << " = " << n << std::endl;
+        DEBUG_MSG("Increasing cell count of node " << *(std::static_pointer_cast<NameData>(n->getUserData())) << " = " << n);
     }
     else
     {
-        std::cout << "Increasing cell count of node " << n << std::endl;
+        DEBUG_MSG("Increasing cell count of node " << n);
     }
 	n->increaseCellCount();
 }
@@ -178,19 +180,21 @@ void Magnusson::insertSwapArcsForNewUsedPath(TrackingAlgorithm::Path &p)
                                           std::make_shared<MagnussonSwapArcUserData>(*it, *inIt, *outIt)
                                           ));
 
-                std::cout << "!!! Adding SWAP ARC between " ;
+                std::stringstream debugString;
+                debugString << "!!! Adding SWAP ARC between ";
                 if(alternativeSource->getUserData())
-                    std::cout << alternativeSource->getUserData();
+                    debugString << alternativeSource->getUserData();
                 else
-                    std::cout << alternativeSource;
-                std::cout << " and ";
+                    debugString << alternativeSource;
+                debugString << " and ";
 
                 if(alternativeTarget->getUserData())
-                    std::cout << alternativeTarget->getUserData();
+                    debugString << alternativeTarget->getUserData();
                 else
-                    std::cout << alternativeTarget;
+                    debugString << alternativeTarget;
 
-                std::cout << " with score " << score << std::endl;
+                debugString << " with score " << score;
+                DEBUG_MSG(debugString.str());
 
                 swapArcs_.push_back(arc);
             }
@@ -215,7 +219,7 @@ void Magnusson::cleanUpUsedSwapArcs(TrackingAlgorithm::Path &p, std::vector<Path
                 Arc* replacementP = std::static_pointer_cast<MagnussonSwapArcUserData>(arc->getUserData())->getReplacementAArc();
                 Arc* replacementPath = std::static_pointer_cast<MagnussonSwapArcUserData>(arc->getUserData())->getReplacementBArc();
 
-                std::cout << "Trying to remove swap arc between " << arc->getSourceNode()->getUserData()->toString() << " and " << arc->getTargetNode()->getUserData()->toString() << std::endl;
+                DEBUG_MSG("Trying to remove swap arc between " << arc->getSourceNode()->getUserData()->toString() << " and " << arc->getTargetNode()->getUserData()->toString());
 
                 for(Path& path : paths)
                 {
@@ -259,7 +263,7 @@ void Magnusson::cleanUpUsedSwapArcs(TrackingAlgorithm::Path &p, std::vector<Path
 
                 // remove swap arc from graph
                 removeArc(arc);
-                std::cout << "updated two paths. removed swap arc between " << arc->getSourceNode()->getUserData()->toString() << " and " << arc->getTargetNode()->getUserData()->toString() << std::endl;
+                DEBUG_MSG("updated two paths. removed swap arc between " << arc->getSourceNode()->getUserData()->toString() << " and " << arc->getTargetNode()->getUserData()->toString());
                 for(Graph::ArcVector::iterator it = swapArcs_.begin(); it != swapArcs_.end(); ++it)
                 {
                     if(it->get() == arc)

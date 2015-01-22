@@ -5,6 +5,11 @@ project(dpct)
 # user defined configuration
 set(WITH_PYTHON "false" CACHE BOOL "Build with python wrapper.")
 set(WITH_TESTS "false" CACHE BOOL "Build tests.")
+set(WITH_LOG "false" CACHE BOOL "Enable logs.")
+
+if(WITH_LOG)
+	add_definitions(-DDEBUG_LOG)
+endif()
 
 # ------------------------------------------
 # global configuration

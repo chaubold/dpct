@@ -6,6 +6,7 @@
 #include "node.h"
 #include "arc.h"
 #include "userdata.h"
+#include "log.h"
 
 namespace dpct
 {
@@ -58,7 +59,7 @@ bool Node::removeInArc(Arc *arc)
 
 bool Node::removeOutArc(Arc *arc)
 {
-    std::cout << "Trying to remove out arc from a vector of size: " << outArcs_.size() << std::endl;
+    DEBUG_MSG("Trying to remove out arc from a vector of size: " << outArcs_.size());
     ArcIt it = std::find(outArcs_.begin(), outArcs_.end(), arc);
     if(it != outArcs_.end())
     {
@@ -109,7 +110,7 @@ void Node::updateBestInArcAndScore()
     double bestScore = std::numeric_limits<double>::lowest();
     Arc* bestArc = nullptr;
 
-    std::cout << "Updating node with " << inArcs_.size() << " inArcs and " << outArcs_.size() << " out arcs" << std::endl;
+    DEBUG_MSG("Updating node with " << inArcs_.size() << " inArcs and " << outArcs_.size() << " out arcs");
 
     for(ArcIt it = inArcs_.begin(); it != inArcs_.end(); ++it)
     {
@@ -127,11 +128,11 @@ void Node::updateBestInArcAndScore()
         bestInArc_ = bestArc;
         if(getUserData())
         {
-            std::cout << "Node (" << *(std::static_pointer_cast<NameData>(getUserData())) << ") update: score is now " << currentScore_ << std::endl;
+            DEBUG_MSG("Node (" << *(std::static_pointer_cast<NameData>(getUserData())) << ") update: score is now " << currentScore_);
         }
         else
         {
-            std::cout << "Node update: score is now " << currentScore_ << std::endl;
+            DEBUG_MSG("Node update: score is now " << currentScore_);
         }
     }
 }

@@ -1,5 +1,6 @@
 #include "arc.h"
 #include "node.h"
+#include "log.h"
 
 #include <assert.h>
 
@@ -51,7 +52,7 @@ void Arc::update()
 {
 	currentScore_ = getScoreDelta() + sourceNode_->getCurrentScore();
     updateEnabledState();
-    std::cout << typeAsString() << "-Arc update: score is now " << currentScore_ << " (enabled=" << (enabled_?"true":"false") << ")" << std::endl;
+    DEBUG_MSG(typeAsString() << "-Arc update: score is now " << currentScore_ << " (enabled=" << (enabled_?"true":"false") << ")");
 }
 
 std::string Arc::typeAsString()
@@ -72,7 +73,7 @@ void Arc::updateEnabledState()
 	if(dependsOnCellInNode_ != nullptr)
 	{
         if(enabled_ == false && dependsOnCellInNode_->getCellCount() > 0)
-            std::cout << "Enabling formerly disabled " << typeAsString() << "-arc" << std::endl;
+            DEBUG_MSG("Enabling formerly disabled " << typeAsString() << "-arc");
 		enabled_ = dependsOnCellInNode_->getCellCount() > 0; // or == 1?
 	}
 	else

@@ -8,6 +8,7 @@
 #include "graph.h"
 #include "node.h"
 #include "arc.h"
+#include "log.h"
 
 namespace dpct
 {
@@ -63,15 +64,15 @@ void TrackingAlgorithm::printPath(TrackingAlgorithm::Path& p)
     };
 
     if(p.size() > 0);
-        std::cout << "Path starts at node " << nodeName(p.front()->getSourceNode())
+        DEBUG_MSG("Path starts at node " << nodeName(p.front()->getSourceNode())
                   << " with cellCount " << p.front()->getSourceNode()->getCellCount()
-                  << " and score " << p.front()->getSourceNode()->getCurrentScore() << std::endl;
+                  << " and score " << p.front()->getSourceNode()->getCurrentScore());
 
     for(Path::iterator it = p.begin(); it != p.end(); ++it)
     {
-        std::cout << "\t follows " << (*it)->typeAsString() << " arc to node " <<  nodeName((*it)->getTargetNode())
+        DEBUG_MSG("\t follows " << (*it)->typeAsString() << " arc to node " <<  nodeName((*it)->getTargetNode())
                   << " with cellCount " <<  (*it)->getTargetNode()->getCellCount()
-                  << " and score " <<  (*it)->getTargetNode()->getCurrentScore() << std::endl;
+                  << " and score " <<  (*it)->getTargetNode()->getCurrentScore());
     }
 }
 
@@ -82,9 +83,14 @@ void TrackingAlgorithm::tic()
 
 double TrackingAlgorithm::toc() // return time in seconds
 {
-    std::chrono::time_point<std::chrono::high_resolution_clock> endTime = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed_seconds = endTime - startTime_;
-    std::cout << "Elapsed time: " << elapsed_seconds.count() << "sec" << std::endl;
+    endTime_ = std::chrono::high_resolution_clock::now();
+    return getElapsedSeconds();
+}
+
+double TrackingAlgorithm::getElapsedSeconds()
+{
+    std::chrono::duration<double> elapsed_seconds = endTime_ - startTime_;
+    DEBUG_MSG("Elapsed time: " << elapsed_seconds.count() << "sec");
     return elapsed_seconds.count();
 }
 

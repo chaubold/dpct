@@ -1,4 +1,6 @@
 #include "graph.h"
+#include "log.h"
+
 #include <assert.h>
 #include <iterator>
 
@@ -153,7 +155,7 @@ Graph::ArcPtr Graph::allowMitosis(NodePtr parent,
 
 void Graph::reset()
 {
-	std::cout << "Resetting graph" << std::endl;
+	DEBUG_MSG("Resetting graph");
 
 	for(NodeVectorVector::iterator v = nodesPerTimestep_.begin(); v != nodesPerTimestep_.end(); ++v)
 	{

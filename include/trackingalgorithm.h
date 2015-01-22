@@ -24,11 +24,13 @@ public:
 
 	// track cells, return overall score, and fill 'paths' vector with all chosen paths
 	virtual double track(std::vector<Path>& paths) = 0;
+	double getElapsedSeconds();
 
     void printPath(TrackingAlgorithm::Path &p);
 protected:
 	Graph* graph_;
 	std::chrono::time_point<std::chrono::high_resolution_clock> startTime_;
+	std::chrono::time_point<std::chrono::high_resolution_clock> endTime_;
 
 	void breadthFirstSearchVisitor(Node* begin, VisitorFunction func);
 	void tic();
