@@ -20,7 +20,7 @@ std::ostream& operator<<(std::ostream& lhs, UserDataPtr rhs)
     return lhs;
 }
 
-UserDataHolder::UserDataHolder(UserDataPtr data):
+IUserDataHolder::IUserDataHolder(UserDataPtr data):
     data_(data)
 {}
 

@@ -54,6 +54,7 @@ private:
     void insertSwapArcsForNewUsedPath(Path& p);
     void cleanUpUsedSwapArcs(Path& p, std::vector<Path> &paths);
     void removeSwapArcs();
+    void removeSwapArc(Arc* a);
     void removeArc(Arc *a);
 };
 

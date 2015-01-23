@@ -145,9 +145,7 @@ void Magnusson::insertSwapArcsForNewUsedPath(TrackingAlgorithm::Path &p)
     */
     for(Path::iterator it = p.begin(); it != p.end(); ++it)
     {
-        if((*it)->getType() == Arc::Appearance // only swap Moves (or swapped moves) for now
-                && (*it)->getType() == Arc::Disappearance
-                && (*it)->getType() == Arc::Division)
+        if((*it)->getType() != Arc::Move) // only swap Moves for now
             continue;
 
         Node *source = (*it)->getSourceNode();
@@ -171,9 +169,8 @@ void Magnusson::insertSwapArcsForNewUsedPath(TrackingAlgorithm::Path &p)
                 for(Node::ArcIt alternativeOutIt = alternativeSource->getOutArcsBegin(); alternativeOutIt != alternativeSource->getOutArcsEnd(); ++alternativeOutIt)
                 {
                     if( (*alternativeOutIt)->getTargetNode() == alternativeTarget
-                            && (*alternativeOutIt)->getType() != Arc::Appearance // only swap Moves (or swapped moves) for now
-                            && (*alternativeOutIt)->getType() != Arc::Disappearance
-                            && (*alternativeOutIt)->getType() != Arc::Division) // && (*alternativeOutIt)->getType() != Arc::Swap) // is that needed? -> shouldn't be, could be "swapped" twice
+                            && (*alternativeOutIt)->getType() == Arc::Move) // only swap Moves for now
+                            // && (*alternativeOutIt)->getType() != Arc::Swap) // is that needed? -> shouldn't be, could be "swapped" twice
                         score -= (*alternativeOutIt)->getScoreDelta();
                 }
 
@@ -187,6 +184,7 @@ void Magnusson::insertSwapArcsForNewUsedPath(TrackingAlgorithm::Path &p)
                                           nullptr,
                                           std::make_shared<MagnussonSwapArcUserData>(*it, *inIt, *outIt)
                                           ));
+                (*it)->registerObserverArc(arc.get());
 
                 std::stringstream debugString;
                 debugString << "!!! Adding SWAP ARC between ";
@@ -217,7 +215,7 @@ void Magnusson::cleanUpUsedSwapArcs(TrackingAlgorithm::Path &p, std::vector<Path
     while(foundSwapArc)
     {
         foundSwapArc = false;
-        for(Node::ArcIt p_it = p.begin(); p_it != p.end(); ++p_it)
+        for(Node::ArcIt p_it = p.begin(); p_it != p.end(); ++p_it) // TODO: walk along path from back to front such that we can replace all swaps!
         {
             Arc* arc = *p_it;
             if(arc->getType() == Arc::Swap)
@@ -227,7 +225,7 @@ void Magnusson::cleanUpUsedSwapArcs(TrackingAlgorithm::Path &p, std::vector<Path
                 Arc* replacementP = std::static_pointer_cast<MagnussonSwapArcUserData>(arc->getUserData())->getReplacementAArc();
                 Arc* replacementPath = std::static_pointer_cast<MagnussonSwapArcUserData>(arc->getUserData())->getReplacementBArc();
 
-                DEBUG_MSG("Trying to remove swap arc between " << arc->getSourceNode()->getUserData()->toString() << " and " << arc->getTargetNode()->getUserData()->toString());
+                LOG_MSG("Trying to remove swap arc between " << arc->getSourceNode()->getUserData()->toString() << " and " << arc->getTargetNode()->getUserData()->toString());
 
                 for(Path& path : paths)
                 {
@@ -254,9 +252,14 @@ void Magnusson::cleanUpUsedSwapArcs(TrackingAlgorithm::Path &p, std::vector<Path
                             {
                                 replacementPath->markUsed();
                                 replacementP->markUsed();
-                                // "unuse" the arc that was previously used
+                                // "unuse" the arc that was previously used -> might be WRONG if it was used several times!
+                                // TODO: witch "used" from bool to reference count
                                 arcToRemove->markUsed(false);
                             }
+
+                            // remove all swap arcs from graph that were referencing the edge, including "arc". TODO: what to do if edge was used several times?
+                            LOG_MSG("updated two paths. removed swap arc between " << arc->getSourceNode()->getUserData()->toString() << " and " << arc->getTargetNode()->getUserData()->toString());
+                            arcToRemove->notifyObserverArcs(std::bind(&Magnusson::removeSwapArc, this, _1));
 
                             foundSwapArc = true;
                             break;
@@ -268,22 +271,26 @@ void Magnusson::cleanUpUsedSwapArcs(TrackingAlgorithm::Path &p, std::vector<Path
                 }
 
                 assert(foundSwapArc);
-
-                // remove swap arc from graph
-                removeArc(arc);
-                DEBUG_MSG("updated two paths. removed swap arc between " << arc->getSourceNode()->getUserData()->toString() << " and " << arc->getTargetNode()->getUserData()->toString());
-                for(Graph::ArcVector::iterator it = swapArcs_.begin(); it != swapArcs_.end(); ++it)
-                {
-                    if(it->get() == arc)
-                    {
-                        swapArcs_.erase(it);
-                        break;
-                    }
-                }
                 break;
             }
         }
     }
+}
+
+void Magnusson::removeSwapArc(Arc* arc)
+{
+    assert(arc->getType() == Arc::Swap);
+
+    removeArc(arc);
+    for(Graph::ArcVector::iterator it = swapArcs_.begin(); it != swapArcs_.end(); ++it)
+    {
+        if(it->get() == arc)
+        {
+            swapArcs_.erase(it);
+            return;
+        }
+    }
+    assert(false && "Did not find arc to remove!");
 }
 
 void Magnusson::removeArc(Arc* a)

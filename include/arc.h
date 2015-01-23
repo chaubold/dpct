@@ -3,13 +3,15 @@
 
 #include <iostream>
 #include "userdata.h"
+#include "iarcnotifier.h"
 
 namespace dpct
 {
 
 class Node;
 
-class Arc : public UserDataHolder
+// Arcs notify their observers when they are deleted!
+class Arc : public IUserDataHolder, public IArcNotifier
 {
 public:
 	enum Type{
@@ -35,7 +37,7 @@ public:
 
 	double getCurrentScore() const { return currentScore_; }
 	bool isEnabled() const { return enabled_; }
-	void markUsed(bool enabled = true) { used_ = enabled; }
+	void markUsed(bool enabled = true);
 
 	void reset();
 	void update();
@@ -43,7 +45,7 @@ public:
 	Node* getSourceNode() const { return sourceNode_; }
 	Node* getTargetNode() const { return targetNode_; }
     Type getType() const { return type_; }
-    double getScoreDelta() const { return (used_?0.0:scoreDelta_); }
+    double getScoreDelta() const { return ((used_>0)?0.0:scoreDelta_); }
     Node* getObservedNode() const { return dependsOnCellInNode_; }
 
     std::string typeAsString();
@@ -59,7 +61,7 @@ protected:
 	double scoreDelta_;
 	double currentScore_;
 	bool enabled_;
-	bool used_;
+	size_t used_;
 
 	// dependencies for some arcs (e.g. divisions)
 	Node* dependsOnCellInNode_;

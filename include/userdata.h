@@ -15,10 +15,10 @@ public:
 
 typedef std::shared_ptr<UserData> UserDataPtr;
 
-class UserDataHolder
+class IUserDataHolder
 {
 public:
-    UserDataHolder(UserDataPtr data);
+    IUserDataHolder(UserDataPtr data);
     UserDataPtr getUserData() const { return data_; }
 
 private:

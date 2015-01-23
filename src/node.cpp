@@ -13,7 +13,7 @@ namespace dpct
 
 Node::Node(const std::vector<double>& cellCountScoreDelta,
            UserDataPtr data):
-    UserDataHolder(data),
+    IUserDataHolder(data),
     cellCountScoreDelta_(cellCountScoreDelta),
     bestInArc_(nullptr),
     cellCount_(0),
@@ -38,11 +38,6 @@ void Node::registerInArc(Arc* arc)
 void Node::registerOutArc(Arc* arc)
 {
     outArcs_.push_back(arc);
-}
-
-void Node::registerObserverArc(Arc *arc)
-{
-    observerArcs_.push_back(arc);
 }
 
 bool Node::removeInArc(Arc *arc)
@@ -78,7 +73,7 @@ void Node::reset()
 void Node::increaseCellCount()
 {
     cellCount_++;
-    notifyObserverArcs();
+    notifyObserverArcs([](Arc* a){ a->update(); });
 }
 
 double Node::getScoreDeltaForCurrentCellCount()
@@ -94,14 +89,6 @@ double Node::getScoreDeltaForCurrentCellCount()
     else
     {
         return 0.0;
-    }
-}
-
-void Node::notifyObserverArcs()
-{
-    for(ArcIt it = observerArcs_.begin(); it != observerArcs_.end(); ++it)
-    {
-        (*it)->update();
     }
 }
 

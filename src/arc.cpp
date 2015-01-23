@@ -13,14 +13,14 @@ Arc::Arc(Node* source,
          double scoreDelta,
          Node* dependsOnCellInNode,
          UserDataPtr data):
-    UserDataHolder(data),
+    IUserDataHolder(data),
 	sourceNode_(source),
 	targetNode_(target),
 	type_(type),
 	scoreDelta_(scoreDelta),
 	currentScore_(scoreDelta),
     dependsOnCellInNode_(dependsOnCellInNode),
-    used_(false),
+    used_(0),
     enabled_(true)
 {
 	assert(source != nullptr);
@@ -44,7 +44,7 @@ Arc::Arc(Node* source,
 
 void Arc::reset()
 {
-    used_ = false;
+    used_ = 0;
 	currentScore_ = scoreDelta_;
 	updateEnabledState();
 }
@@ -81,6 +81,18 @@ void Arc::updateEnabledState()
 	{
         enabled_ = true;
 	}
+}
+
+void Arc::markUsed(bool enabled)
+{
+    if(enabled)
+        used_++;
+    else
+    {
+        if(used_ == 0)
+            throw std::runtime_error("Cannot reduce use count of arc that is not used!");
+        used_--;
+    }
 }
 
 } // namespace dpct
