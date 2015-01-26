@@ -20,7 +20,8 @@ Arc::Arc(Node* source,
 	scoreDelta_(scoreDelta),
 	currentScore_(scoreDelta),
     dependsOnCellInNode_(dependsOnCellInNode),
-    used_(false)
+    used_(false),
+    enabled_(true)
 {
 	assert(source != nullptr);
 	assert(target != nullptr);
