@@ -174,6 +174,7 @@ void Magnusson::insertSwapArcsForNewUsedPath(TrackingAlgorithm::Path &p)
     */
     for(Path::iterator it = p.begin(); it != p.end(); ++it)
     {
+        // FIXME: sometimes points to a free'd memory location
         if((*it)->getType() != Arc::Move) // only swap Moves for now
             continue;
 
@@ -246,8 +247,9 @@ void Magnusson::cleanUpUsedSwapArcs(TrackingAlgorithm::Path &p, std::vector<Path
     while(foundSwapArc)
     {
         foundSwapArc = false;
-        for(Node::ArcIt p_it = p.begin(); p_it != p.end(); ++p_it) // TODO: walk along path from back to front such that we can replace all swaps!
+        for(std::vector<Arc*>::reverse_iterator p_it = p.rbegin(); p_it != p.rend(); ++p_it)
         {
+            // FIXME: sometimes points to free'd memory location
             Arc* arc = *p_it;
             if(arc->getType() == Arc::Swap)
             {
@@ -275,10 +277,10 @@ void Magnusson::cleanUpUsedSwapArcs(TrackingAlgorithm::Path &p, std::vector<Path
                             // update original path by appending the replacement arc and the remainder of path P
                             path.erase(path_it, path.end());
                             path.push_back(replacementPath);
-                            path.insert(path.end(), p_it+1, p.end());
+                            path.insert(path.end(), p_it.base(), p.end());
 
                             // update path p
-                            p.erase(p_it, p.end());
+                            p.erase(p_it.base()-1, p.end());
                             p.push_back(replacementP);
                             p.insert(p.end(), temp.begin(), temp.end());
 
