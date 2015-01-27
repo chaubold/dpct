@@ -55,6 +55,15 @@ double Magnusson::track(std::vector<TrackingAlgorithm::Path>& paths)
         {
             cleanUpUsedSwapArcs(p, paths);
 
+            // make sure no swap arcs are left in the paths, otherwise we'll access free'd memory lateron
+            for(Path& path : paths)
+            { 
+                for(Node::ArcIt p_it = path.begin(); p_it != path.end(); ++p_it)
+                {
+                    assert((*p_it)->getType() != Arc::Swap);
+                }
+            }
+
             // first remove all swap arcs, then add new ones!
             removeSwapArcs();
             for(Path &path : paths)
@@ -99,6 +108,8 @@ double Magnusson::track(std::vector<TrackingAlgorithm::Path>& paths)
         std::cout << "Added path with score " << scoreDelta << std::endl;
     };
 
+    // done
+    removeSwapArcs();
     toc();
 
     return score;
@@ -184,13 +195,13 @@ void Magnusson::insertSwapArcsForNewUsedPath(TrackingAlgorithm::Path &p)
         for(Node::ArcIt outIt = source->getOutArcsBegin(); outIt != source->getOutArcsEnd(); ++outIt)
         {
             Node *alternativeTarget = (*outIt)->getTargetNode();
-            if(alternativeTarget == target || graph_->isSpecialNode(alternativeTarget))
+            if(alternativeTarget == target || graph_->isSpecialNode(alternativeTarget) || (*outIt)->getType() == Arc::Swap)
                 continue;
 
             for(Node::ArcIt inIt = target->getInArcsBegin(); inIt != target->getInArcsEnd(); ++inIt)
             {
                 Node *alternativeSource = (*inIt)->getSourceNode();
-                if(alternativeSource == source || graph_->isSpecialNode(alternativeSource))
+                if(alternativeSource == source || graph_->isSpecialNode(alternativeSource) || (*inIt)->getType() == Arc::Swap)
                     continue;
 
                 // found a candidate
@@ -274,6 +285,11 @@ void Magnusson::cleanUpUsedSwapArcs(TrackingAlgorithm::Path &p, std::vector<Path
                             // found candidate. store part of original path that will be used by new path
                             Path temp(path_it+1, path.end());
 
+                            for(Node::ArcIt temp_it = temp.begin(); temp_it != temp.end(); ++temp_it)
+                            {
+                                assert((*temp_it)->getType() != Arc::Swap);
+                            }
+
                             // update original path by appending the replacement arc and the remainder of path P
                             path.erase(path_it, path.end());
                             path.push_back(replacementPath);
@@ -309,6 +325,11 @@ void Magnusson::cleanUpUsedSwapArcs(TrackingAlgorithm::Path &p, std::vector<Path
                 break;
             }
         }
+    }
+
+    for(Node::ArcIt p_it = p.begin(); p_it != p.end(); ++p_it)
+    {
+        assert((*p_it)->getType() != Arc::Swap);
     }
 }
 
