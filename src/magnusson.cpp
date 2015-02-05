@@ -218,15 +218,16 @@ void Magnusson::insertSwapArcsForNewUsedPath(TrackingAlgorithm::Path &p)
                 // the swap arc does not depend on other nodes being part of a path,
                 // as this algorithm never removes cells and thus the previously populated nodes can be used in swaps.
                 // BUT: it needs to store a reference to the arc that it would cut, and the cleanup action is performed in cleanUpUsedSwapArcs()
-                Graph::ArcPtr arc(new Arc(alternativeSource,
+                Arc* arc = new Arc(alternativeSource,
                                           alternativeTarget,
                                           Arc::Swap,
                                           score,
                                           nullptr,
                                           std::make_shared<MagnussonSwapArcUserData>(*it, *inIt, *outIt)
-                                          ));
-                (*it)->registerObserverArc(arc.get());
+                                          );
+                (*it)->registerObserverArc(arc);
 
+#ifdef DEBUG_LOG
                 std::stringstream debugString;
                 debugString << "!!! Adding SWAP ARC between ";
                 if(alternativeSource->getUserData())
@@ -244,6 +245,7 @@ void Magnusson::insertSwapArcsForNewUsedPath(TrackingAlgorithm::Path &p)
                 DEBUG_MSG(debugString.str());
                 DEBUG_MSG("\twith replacement arcs: in=" << *inIt << " and out=" << *outIt);
                 DEBUG_MSG("\tdeletes arc: " << *it);
+#endif
 
                 swapArcs_.push_back(arc);
             }
@@ -338,15 +340,11 @@ void Magnusson::removeSwapArc(Arc* arc)
     assert(arc->getType() == Arc::Swap);
 
     removeArc(arc);
-    for(Graph::ArcVector::iterator it = swapArcs_.begin(); it != swapArcs_.end(); ++it)
-    {
-        if(it->get() == arc)
-        {
-            swapArcs_.erase(it);
-            return;
-        }
-    }
-    assert(false && "Did not find arc to remove!");
+    std::vector<Arc*>::iterator it = std::find(swapArcs_.begin(), swapArcs_.end(), arc);
+    if(it != swapArcs_.end())
+        swapArcs_.erase(it);
+    else
+        throw std::runtime_error("Did not find arc to remove!");
 }
 
 void Magnusson::removeArc(Arc* a)
@@ -360,9 +358,10 @@ void Magnusson::removeArc(Arc* a)
 
 void Magnusson::removeSwapArcs()
 {
-    for(Graph::ArcPtr a : swapArcs_)
+    for(Arc* a : swapArcs_)
     {
-        removeArc(a.get());
+        removeArc(a);
+        delete a;
     }
     swapArcs_.clear();
 }

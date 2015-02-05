@@ -49,7 +49,7 @@ private:
     // swap arc members
     bool withSwap_;
     bool usedArcsScoreZero_;
-    Graph::ArcVector swapArcs_;
+    std::vector<Arc*> swapArcs_;
     // swap arc methods
     void insertSwapArcsForNewUsedPath(Path& p);
     void cleanUpUsedSwapArcs(Path& p, std::vector<Path> &paths);
