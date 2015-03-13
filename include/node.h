@@ -40,6 +40,9 @@ public:
     size_t getCellCount() const    { return cellCount_; }
     double getCurrentScore() const { return currentScore_; }
 
+    size_t getNumInArcs() const  { return inArcs_.size(); }
+    size_t getNumOutArcs() const { return outArcs_.size(); }
+
 protected:
     double getScoreDeltaForCurrentCellCount();
 
