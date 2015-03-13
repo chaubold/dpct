@@ -314,3 +314,25 @@ BOOST_AUTO_TEST_CASE(test_full_magnusson_with_swap)
 
     std::cout << "Tracker returned score " << score << std::endl;
 }
+
+BOOST_AUTO_TEST_CASE(test_full_magnusson_graph_constness)
+{
+    Graph::Configuration config(true, true, true);
+    Graph g(config);
+
+    buildGraph(g);
+
+    size_t num_arcs = g.getNumArcs();
+    size_t num_timesteps = g.getNumTimesteps();
+    size_t num_nodes = g.getNumNodes();
+
+    // -----------------------------------------------------
+    // Tracking
+    Magnusson tracker(&g, true);
+    std::vector<TrackingAlgorithm::Path> paths;
+    double score = tracker.track(paths);
+
+    BOOST_CHECK_EQUAL(g.getNumArcs(), num_arcs);
+    BOOST_CHECK_EQUAL(g.getNumNodes(), num_nodes);
+    BOOST_CHECK_EQUAL(g.getNumTimesteps(), num_timesteps);
+}

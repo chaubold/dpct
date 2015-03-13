@@ -37,6 +37,9 @@ public:
 
 	double getCurrentScore() const { return currentScore_; }
 	bool isEnabled() const { return enabled_; }
+
+    // marking an arc as used has the consequence that each further appearance in a path
+    // has a cost of zero, otherwise it will stay the same no matter how often it is used
 	void markUsed(bool enabled = true);
 
 	void reset();
