@@ -11,6 +11,25 @@
 namespace dpct
 {
 
+template<typename T>
+class OriginData : public UserData
+{
+public:
+    OriginData(const std::vector<T>& origin):
+        origin_(origin)
+    {}
+
+    virtual std::string toString() const { return "OriginData"; }
+    const std::vector<T>& getOrigin() const { return origin_; }
+
+private:
+    std::string name_;
+    std::vector<T> origin_;
+};
+
+typedef OriginData<const Node*> NodeOriginData;
+typedef OriginData<const Arc*>  ArcOriginData;
+
 class Graph
 {
 public:
@@ -37,7 +56,7 @@ public:
 public:
 	// constructor
 	Graph() = delete;
-	Graph(const Graph&) = delete;
+    Graph(const Graph&);
 	Graph(const Configuration& config);
 
 	// Add a new node to the graph, expecting timesteps to begin with 0!
@@ -76,6 +95,9 @@ public:
     bool isSpecialNode(Node *n) const;
 
 	void reset();
+
+protected:
+    void connectSpecialNodes();
 
 protected:
 	Configuration config_;

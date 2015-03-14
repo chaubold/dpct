@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <iterator>
+#include <map>
 
 namespace dpct
 {
@@ -15,42 +16,98 @@ Graph::Configuration::Configuration(bool enableAppearance,
     withDivision(enableDivision)
 {}
 
+Graph::Graph(const Graph &other):
+    config_(other.config_),
+    numNodes_(0),
+    sinkNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>( new NodeOriginData( { &other.sinkNode_ } ))),
+    sourceNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>( new NodeOriginData( { &other.sourceNode_ } ))),
+    appearanceNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>( new NodeOriginData( { &other.appearanceNode_ } ))),
+    disappearanceNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>( new NodeOriginData( { &other.disappearanceNode_ } ))),
+    divisionNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>( new NodeOriginData( { &other.divisionNode_ } )))
+{
+    // copy nodes, and keep a mapping
+    std::map<Node*, Node*> node_map;
+
+    for(const auto& timestep : other.nodesPerTimestep_)
+    {
+        nodesPerTimestep_.push_back(NodeVector());
+        for(const NodePtr& other_node : timestep)
+        {
+            NodePtr node(new Node(*other_node, std::shared_ptr<NodeOriginData>( new NodeOriginData( { other_node.get() } ))));
+            nodesPerTimestep_.back().push_back(node);
+            node_map[other_node.get()] = node.get();
+            numNodes_++;
+        }
+    }
+
+    auto map_node = [&](Node* n) -> Node*
+    {
+        if(n == nullptr)
+            return nullptr;
+        else if(n == &other.sinkNode_)
+            return &sinkNode_;
+        else if(n == &other.sourceNode_)
+            return &sourceNode_;
+        else if(n == &other.appearanceNode_)
+            return &appearanceNode_;
+        else if(n == &other.disappearanceNode_)
+            return &disappearanceNode_;
+        else if(n == &other.divisionNode_)
+            return &divisionNode_;
+        else
+            return node_map[n];
+    };
+
+    // copy arcs, use mapping to create them
+    for(const ArcPtr& other_arc : other.arcs_)
+    {
+        // attention: arcs might be going from/to special nodes
+        ArcPtr arc(new Arc(*other_arc, map_node, std::shared_ptr<ArcOriginData>( new ArcOriginData({ other_arc.get() } ))));
+        arcs_.push_back(arc);
+    }
+}
+
 Graph::Graph(const Graph::Configuration& config):
 	config_(config),
     numNodes_(0),
-    sinkNode_({}, std::make_shared<NameData>("Sink")),
-    sourceNode_({}, std::make_shared<NameData>("Source")),
-    appearanceNode_({}, std::make_shared<NameData>("Appearance")),
-    disappearanceNode_({}, std::make_shared<NameData>("Disappearance")),
-    divisionNode_({}, std::make_shared<NameData>("Division"))
+    sinkNode_(std::vector<double>(), std::make_shared<NameData>("Sink")),
+    sourceNode_(std::vector<double>(), std::make_shared<NameData>("Source")),
+    appearanceNode_(std::vector<double>(), std::make_shared<NameData>("Appearance")),
+    disappearanceNode_(std::vector<double>(), std::make_shared<NameData>("Disappearance")),
+    divisionNode_(std::vector<double>(), std::make_shared<NameData>("Division"))
 {
-	// connect the "special" nodes to source and sink
-	if(config_.withAppearance)
-	{
-		ArcPtr sourceToAppNode(new Arc(&sourceNode_, 
-			&appearanceNode_,
-			Arc::Dummy,
-			0.0));
-		arcs_.push_back(sourceToAppNode);
-	}
+    connectSpecialNodes();
+}
 
-	if(config_.withDivision)
-	{
-		ArcPtr sourceToDivisionNode(new Arc(&sourceNode_, 
-			&divisionNode_,
-			Arc::Dummy,
-			0.0));
-		arcs_.push_back(sourceToDivisionNode);
-	}
+void Graph::connectSpecialNodes()
+{
+    // connect the "special" nodes to source and sink
+    if(config_.withAppearance)
+    {
+        ArcPtr sourceToAppNode(new Arc(&sourceNode_,
+            &appearanceNode_,
+            Arc::Dummy,
+            0.0));
+        arcs_.push_back(sourceToAppNode);
+    }
 
-	if(config_.withDisappearance)
-	{
-		ArcPtr disToSinkNode(new Arc(&disappearanceNode_, 
-			&sinkNode_,
-			Arc::Dummy,
-			0.0));
-		arcs_.push_back(disToSinkNode);
-	}
+    if(config_.withDivision)
+    {
+        ArcPtr sourceToDivisionNode(new Arc(&sourceNode_,
+            &divisionNode_,
+            Arc::Dummy,
+            0.0));
+        arcs_.push_back(sourceToDivisionNode);
+    }
+
+    if(config_.withDisappearance)
+    {
+        ArcPtr disToSinkNode(new Arc(&disappearanceNode_,
+            &sinkNode_,
+            Arc::Dummy,
+            0.0));
+        arcs_.push_back(disToSinkNode);
+    }
 }
 
 Graph::NodePtr Graph::addNode(size_t timestep,

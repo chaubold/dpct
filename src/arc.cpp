@@ -42,6 +42,17 @@ Arc::Arc(Node* source,
     update();
 }
 
+Arc::Arc(const Arc& a,
+        NodeMapFunc map_node,
+        UserDataPtr data):
+    Arc(map_node(a.sourceNode_),
+        map_node(a.targetNode_),
+        a.type_,
+        a.scoreDelta_,
+        map_node(a.dependsOnCellInNode_),
+        data)
+{}
+
 void Arc::reset()
 {
     used_ = 0;

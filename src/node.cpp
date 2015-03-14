@@ -29,6 +29,10 @@ Node::Node(const std::vector<double>& cellCountScoreDelta,
     }
 }
 
+Node::Node(const Node& n, UserDataPtr data):
+    Node(n.cellCountScoreDelta_, data)
+{}
+
 void Node::registerInArc(Arc* arc)
 {
     inArcs_.push_back(arc);

@@ -23,8 +23,11 @@ public:
 		Dummy
 	};
 
+    typedef std::function<Node*(Node*)> NodeMapFunc;
+
 public:
 	Arc() = delete;
+    Arc(const Arc&) = delete;
 
 	// creating an arc automatically registers it at source and target node!
 	Arc(Node* source,
@@ -34,6 +37,10 @@ public:
 		Node* dependsOnCellInNode = nullptr,
         UserDataPtr data = UserDataPtr()
 		);
+
+    Arc(const Arc& a,
+        NodeMapFunc map_node,
+        UserDataPtr data = UserDataPtr());
 
 	double getCurrentScore() const { return currentScore_; }
 	bool isEnabled() const { return enabled_; }

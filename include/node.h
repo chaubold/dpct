@@ -19,8 +19,15 @@ public:
 	typedef std::vector<Arc*>::iterator ArcIt;
 
 public:
-	Node(const std::vector<double>& cellCountScoreDelta = {},
+    Node() = delete;
+    Node(const Node&) = delete;
+
+    Node(const std::vector<double>& cellCountScoreDelta = {},
          UserDataPtr data = UserDataPtr());
+    // this dedicated copy constructor does NOT copy connected arcs, but only node internals
+    Node(const Node& n,
+         UserDataPtr data = UserDataPtr());
+
 
 	void increaseCellCount();
 
