@@ -17,7 +17,7 @@ Graph::Configuration::Configuration(bool enableAppearance,
     withDivision(enableDivision)
 {}
 
-Graph::Graph(const Graph &other,
+Graph::Graph(Graph &other,
              NodeSelectionMap node_selection_map,
              ArcSelectionMap arc_selection_map):
     config_(other.config_),
@@ -307,7 +307,7 @@ void Graph::visitSpecialNodes(Graph::VisitorFunction func)
     func(&sinkNode_);
 }
 
-bool Graph::isSpecialNode(Node *n) const
+bool Graph::isSpecialNode(const Node *n) const
 {
     if(n == &sourceNode_)
     	return true;
@@ -378,7 +378,7 @@ void Graph::selectNode(NodeSelectionMap& node_selection_map, ArcSelectionMap& ar
     }
 
     // activate special in arcs
-    for(Node::ArcIt in_arc = n->getInArcsBegin(); in_arc != n->getInArcsEnd(); ++in_arc)
+    for(Node::ConstArcIt in_arc = n->getInArcsBegin(); in_arc != n->getInArcsEnd(); ++in_arc)
     {
         if(isSpecialNode((*in_arc)->getSourceNode()))
         {
@@ -387,7 +387,7 @@ void Graph::selectNode(NodeSelectionMap& node_selection_map, ArcSelectionMap& ar
     }
 
     // activate special out arcs
-    for(Node::ArcIt out_arc = n->getOutArcsBegin(); out_arc != n->getOutArcsEnd(); ++out_arc)
+    for(Node::ConstArcIt out_arc = n->getOutArcsBegin(); out_arc != n->getOutArcsEnd(); ++out_arc)
     {
         if(isSpecialNode((*out_arc)->getTargetNode()))
         {

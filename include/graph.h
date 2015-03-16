@@ -28,8 +28,8 @@ private:
     std::vector<T> origin_;
 };
 
-typedef OriginData<const Node*> NodeOriginData;
-typedef OriginData<const Arc*>  ArcOriginData;
+typedef OriginData<Node*> NodeOriginData;
+typedef OriginData<Arc*>  ArcOriginData;
 
 class Graph
 {
@@ -64,7 +64,7 @@ public:
     // if maps are empty, copies everything.
     // nodes/arcs not present in the map are taken as selected, add them with
     // the value FALSE to make sure they are not copied
-    Graph(const Graph& other,
+    Graph(Graph& other,
           NodeSelectionMap node_selection_map = std::map<Node*, bool>(),
           ArcSelectionMap arc_selection_map = std::map<Arc*, bool>());
 
@@ -104,7 +104,7 @@ public:
     Node& getSinkNode() { return sinkNode_; }
 	void visitNodesInTimestep(size_t timestep, VisitorFunction func);
     void visitSpecialNodes(VisitorFunction func);
-    bool isSpecialNode(Node *n) const;
+    bool isSpecialNode(const Node *n) const;
 
 	void reset();
 
@@ -116,11 +116,11 @@ public:
     // select node and its "special arcs"
     void selectNode(NodeSelectionMap& node_selection_map,
                     ArcSelectionMap& arc_selection_map,
-                    Node* n) const;
+                    Node *n) const;
     // select arc, and source and target node if they are not active yet
     void selectArc(NodeSelectionMap& node_selection_map,
                    ArcSelectionMap& arc_selection_map,
-                   Arc* a) const;
+                   Arc *a) const;
 
 protected:
     void connectSpecialNodes();

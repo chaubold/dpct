@@ -52,7 +52,7 @@ public:
     // defaults to using node->getBestInArc()
     void setPathStartSelectorFunction(SelectorFunction func);
 
-	virtual double track(std::vector<Path>& paths);
+    virtual double track(Solution& paths);
 private:
 	void updateNode(Node* n);
 	void increaseCellCount(Node* n);

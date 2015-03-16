@@ -63,10 +63,12 @@ void TrackingAlgorithm::printPath(TrackingAlgorithm::Path& p)
         return s.str();
     };
 
-    if(p.size() > 0);
+    if(p.size() > 0)
         DEBUG_MSG("Path starts at node " << nodeName(p.front()->getSourceNode())
                   << " with cellCount " << p.front()->getSourceNode()->getCellCount()
                   << " and score " << p.front()->getSourceNode()->getCurrentScore());
+    else
+        return;
 
     for(Path::iterator it = p.begin(); it != p.end(); ++it)
     {
@@ -92,6 +94,25 @@ double TrackingAlgorithm::getElapsedSeconds()
     std::chrono::duration<double> elapsed_seconds = endTime_ - startTime_;
     DEBUG_MSG("Elapsed time: " << elapsed_seconds.count() << "sec");
     return elapsed_seconds.count();
+}
+
+TrackingAlgorithm::Solution TrackingAlgorithm::translateToOriginGraph(TrackingAlgorithm::Solution &sol)
+{
+    Solution origin_sol;
+    for(Path& p : sol)
+    {
+        Path origin_path;
+        origin_path.reserve(p.size());
+
+        for(Arc* a : p)
+        {
+            std::shared_ptr<ArcOriginData> origin_data = std::static_pointer_cast<ArcOriginData>(a->getUserData());
+            for(Arc* i : origin_data->getOrigin())
+                origin_path.push_back(i);
+        }
+        origin_sol.push_back(origin_path);
+    }
+    return origin_sol;
 }
 
 } // namespace dpct

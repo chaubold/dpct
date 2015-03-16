@@ -17,14 +17,17 @@ class TrackingAlgorithm
 {
 public:
     typedef std::vector<Arc*> Path;
+    typedef std::vector<Path> Solution;
 	typedef std::function<void(Node*)> VisitorFunction;
 
 public:
 	TrackingAlgorithm(Graph* graph);
 
 	// track cells, return overall score, and fill 'paths' vector with all chosen paths
-	virtual double track(std::vector<Path>& paths) = 0;
+    virtual double track(Solution& paths) = 0;
 	double getElapsedSeconds();
+
+    Solution translateToOriginGraph(Solution& sol);
 
     void printPath(TrackingAlgorithm::Path &p);
 protected:

@@ -17,6 +17,7 @@ class Node : public IUserDataHolder, public IArcNotifier
 {
 public:
 	typedef std::vector<Arc*>::iterator ArcIt;
+    typedef std::vector<Arc*>::const_iterator ConstArcIt;
 
 public:
     Node() = delete;
@@ -43,6 +44,11 @@ public:
 	ArcIt getInArcsEnd()    { return inArcs_.end(); }
 	ArcIt getOutArcsBegin() { return outArcs_.begin(); }
 	ArcIt getOutArcsEnd()   { return outArcs_.end(); }
+    ConstArcIt getInArcsBegin() const { return inArcs_.begin(); }
+    ConstArcIt getInArcsEnd()   const { return inArcs_.end(); }
+    ConstArcIt getOutArcsBegin()const { return outArcs_.begin(); }
+    ConstArcIt getOutArcsEnd()  const { return outArcs_.end(); }
+
     Arc*  getBestInArc() const     { return bestInArc_; }
     size_t getCellCount() const    { return cellCount_; }
     double getCurrentScore() const { return currentScore_; }

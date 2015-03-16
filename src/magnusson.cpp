@@ -25,7 +25,7 @@ void Magnusson::setPathStartSelectorFunction(SelectorFunction func)
     selectorFunction_ = func;
 }
 
-double Magnusson::track(std::vector<TrackingAlgorithm::Path>& paths)
+double Magnusson::track(Solution &paths)
 {
     tic();
 	paths.clear();
