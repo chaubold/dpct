@@ -75,6 +75,12 @@ private:
     SelectorFunction selectorFunction_;
 };
 
+
+// path selection strategies
+Arc* selectBestInArc(Node* n);
+Arc* selectSecondBestInArc(Node* n);
+Arc* selectAtRandom(Node* n);
+
 } // namespace dpct
 
 #endif // DPCT_MAGNUSSON_H

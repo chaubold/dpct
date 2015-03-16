@@ -17,7 +17,7 @@ Magnusson::Magnusson(Graph* graph, bool withSwap, bool usedArcsScoreZero):
     TrackingAlgorithm(graph),
     withSwap_(withSwap),
     usedArcsScoreZero_(usedArcsScoreZero),
-    selectorFunction_([](Node* n){ return n->getBestInArc(); })
+    selectorFunction_( selectBestInArc )
 {}
 
 void Magnusson::setPathStartSelectorFunction(SelectorFunction func)
@@ -352,6 +352,74 @@ void Magnusson::removeSwapArcs()
         delete a;
     }
     swapArcs_.clear();
+}
+
+// path selection strategies
+
+Arc* selectBestInArc(Node* n)
+{
+    return n->getBestInArc();
+}
+
+Arc* selectSecondBestInArc(Node* n)
+{
+    if(n->getNumInArcs() == 0)
+        return nullptr;
+
+    // collect all in arcs and their scores
+    typedef std::pair<double, Arc*> SnA;
+    std::vector< SnA > scoreAndArc;
+    for(Node::ArcIt it = n->getInArcsBegin(); it != n->getInArcsEnd(); ++it)
+    {
+        double cs = (*it)->getCurrentScore();
+        scoreAndArc.push_back(SnA(cs, *it));
+    }
+
+    // sort descending by score
+    std::sort(scoreAndArc.begin(), scoreAndArc.end(), [](const SnA& a, const SnA& b){
+        return a.first > b.first;
+    });
+
+    // pick second, if any, and if second.score > 0
+    if(scoreAndArc.size() > 1 && scoreAndArc[1].first > 0.0)
+        return scoreAndArc[1].second;
+    else
+        return scoreAndArc[0].second;
+}
+
+Arc* selectAtRandom(Node* n)
+{
+    if(n->getNumInArcs() == 0)
+        return nullptr;
+
+    // collect all in arcs and their scores
+    typedef std::pair<double, Arc*> SnA;
+    std::vector< SnA > scoreAndArc;
+    for(Node::ArcIt it = n->getInArcsBegin(); it != n->getInArcsEnd(); ++it)
+    {
+        double cs = (*it)->getCurrentScore();
+        scoreAndArc.push_back(SnA(cs, *it));
+    }
+
+    // sort descending by score
+    std::sort(scoreAndArc.begin(), scoreAndArc.end(), [](const SnA& a, const SnA& b){
+        return a.first > b.first;
+    });
+
+    // count number of valid scores
+    size_t numPositive = std::count_if(scoreAndArc.begin(), scoreAndArc.end(), [](const SnA& a){
+       return a.first > 0.0;
+    });
+
+    // pick at random in that range:
+    size_t random = 0;
+    if(numPositive > 0)
+    {
+        std::default_random_engine generator;
+        std::uniform_int_distribution<int> distribution(0,numPositive - 1);
+        random = distribution(generator);
+    }
+    return scoreAndArc[random].second;
 }
 
 } // namespace dpct
