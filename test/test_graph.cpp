@@ -311,7 +311,7 @@ BOOST_AUTO_TEST_CASE(copy_subgraph)
     g.addMoveArc(n_3_3, n_4_3, 0.0);
     g.addMoveArc(n_3_3, n_4_4, 0.0);
 
-    g.allowMitosis(n_3_2, n_4_3, -1);
+    Graph::ArcPtr m_4_2 = g.allowMitosis(n_3_2, n_4_3, -1);
     g.allowMitosis(n_3_3, n_4_3, 2);
 
     Graph::NodeSelectionMap node_selection_map = g.getEmptyNodeSelectionMap();
@@ -320,6 +320,7 @@ BOOST_AUTO_TEST_CASE(copy_subgraph)
     g.selectArc(node_selection_map, arc_selection_map, a_2_1.get());
     g.selectArc(node_selection_map, arc_selection_map, a_3_1.get());
     g.selectArc(node_selection_map, arc_selection_map, a_4_1.get());
+    g.selectArc(node_selection_map, arc_selection_map, m_4_2.get());
 
     Graph g2(g, node_selection_map, arc_selection_map);
     // 3 selected arcs + 1 to source + 1 to sink + 3 appearance + 3 disappearance

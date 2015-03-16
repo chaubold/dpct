@@ -22,11 +22,16 @@ Graph::Graph(const Graph &other,
              ArcSelectionMap arc_selection_map):
     config_(other.config_),
     numNodes_(0),
-    sinkNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>( new NodeOriginData( { &other.sinkNode_ } ))),
-    sourceNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>( new NodeOriginData( { &other.sourceNode_ } ))),
-    appearanceNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>( new NodeOriginData( { &other.appearanceNode_ } ))),
-    disappearanceNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>( new NodeOriginData( { &other.disappearanceNode_ } ))),
-    divisionNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>( new NodeOriginData( { &other.divisionNode_ } )))
+    sinkNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>(
+                  new NodeOriginData( { &other.sinkNode_ } ))),
+    sourceNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>(
+                    new NodeOriginData( { &other.sourceNode_ } ))),
+    appearanceNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>(
+                        new NodeOriginData( { &other.appearanceNode_ } ))),
+    disappearanceNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>(
+                           new NodeOriginData( { &other.disappearanceNode_ } ))),
+    divisionNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>(
+                      new NodeOriginData( { &other.divisionNode_ } )))
 {
     // copy selected nodes, and keep a mapping
     std::map<Node*, Node*> node_map;
@@ -39,7 +44,8 @@ Graph::Graph(const Graph &other,
             auto selection_map_it = node_selection_map.find(other_node.get());
             if(selection_map_it == node_selection_map.end() || selection_map_it->second == true)
             {
-                NodePtr node(new Node(*other_node, std::shared_ptr<NodeOriginData>( new NodeOriginData( { other_node.get() } ))));
+                NodePtr node(new Node(*other_node, std::shared_ptr<NodeOriginData>(
+                                          new NodeOriginData( { other_node.get() } ))));
                 nodesPerTimestep_.back().push_back(node);
                 node_map[other_node.get()] = node.get();
                 numNodes_++;
@@ -71,8 +77,45 @@ Graph::Graph(const Graph &other,
         auto selection_map_it = arc_selection_map.find(other_arc.get());
         if(selection_map_it == arc_selection_map.end() || selection_map_it->second == true)
         {
+            if(other_arc->getType() == Arc::Division)
+            {
+                // mother cell must be available and selected
+                Node* mother = other_arc->getObservedNode();
+                if(mother == nullptr)
+                    continue;
+
+                auto mother_it = node_selection_map.find(mother);
+                if(mother_it != node_selection_map.end() && mother_it->second == false)
+                {
+                    DEBUG_MSG("Discarding division arc due to missing mother");
+                    continue;
+                }
+
+                // there must be one alternative move arc selected
+                size_t numMoveArcs = 0;
+
+                for(Node::ArcIt out_arc_it = mother->getOutArcsBegin();
+                    out_arc_it != mother->getOutArcsEnd();
+                    ++out_arc_it)
+                {
+                    if((*out_arc_it)->getType() == Arc::Move)
+                    {
+                        auto move_arc_it = arc_selection_map.find(other_arc.get());
+                        if(move_arc_it == arc_selection_map.end() || move_arc_it->second == true)
+                            numMoveArcs++;
+                    }
+                }
+
+                if(numMoveArcs < 2)
+                {
+                    DEBUG_MSG("Discarding division arc due to missing second possible child");
+                    continue;
+                }
+            }
+
             // arcs might be going from/to special nodes - is handled by map_node()
-            ArcPtr arc(new Arc(*other_arc, map_node, std::shared_ptr<ArcOriginData>( new ArcOriginData({ other_arc.get() } ))));
+            ArcPtr arc(new Arc(*other_arc, map_node, std::shared_ptr<ArcOriginData>(
+                                   new ArcOriginData({ other_arc.get() } ))));
             arcs_.push_back(arc);
         }
     }
@@ -372,7 +415,10 @@ void Graph::selectArc(NodeSelectionMap& node_selection_map, ArcSelectionMap& arc
         DEBUG_MSG("Selecting arc");
     }
 
-    // activate source and target nodes
+    // activate source and target nodes if this is not a mitosis arc
+    if(a->getType() == Arc::Division)
+        return;
+
     selectNode(node_selection_map, arc_selection_map, a->getSourceNode());
     selectNode(node_selection_map, arc_selection_map, a->getTargetNode());
 }

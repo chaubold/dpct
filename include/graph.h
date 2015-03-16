@@ -61,7 +61,9 @@ public:
 	Graph() = delete;
 
     // selective copy constructor, copies "special" and selected nodes.
-    // if maps are empty, copies everything
+    // if maps are empty, copies everything.
+    // nodes/arcs not present in the map are taken as selected, add them with
+    // the value FALSE to make sure they are not copied
     Graph(const Graph& other,
           NodeSelectionMap node_selection_map = std::map<Node*, bool>(),
           ArcSelectionMap arc_selection_map = std::map<Arc*, bool>());
@@ -107,6 +109,8 @@ public:
 	void reset();
 
     // selection map creation. Use in conjunction with selective copy constructor
+
+    // get maps where all nodes/arcs are set to false
     NodeSelectionMap getEmptyNodeSelectionMap() const;
     ArcSelectionMap getEmptyArcSelectionMap() const;
     // select node and its "special arcs"
