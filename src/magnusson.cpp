@@ -72,35 +72,12 @@ double Magnusson::track(std::vector<TrackingAlgorithm::Path>& paths)
             insertSwapArcsForNewUsedPath(p);
         }
 
-        // update scores along that path and all nodes that go away from there
-        // Node* firstPathNode = p.front()->getTargetNode();
-        // if(firstPathNode->getUserData())
-        // {
-        //     DEBUG_MSG("Beginning update at node: " << *(std::static_pointer_cast<NameData>(firstPathNode->getUserData())));
-        // }
-        // else
-        // {
-        //     DEBUG_MSG("Beginning update at node " << firstPathNode);
-        // }
-        // breadthFirstSearchVisitor(firstPathNode, std::bind(&Magnusson::updateNode, this, _1));
-
         // update scores from timestep 0 to the end
         for(size_t t = 0; t < graph_->getNumTimesteps(); ++t)
         {
             graph_->visitNodesInTimestep(t, std::bind(&Magnusson::updateNode, this, _1));
         }
         graph_->visitSpecialNodes(std::bind(&Magnusson::updateNode, this, _1));
-
-        // // clean up used arcs
-        // if(withSwap_)
-        // {
-        //     cleanUpUsedSwapArcs(p, paths);
-
-        //     // first remove all swap arcs, then add new ones!
-        //     removeSwapArcs();
-        //     for(Path &path : paths)
-        //         insertSwapArcsForNewUsedPath(path);
-        // }
 
         // add path to solution
         paths.push_back(p);
