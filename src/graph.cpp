@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <iterator>
 #include <map>
+#include <algorithm>
 
 namespace dpct
 {
@@ -16,7 +17,9 @@ Graph::Configuration::Configuration(bool enableAppearance,
     withDivision(enableDivision)
 {}
 
-Graph::Graph(const Graph &other):
+Graph::Graph(const Graph &other,
+             NodeSelectionMap node_selection_map,
+             ArcSelectionMap arc_selection_map):
     config_(other.config_),
     numNodes_(0),
     sinkNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>( new NodeOriginData( { &other.sinkNode_ } ))),
@@ -25,7 +28,7 @@ Graph::Graph(const Graph &other):
     disappearanceNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>( new NodeOriginData( { &other.disappearanceNode_ } ))),
     divisionNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>( new NodeOriginData( { &other.divisionNode_ } )))
 {
-    // copy nodes, and keep a mapping
+    // copy selected nodes, and keep a mapping
     std::map<Node*, Node*> node_map;
 
     for(const auto& timestep : other.nodesPerTimestep_)
@@ -33,10 +36,14 @@ Graph::Graph(const Graph &other):
         nodesPerTimestep_.push_back(NodeVector());
         for(const NodePtr& other_node : timestep)
         {
-            NodePtr node(new Node(*other_node, std::shared_ptr<NodeOriginData>( new NodeOriginData( { other_node.get() } ))));
-            nodesPerTimestep_.back().push_back(node);
-            node_map[other_node.get()] = node.get();
-            numNodes_++;
+            auto selection_map_it = node_selection_map.find(other_node.get());
+            if(selection_map_it == node_selection_map.end() || selection_map_it->second == true)
+            {
+                NodePtr node(new Node(*other_node, std::shared_ptr<NodeOriginData>( new NodeOriginData( { other_node.get() } ))));
+                nodesPerTimestep_.back().push_back(node);
+                node_map[other_node.get()] = node.get();
+                numNodes_++;
+            }
         }
     }
 
@@ -58,12 +65,16 @@ Graph::Graph(const Graph &other):
             return node_map[n];
     };
 
-    // copy arcs, use mapping to create them
+    // copy selected arcs, use mapping from above
     for(const ArcPtr& other_arc : other.arcs_)
     {
-        // attention: arcs might be going from/to special nodes
-        ArcPtr arc(new Arc(*other_arc, map_node, std::shared_ptr<ArcOriginData>( new ArcOriginData({ other_arc.get() } ))));
-        arcs_.push_back(arc);
+        auto selection_map_it = arc_selection_map.find(other_arc.get());
+        if(selection_map_it == arc_selection_map.end() || selection_map_it->second == true)
+        {
+            // arcs might be going from/to special nodes - is handled by map_node()
+            ArcPtr arc(new Arc(*other_arc, map_node, std::shared_ptr<ArcOriginData>( new ArcOriginData({ other_arc.get() } ))));
+            arcs_.push_back(arc);
+        }
     }
 }
 
@@ -271,6 +282,99 @@ bool Graph::isSpecialNode(Node *n) const
     	return true;
     
     return false;
+}
+
+Graph::NodeSelectionMap Graph::getEmptyNodeSelectionMap() const
+{
+    NodeSelectionMap map;
+
+    for(NodeVectorVector::const_iterator v = nodesPerTimestep_.begin(); v != nodesPerTimestep_.end(); ++v)
+    {
+        for(NodeVector::const_iterator it = v->begin(); it != v->end(); ++it)
+        {
+            map[it->get()] = false;
+        }
+    }
+
+    return map;
+}
+
+Graph::ArcSelectionMap Graph::getEmptyArcSelectionMap() const
+{
+    ArcSelectionMap map;
+
+    for(ArcVector::const_iterator it = arcs_.begin(); it != arcs_.end(); ++it)
+    {
+        map[it->get()] = false;
+    }
+
+    return map;
+}
+
+void Graph::selectNode(NodeSelectionMap& node_selection_map, ArcSelectionMap& arc_selection_map, Node* n) const
+{
+    // skip if is special node
+    if(isSpecialNode(n))
+        return;
+
+    // skip if already selected
+    auto selection_map_it = node_selection_map.find(n);
+    if(selection_map_it != node_selection_map.end() && selection_map_it->second == true)
+        return;
+
+    // select
+    node_selection_map[n] = true;
+
+    if(n->getUserData())
+    {
+        DEBUG_MSG("Selecting node: " << n->getUserData()->toString());
+    }
+    else
+    {
+        DEBUG_MSG("Selecting node");
+    }
+
+    // activate special in arcs
+    for(Node::ArcIt in_arc = n->getInArcsBegin(); in_arc != n->getInArcsEnd(); ++in_arc)
+    {
+        if(isSpecialNode((*in_arc)->getSourceNode()))
+        {
+            arc_selection_map[*in_arc] = true;
+        }
+    }
+
+    // activate special out arcs
+    for(Node::ArcIt out_arc = n->getOutArcsBegin(); out_arc != n->getOutArcsEnd(); ++out_arc)
+    {
+        if(isSpecialNode((*out_arc)->getTargetNode()))
+        {
+            arc_selection_map[*out_arc] = true;
+        }
+    }
+}
+
+void Graph::selectArc(NodeSelectionMap& node_selection_map, ArcSelectionMap& arc_selection_map, Arc* a) const
+{
+    // skip if already selected
+    auto selection_map_it = arc_selection_map.find(a);
+    if(selection_map_it != arc_selection_map.end() && selection_map_it->second == true)
+        return;
+
+    // select
+    arc_selection_map[a] = true;
+
+    if(a->getUserData())
+    {
+        DEBUG_MSG("Selecting arc: " << a->getUserData()->toString());
+    }
+    else
+    {
+        DEBUG_MSG("Selecting arc");
+    }
+
+    // activate source and target nodes
+    selectNode(node_selection_map, arc_selection_map, a->getSourceNode());
+    selectNode(node_selection_map, arc_selection_map, a->getTargetNode());
 }
 
 } // namespace dpct

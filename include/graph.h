@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <functional>
+#include <map>
 
 #include "node.h"
 #include "arc.h"
@@ -38,6 +39,8 @@ public:
 	typedef std::vector<NodePtr> NodeVector;
 	typedef std::vector<NodeVector> NodeVectorVector;
 	typedef std::vector<ArcPtr> ArcVector;
+    typedef std::map<Node*, bool> NodeSelectionMap;
+    typedef std::map<Arc*, bool>  ArcSelectionMap;
 
 	typedef std::function<void(Node*)> VisitorFunction;
 
@@ -54,9 +57,16 @@ public:
 	};
 
 public:
-	// constructor
+    // constructors:
 	Graph() = delete;
-    Graph(const Graph&);
+
+    // selective copy constructor, copies "special" and selected nodes.
+    // if maps are empty, copies everything
+    Graph(const Graph& other,
+          NodeSelectionMap node_selection_map = std::map<Node*, bool>(),
+          ArcSelectionMap arc_selection_map = std::map<Arc*, bool>());
+
+    // create with config
 	Graph(const Configuration& config);
 
 	// Add a new node to the graph, expecting timesteps to begin with 0!
@@ -95,6 +105,18 @@ public:
     bool isSpecialNode(Node *n) const;
 
 	void reset();
+
+    // selection map creation. Use in conjunction with selective copy constructor
+    NodeSelectionMap getEmptyNodeSelectionMap() const;
+    ArcSelectionMap getEmptyArcSelectionMap() const;
+    // select node and its "special arcs"
+    void selectNode(NodeSelectionMap& node_selection_map,
+                    ArcSelectionMap& arc_selection_map,
+                    Node* n) const;
+    // select arc, and source and target node if they are not active yet
+    void selectArc(NodeSelectionMap& node_selection_map,
+                   ArcSelectionMap& arc_selection_map,
+                   Arc* a) const;
 
 protected:
     void connectSpecialNodes();
