@@ -16,8 +16,14 @@ namespace dpct
 Magnusson::Magnusson(Graph* graph, bool withSwap, bool usedArcsScoreZero):
     TrackingAlgorithm(graph),
     withSwap_(withSwap),
-    usedArcsScoreZero_(usedArcsScoreZero)
+    usedArcsScoreZero_(usedArcsScoreZero),
+    selectorFunction_([](Node* n){ return n->getBestInArc(); })
 {}
+
+void Magnusson::setPathStartSelectorFunction(SelectorFunction func)
+{
+    selectorFunction_ = func;
+}
 
 double Magnusson::track(std::vector<TrackingAlgorithm::Path>& paths)
 {
@@ -124,7 +130,12 @@ void Magnusson::backtrack(Node* start, TrackingAlgorithm::Path& p, TrackingAlgor
 	while(current != &(graph_->getSourceNode()))
 	{
         nodeVisitor(current);
-		Arc* bestArc = current->getBestInArc();
+        Arc* bestArc = nullptr;
+        if(current == start)
+            bestArc = selectorFunction_(current);
+        else
+            bestArc = current->getBestInArc();
+
 		assert(bestArc != nullptr);
 
         if(usedArcsScoreZero_ && bestArc->getType() == Arc::Move)
