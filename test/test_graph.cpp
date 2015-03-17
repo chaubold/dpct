@@ -224,8 +224,8 @@ BOOST_AUTO_TEST_CASE(copy_graph)
     BOOST_CHECK_EQUAL(g2.getNumArcs(), g.getNumArcs());
     BOOST_CHECK_EQUAL(g2.getNumNodes(), g.getNumNodes());
     BOOST_CHECK_EQUAL(g2.getNumTimesteps(), g.getNumTimesteps());
-    BOOST_CHECK_EQUAL(std::static_pointer_cast<NodeOriginData>(g2.getSinkNode().getUserData())->getOrigin()[0], &g.getSinkNode());
-    BOOST_CHECK_EQUAL(std::static_pointer_cast<NodeOriginData>(g2.getSourceNode().getUserData())->getOrigin()[0], &g.getSourceNode());
+    BOOST_CHECK_EQUAL(std::static_pointer_cast<NodeOriginData>(g2.getSinkNode().getUserData())->getOriginsReverseOrder().back(), &g.getSinkNode());
+    BOOST_CHECK_EQUAL(std::static_pointer_cast<NodeOriginData>(g2.getSourceNode().getUserData())->getOriginsReverseOrder().back(), &g.getSourceNode());
     BOOST_CHECK_EQUAL(g2.getConfig().withAppearance, g.getConfig().withAppearance);
     BOOST_CHECK_EQUAL(g2.getConfig().withDisappearance, g.getConfig().withDisappearance);
     BOOST_CHECK_EQUAL(g2.getConfig().withDivision, g.getConfig().withDivision);
@@ -327,8 +327,8 @@ BOOST_AUTO_TEST_CASE(copy_subgraph)
     BOOST_CHECK_EQUAL(g2.getNumArcs(), 11);
     BOOST_CHECK_EQUAL(g2.getNumNodes(), 4);
     BOOST_CHECK_EQUAL(g2.getNumTimesteps(), g.getNumTimesteps());
-    BOOST_CHECK_EQUAL(std::static_pointer_cast<NodeOriginData>(g2.getSinkNode().getUserData())->getOrigin()[0], &g.getSinkNode());
-    BOOST_CHECK_EQUAL(std::static_pointer_cast<NodeOriginData>(g2.getSourceNode().getUserData())->getOrigin()[0], &g.getSourceNode());
+    BOOST_CHECK_EQUAL(std::static_pointer_cast<NodeOriginData>(g2.getSinkNode().getUserData())->getOriginsReverseOrder().back(), &g.getSinkNode());
+    BOOST_CHECK_EQUAL(std::static_pointer_cast<NodeOriginData>(g2.getSourceNode().getUserData())->getOriginsReverseOrder().back(), &g.getSourceNode());
     BOOST_CHECK_EQUAL(g2.getConfig().withAppearance, g.getConfig().withAppearance);
     BOOST_CHECK_EQUAL(g2.getConfig().withDisappearance, g.getConfig().withDisappearance);
     BOOST_CHECK_EQUAL(g2.getConfig().withDivision, g.getConfig().withDivision);

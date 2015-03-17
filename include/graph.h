@@ -12,7 +12,7 @@
 namespace dpct
 {
 
-template<typename T>
+template<typename T, typename U>
 class OriginData : public UserData
 {
 public:
@@ -21,15 +21,24 @@ public:
     {}
 
     virtual std::string toString() const { return "OriginData"; }
-    const std::vector<T>& getOrigin() const { return origin_; }
+    std::vector<T>& getOriginsReverseOrder() { return origin_; }
+    std::vector<U>& getConnectorsReverseOrder() { return connector_; }
+
+    void push_back_connector(U& u) { connector_.push_back(u); }
+    void push_back(OriginData& other)
+    {
+        origin_.insert(origin_.end(), other.origin_.begin(), other.origin_.end());
+        connector_.insert(connector_.end(), other.connector_.begin(), other.connector_.end());
+    }
 
 private:
     std::string name_;
     std::vector<T> origin_;
+    std::vector<U> connector_;
 };
 
-typedef OriginData<Node*> NodeOriginData;
-typedef OriginData<Arc*>  ArcOriginData;
+typedef OriginData<Node*, Arc*> NodeOriginData;
+typedef OriginData<Arc*, Node*> ArcOriginData;
 
 class Graph
 {
@@ -122,8 +131,12 @@ public:
                    ArcSelectionMap& arc_selection_map,
                    Arc *a) const;
 
+    void contractLoneArcs(bool usedArcsScoreZero = false);
+
 protected:
     void connectSpecialNodes();
+    bool removeArc(Arc *a); // remove arc and unregister it from source and target nodes
+    bool removeNode(Node *n); // remove node that has no in and out arcs! (assertion in DEBUG mode)
 
 protected:
 	Configuration config_;
@@ -139,6 +152,7 @@ protected:
 	NodeVectorVector nodesPerTimestep_;
 	ArcVector arcs_;
 	size_t numNodes_;
+    bool isCopiedGraph_;
 };
 
 } // namespace dpct

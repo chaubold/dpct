@@ -47,15 +47,18 @@ public:
 
     // marking an arc as used has the consequence that each further appearance in a path
     // has a cost of zero, otherwise it will stay the same no matter how often it is used
-	void markUsed(bool enabled = true);
+    void markUsed(bool used = true);
 
 	void reset();
 	void update();
+
+    void changeTargetTo(Node* other);
 
 	Node* getSourceNode() const { return sourceNode_; }
 	Node* getTargetNode() const { return targetNode_; }
     Type getType() const { return type_; }
     double getScoreDelta() const { return ((used_>0)?0.0:scoreDelta_); }
+    double getPlainScoreDelta() const { return scoreDelta_; }
     Node* getObservedNode() const { return dependsOnCellInNode_; }
 
     std::string typeAsString();

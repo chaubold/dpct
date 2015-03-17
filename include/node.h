@@ -29,7 +29,6 @@ public:
     Node(const Node& n,
          UserDataPtr data = UserDataPtr());
 
-
 	void increaseCellCount();
 
 	void registerInArc(Arc* arc);
@@ -55,6 +54,9 @@ public:
 
     size_t getNumInArcs() const  { return inArcs_.size(); }
     size_t getNumOutArcs() const { return outArcs_.size(); }
+
+    void accumulateScoreDelta(Node* other);
+    void addArcCost(Arc *other, bool usedArcsScoreZero);
 
 protected:
     double getScoreDeltaForCurrentCellCount();

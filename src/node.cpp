@@ -128,5 +128,26 @@ void Node::updateBestInArcAndScore()
     }
 }
 
+void Node::accumulateScoreDelta(Node *other)
+{
+    assert(other->cellCountScoreDelta_.size() == cellCountScoreDelta_.size());
+    for(size_t i = 0; i < cellCountScoreDelta_.size(); i++)
+    {
+        cellCountScoreDelta_[i] += other->cellCountScoreDelta_[i];
+    }
+}
+
+void Node::addArcCost(Arc* other, bool usedArcsScoreZero)
+{
+    size_t numStatesToChange = std::min<size_t>(1, cellCountScoreDelta_.size());
+    if(!usedArcsScoreZero)
+        numStatesToChange = cellCountScoreDelta_.size();
+
+    for(size_t i = 1; i < numStatesToChange; i++)
+    {
+        cellCountScoreDelta_[i] += other->getPlainScoreDelta();
+    }
+}
+
 
 } // namespace dpct

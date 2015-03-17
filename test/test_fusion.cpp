@@ -133,3 +133,74 @@ BOOST_AUTO_TEST_CASE(fuse_solutions)
     BOOST_CHECK(unionGraph->getNumNodes() <= g.getNumNodes());
     BOOST_CHECK(unionGraph->getNumTimesteps() == g.getNumTimesteps());
 }
+
+BOOST_AUTO_TEST_CASE(fuse_and_contract_solutions)
+{
+    std::vector<size_t> pathLengthsA = {5, 5, 5, 4, 3};
+    std::vector<size_t> pathLengthsB = {5, 5, 4, 5, 5};
+
+    auto checkPathLengths = [](const TrackingAlgorithm::Solution& s, const std::vector<size_t>& expectedLengths)
+    {
+        for(size_t i = 0; i < s.size(); i++)
+        {
+            BOOST_CHECK_EQUAL(s[0].size(), expectedLengths[0]);
+        }
+    };
+
+    // create graph
+    Graph::Configuration config(true, true, true);
+    Graph g(config);
+    buildGraph(g);
+
+    // create solution A
+    Graph gA(g);
+    Magnusson trackerA(&gA, false);
+    TrackingAlgorithm::Solution pathsA;
+    double scoreA = trackerA.track(pathsA);
+    pathsA = trackerA.translateToOriginGraph(pathsA);
+    std::cout << "Solution A with score " << scoreA << " has " << pathsA.size() << " paths" << std::endl;
+    BOOST_CHECK_EQUAL(pathsA.size(), 5);
+    checkPathLengths(pathsA, pathLengthsA);
+
+    // create solution B (pick second best)
+    Graph gB(g);
+    Magnusson trackerB(&gB, false);
+    trackerB.setPathStartSelectorFunction(selectSecondBestInArc);
+    TrackingAlgorithm::Solution pathsB;
+    double scoreB = trackerB.track(pathsB);
+    pathsB = trackerB.translateToOriginGraph(pathsB);
+    std::cout << "Solution B with score " << scoreB << " has " << pathsB.size() << " paths" << std::endl;
+    BOOST_CHECK_EQUAL(pathsB.size(), 5);
+    checkPathLengths(pathsB, pathLengthsB);
+
+    // create graph union
+    FusionMove fm(&g);
+    std::shared_ptr<Graph> unionGraph = fm.graphUnion(pathsA, pathsB);
+    BOOST_CHECK(unionGraph->getSinkNode().getNumInArcs() >= 1);
+    unionGraph->contractLoneArcs(false);
+
+    // track on graph union
+    Magnusson trackerFM(unionGraph.get(), false);
+    TrackingAlgorithm::Solution pathsFM;
+    double scoreFM = trackerFM.track(pathsFM);
+    std::cout << "Solution FM with score " << scoreFM << " has " << pathsFM.size() << " paths" << std::endl;
+    BOOST_CHECK_EQUAL(pathsFM.size(), 5);
+    for(TrackingAlgorithm::Path& p : pathsFM)
+    {
+        BOOST_CHECK(p.size() <= 6);
+    }
+
+    pathsFM = trackerFM.translateToOriginGraph(pathsFM);
+    checkPathLengths(pathsFM, pathLengthsA);
+
+
+    std::cout << "Original graph has " << g.getNumArcs() << " arcs and " << g.getNumNodes() << " nodes.\n";
+    std::cout << "Union graph has " << unionGraph->getNumArcs()
+              << " arcs and " << unionGraph->getNumNodes() << " nodes.\n" << std::endl;
+
+    BOOST_CHECK(scoreFM >= scoreA);
+    BOOST_CHECK(scoreFM >= scoreB);
+    BOOST_CHECK(unionGraph->getNumArcs() <= g.getNumArcs());
+    BOOST_CHECK(unionGraph->getNumNodes() <= g.getNumNodes());
+    BOOST_CHECK(unionGraph->getNumTimesteps() == g.getNumTimesteps());
+}

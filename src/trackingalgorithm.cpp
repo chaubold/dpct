@@ -98,21 +98,30 @@ double TrackingAlgorithm::getElapsedSeconds()
 
 TrackingAlgorithm::Solution TrackingAlgorithm::translateToOriginGraph(TrackingAlgorithm::Solution &sol)
 {
-    Solution origin_sol;
+    Solution originSol;
     for(Path& p : sol)
     {
-        Path origin_path;
-        origin_path.reserve(p.size());
+        Path originPath;
+        originPath.reserve(p.size());
 
         for(Arc* a : p)
         {
-            std::shared_ptr<ArcOriginData> origin_data = std::static_pointer_cast<ArcOriginData>(a->getUserData());
-            for(Arc* i : origin_data->getOrigin())
-                origin_path.push_back(i);
+            std::shared_ptr<ArcOriginData> arcOriginData = std::static_pointer_cast<ArcOriginData>(a->getUserData());
+            std::shared_ptr<NodeOriginData> targetNodeOriginData = std::static_pointer_cast<NodeOriginData>(a->getTargetNode()->getUserData());
+
+            assert(arcOriginData->getOriginsReverseOrder().size() == 1);
+            originPath.push_back(arcOriginData->getOriginsReverseOrder().back());
+
+            for(auto it = targetNodeOriginData->getConnectorsReverseOrder().rbegin();
+                it != targetNodeOriginData->getConnectorsReverseOrder().rend();
+                ++it)
+            {
+                originPath.push_back(*it);
+            }
         }
-        origin_sol.push_back(origin_path);
+        originSol.push_back(originPath);
     }
-    return origin_sol;
+    return originSol;
 }
 
 } // namespace dpct

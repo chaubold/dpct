@@ -67,6 +67,13 @@ void Arc::update()
     DEBUG_MSG(typeAsString() << "-Arc update: score is now " << currentScore_ << " (enabled=" << (enabled_?"true":"false") << ")");
 }
 
+void Arc::changeTargetTo(Node *other)
+{
+    targetNode_->removeInArc(this);
+    targetNode_ = other;
+    targetNode_->registerInArc(this);
+}
+
 std::string Arc::typeAsString()
 {
     switch(type_)
@@ -94,9 +101,9 @@ void Arc::updateEnabledState()
 	}
 }
 
-void Arc::markUsed(bool enabled)
+void Arc::markUsed(bool used)
 {
-    if(enabled)
+    if(used)
         used_++;
     else
     {

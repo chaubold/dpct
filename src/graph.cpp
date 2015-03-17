@@ -31,7 +31,8 @@ Graph::Graph(Graph &other,
     disappearanceNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>(
                            new NodeOriginData( { &other.disappearanceNode_ } ))),
     divisionNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>(
-                      new NodeOriginData( { &other.divisionNode_ } )))
+                      new NodeOriginData( { &other.divisionNode_ } ))),
+    isCopiedGraph_(true)
 {
     // copy selected nodes, and keep a mapping
     std::map<Node*, Node*> node_map;
@@ -128,7 +129,8 @@ Graph::Graph(const Graph::Configuration& config):
     sourceNode_(std::vector<double>(), std::make_shared<NameData>("Source")),
     appearanceNode_(std::vector<double>(), std::make_shared<NameData>("Appearance")),
     disappearanceNode_(std::vector<double>(), std::make_shared<NameData>("Disappearance")),
-    divisionNode_(std::vector<double>(), std::make_shared<NameData>("Division"))
+    divisionNode_(std::vector<double>(), std::make_shared<NameData>("Division")),
+    isCopiedGraph_(false)
 {
     connectSpecialNodes();
 }
@@ -377,23 +379,23 @@ void Graph::selectNode(NodeSelectionMap& node_selection_map, ArcSelectionMap& ar
         DEBUG_MSG("Selecting node");
     }
 
-    // activate special in arcs
-    for(Node::ConstArcIt in_arc = n->getInArcsBegin(); in_arc != n->getInArcsEnd(); ++in_arc)
-    {
-        if(isSpecialNode((*in_arc)->getSourceNode()))
-        {
-            arc_selection_map[*in_arc] = true;
-        }
-    }
+//    // activate special in arcs
+//    for(Node::ConstArcIt in_arc = n->getInArcsBegin(); in_arc != n->getInArcsEnd(); ++in_arc)
+//    {
+//        if(isSpecialNode((*in_arc)->getSourceNode()))
+//        {
+//            arc_selection_map[*in_arc] = true;
+//        }
+//    }
 
-    // activate special out arcs
-    for(Node::ConstArcIt out_arc = n->getOutArcsBegin(); out_arc != n->getOutArcsEnd(); ++out_arc)
-    {
-        if(isSpecialNode((*out_arc)->getTargetNode()))
-        {
-            arc_selection_map[*out_arc] = true;
-        }
-    }
+//    // activate special out arcs
+//    for(Node::ConstArcIt out_arc = n->getOutArcsBegin(); out_arc != n->getOutArcsEnd(); ++out_arc)
+//    {
+//        if(isSpecialNode((*out_arc)->getTargetNode()))
+//        {
+//            arc_selection_map[*out_arc] = true;
+//        }
+//    }
 }
 
 void Graph::selectArc(NodeSelectionMap& node_selection_map, ArcSelectionMap& arc_selection_map, Arc* a) const
@@ -421,6 +423,90 @@ void Graph::selectArc(NodeSelectionMap& node_selection_map, ArcSelectionMap& arc
 
     selectNode(node_selection_map, arc_selection_map, a->getSourceNode());
     selectNode(node_selection_map, arc_selection_map, a->getTargetNode());
+}
+
+bool Graph::removeNode(Node* n)
+{
+    assert(n->getNumInArcs() == 0);
+    assert(n->getNumOutArcs() == 0);
+
+    for(NodeVectorVector::iterator v = nodesPerTimestep_.begin(); v != nodesPerTimestep_.end(); ++v)
+    {
+        for(NodeVector::iterator it = v->begin(); it != v->end(); ++it)
+        {
+            if(it->get() == n)
+            {
+                v->erase(it);
+                numNodes_--;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool Graph::removeArc(Arc* a)
+{
+    a->getSourceNode()->removeOutArc(a);
+    a->getTargetNode()->removeInArc(a);
+
+    for(ArcVector::iterator it = arcs_.begin(); it != arcs_.end(); ++it)
+    {
+        if(it->get() == a)
+        {
+            arcs_.erase(it);
+            return true;
+        }
+    }
+    return false;
+}
+
+void Graph::contractLoneArcs(bool usedArcsScoreZero)
+{
+    if(!isCopiedGraph_)
+        throw std::runtime_error("Graph Contraction relies on OriginData in nodes and arcs, "
+                                 "which is only given in a copied graph");
+
+    std::vector<Arc*> arcsToContract;
+    for(ArcPtr a : arcs_)
+    {
+        // only contract move arcs
+        if(a->getType() == Arc::Move)
+        {
+            if(a->getSourceNode()->getNumOutArcs() == 1 && a->getTargetNode()->getNumInArcs() == 1)
+            {
+                arcsToContract.push_back(a.get());
+            }
+        }
+    }
+
+    LOG_MSG("Found " << arcsToContract.size() << " arcs to contract");
+
+    for(Arc* a : arcsToContract)
+    {
+        // add source node origin and arc origin to target node origins
+        Node* target = a->getTargetNode();
+        Node* source = a->getSourceNode();
+        std::shared_ptr<NodeOriginData> target_origin_data = std::static_pointer_cast<NodeOriginData>(target->getUserData());
+        std::shared_ptr<NodeOriginData> source_origin_data = std::static_pointer_cast<NodeOriginData>(source->getUserData());
+        target_origin_data->push_back_connector(std::static_pointer_cast<ArcOriginData>(a->getUserData())->getOriginsReverseOrder().back());
+        target_origin_data->push_back(*source_origin_data);
+
+        // update costs of target node (sum cellCountScoreDelta_'s, add arc cost to [1] or to all [i] > 1)
+        target->accumulateScoreDelta(source);
+        target->addArcCost(a, usedArcsScoreZero);
+
+        // link incoming arcs to target node
+        std::vector<Arc*> arcsToPointToTarget;
+        for(Node::ArcIt it = source->getInArcsBegin(); it != source->getInArcsEnd(); ++it)
+            arcsToPointToTarget.push_back(*it);
+        for(Arc* b : arcsToPointToTarget)
+            b->changeTargetTo(target);
+
+        // remove source node and arc
+        removeArc(a);
+        removeNode(source);
+    }
 }
 
 } // namespace dpct
