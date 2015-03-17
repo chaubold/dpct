@@ -317,14 +317,16 @@ BOOST_AUTO_TEST_CASE(copy_subgraph)
     Graph::NodeSelectionMap node_selection_map = g.getEmptyNodeSelectionMap();
     Graph::ArcSelectionMap arc_selection_map = g.getEmptyArcSelectionMap();
 
+    g.selectArc(node_selection_map, arc_selection_map, *(n_1_1->getInArcsBegin()));
     g.selectArc(node_selection_map, arc_selection_map, a_2_1.get());
     g.selectArc(node_selection_map, arc_selection_map, a_3_1.get());
     g.selectArc(node_selection_map, arc_selection_map, a_4_1.get());
     g.selectArc(node_selection_map, arc_selection_map, m_4_2.get());
+    g.selectArc(node_selection_map, arc_selection_map, *(n_4_1->getOutArcsBegin()));
 
     Graph g2(g, node_selection_map, arc_selection_map);
-    // 3 selected arcs + 1 to source + 1 to sink + 3 appearance + 3 disappearance
-    BOOST_CHECK_EQUAL(g2.getNumArcs(), 11);
+    // 3 selected arcs + 1 to source + 1 to sink
+    BOOST_CHECK_EQUAL(g2.getNumArcs(), 5);
     BOOST_CHECK_EQUAL(g2.getNumNodes(), 4);
     BOOST_CHECK_EQUAL(g2.getNumTimesteps(), g.getNumTimesteps());
     BOOST_CHECK_EQUAL(std::static_pointer_cast<NodeOriginData>(g2.getSinkNode().getUserData())->getOriginsReverseOrder().back(), &g.getSinkNode());
