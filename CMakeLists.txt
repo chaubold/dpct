@@ -27,6 +27,14 @@ else()
         message(SEND_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
+# C++ STL debug symbols
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  set(WITH_DEBUG_STL "False" CACHE BOOL "Build with C++ stl debug symbols?")
+  if(WITH_DEBUG_STL)
+    add_definitions(-D_GLIBCXX_DEBUG)
+  endif()
+endif()
+
 # ------------------------------------------
 # build library
 file(GLOB_RECURSE SOURCES src/*.cpp)
