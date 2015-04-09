@@ -131,7 +131,7 @@ void Magnusson::backtrack(Node* start, TrackingAlgorithm::Path& p, TrackingAlgor
 	p.clear();
 	Node* current = start;
 
-	while(current != &(graph_->getSourceNode()))
+    while(current != &(graph_->getSourceNode()))
 	{
         nodeVisitor(current);
         Arc* bestArc = nullptr;
@@ -411,16 +411,16 @@ Arc* selectAtRandom(Node* n)
     });
 
     // count number of valid scores
-    size_t numPositive = std::count_if(scoreAndArc.begin(), scoreAndArc.end(), [](const SnA& a){
-       return a.first > 0.0;
+    size_t numNonNegative = std::count_if(scoreAndArc.begin(), scoreAndArc.end(), [](const SnA& a){
+       return a.first >= 0.0;
     });
 
     // pick at random in that range:
     size_t random = 0;
-    if(numPositive > 0)
+    if(numNonNegative > 0)
     {
         std::default_random_engine generator;
-        std::uniform_int_distribution<int> distribution(0,numPositive - 1);
+        std::uniform_int_distribution<int> distribution(0,numNonNegative - 1);
         random = distribution(generator);
     }
     return scoreAndArc[random].second;
