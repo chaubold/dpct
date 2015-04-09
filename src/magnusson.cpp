@@ -88,7 +88,8 @@ double Magnusson::track(Solution &paths)
         // add path to solution
         paths.push_back(p);
         score += scoreDelta;
-        std::cout << "Added path with score " << scoreDelta << std::endl;
+        std::cout << "\rFound " << paths.size() << " paths...";
+        std::cout.flush();
     };
 
     // done
@@ -111,14 +112,17 @@ void Magnusson::updateNode(Node* n)
 
 void Magnusson::increaseCellCount(Node* n)
 {
-    if(n->getUserData())
-    {
-        DEBUG_MSG("Increasing cell count of node " << *(std::static_pointer_cast<NameData>(n->getUserData())) << " = " << n);
-    }
-    else
-    {
+    if(n == nullptr)
+        throw std::runtime_error("Trying to backtrack allong nullptr.");
+
+//    if(n->getUserData())
+//    {
+//        DEBUG_MSG("Increasing cell count of node " << *(std::static_pointer_cast<NameData>(n->getUserData())) << " = " << n);
+//    }
+//    else
+//    {
         DEBUG_MSG("Increasing cell count of node " << n);
-    }
+//    }
 	n->increaseCellCount();
 }
 
@@ -262,7 +266,7 @@ void Magnusson::cleanUpUsedSwapArcs(TrackingAlgorithm::Path &p, std::vector<Path
                 assert(replacementP != nullptr);
                 assert(replacementPath != nullptr);
 
-                LOG_MSG("Trying to remove swap arc between " << arc->getSourceNode()->getUserData()->toString() << " and " << arc->getTargetNode()->getUserData()->toString());
+                DEBUG_MSG("Trying to remove swap arc between " << arc->getSourceNode()->getUserData()->toString() << " and " << arc->getTargetNode()->getUserData()->toString());
 
                 for(Path& path : paths)
                 {
