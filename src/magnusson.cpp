@@ -16,10 +16,16 @@ namespace dpct
 Magnusson::Magnusson(Graph* graph, bool withSwap, bool usedArcsScoreZero):
     TrackingAlgorithm(graph),
     withSwap_(withSwap),
-    usedArcsScoreZero_(usedArcsScoreZero)
+    usedArcsScoreZero_(usedArcsScoreZero),
+    selectorFunction_( selectBestInArc )
 {}
 
-double Magnusson::track(std::vector<TrackingAlgorithm::Path>& paths)
+void Magnusson::setPathStartSelectorFunction(SelectorFunction func)
+{
+    selectorFunction_ = func;
+}
+
+double Magnusson::track(Solution &paths)
 {
     tic();
 	paths.clear();
@@ -72,18 +78,6 @@ double Magnusson::track(std::vector<TrackingAlgorithm::Path>& paths)
             insertSwapArcsForNewUsedPath(p);
         }
 
-        // update scores along that path and all nodes that go away from there
-        // Node* firstPathNode = p.front()->getTargetNode();
-        // if(firstPathNode->getUserData())
-        // {
-        //     DEBUG_MSG("Beginning update at node: " << *(std::static_pointer_cast<NameData>(firstPathNode->getUserData())));
-        // }
-        // else
-        // {
-        //     DEBUG_MSG("Beginning update at node " << firstPathNode);
-        // }
-        // breadthFirstSearchVisitor(firstPathNode, std::bind(&Magnusson::updateNode, this, _1));
-
         // update scores from timestep 0 to the end
         for(size_t t = 0; t < graph_->getNumTimesteps(); ++t)
         {
@@ -91,21 +85,11 @@ double Magnusson::track(std::vector<TrackingAlgorithm::Path>& paths)
         }
         graph_->visitSpecialNodes(std::bind(&Magnusson::updateNode, this, _1));
 
-        // // clean up used arcs
-        // if(withSwap_)
-        // {
-        //     cleanUpUsedSwapArcs(p, paths);
-
-        //     // first remove all swap arcs, then add new ones!
-        //     removeSwapArcs();
-        //     for(Path &path : paths)
-        //         insertSwapArcsForNewUsedPath(path);
-        // }
-
         // add path to solution
         paths.push_back(p);
         score += scoreDelta;
-        std::cout << "Added path with score " << scoreDelta << std::endl;
+        std::cout << "\rFound " << paths.size() << " paths...";
+        std::cout.flush();
     };
 
     // done
@@ -128,14 +112,17 @@ void Magnusson::updateNode(Node* n)
 
 void Magnusson::increaseCellCount(Node* n)
 {
-    if(n->getUserData())
-    {
-        DEBUG_MSG("Increasing cell count of node " << *(std::static_pointer_cast<NameData>(n->getUserData())) << " = " << n);
-    }
-    else
-    {
+    if(n == nullptr)
+        throw std::runtime_error("Trying to backtrack allong nullptr.");
+
+//    if(n->getUserData())
+//    {
+//        DEBUG_MSG("Increasing cell count of node " << *(std::static_pointer_cast<NameData>(n->getUserData())) << " = " << n);
+//    }
+//    else
+//    {
         DEBUG_MSG("Increasing cell count of node " << n);
-    }
+//    }
 	n->increaseCellCount();
 }
 
@@ -144,10 +131,15 @@ void Magnusson::backtrack(Node* start, TrackingAlgorithm::Path& p, TrackingAlgor
 	p.clear();
 	Node* current = start;
 
-	while(current != &(graph_->getSourceNode()))
+    while(current != &(graph_->getSourceNode()))
 	{
         nodeVisitor(current);
-		Arc* bestArc = current->getBestInArc();
+        Arc* bestArc = nullptr;
+        if(current == start)
+            bestArc = selectorFunction_(current);
+        else
+            bestArc = current->getBestInArc();
+
 		assert(bestArc != nullptr);
 
         if(usedArcsScoreZero_ && bestArc->getType() == Arc::Move)
@@ -274,7 +266,7 @@ void Magnusson::cleanUpUsedSwapArcs(TrackingAlgorithm::Path &p, std::vector<Path
                 assert(replacementP != nullptr);
                 assert(replacementPath != nullptr);
 
-                LOG_MSG("Trying to remove swap arc between " << arc->getSourceNode()->getUserData()->toString() << " and " << arc->getTargetNode()->getUserData()->toString());
+                DEBUG_MSG("Trying to remove swap arc between " << arc->getSourceNode()->getUserData()->toString() << " and " << arc->getTargetNode()->getUserData()->toString());
 
                 for(Path& path : paths)
                 {
@@ -364,6 +356,74 @@ void Magnusson::removeSwapArcs()
         delete a;
     }
     swapArcs_.clear();
+}
+
+// path selection strategies
+
+Arc* selectBestInArc(Node* n)
+{
+    return n->getBestInArc();
+}
+
+Arc* selectSecondBestInArc(Node* n)
+{
+    if(n->getNumInArcs() == 0)
+        return nullptr;
+
+    // collect all in arcs and their scores
+    typedef std::pair<double, Arc*> SnA;
+    std::vector< SnA > scoreAndArc;
+    for(Node::ArcIt it = n->getInArcsBegin(); it != n->getInArcsEnd(); ++it)
+    {
+        double cs = (*it)->getCurrentScore();
+        scoreAndArc.push_back(SnA(cs, *it));
+    }
+
+    // sort descending by score
+    std::sort(scoreAndArc.begin(), scoreAndArc.end(), [](const SnA& a, const SnA& b){
+        return a.first > b.first;
+    });
+
+    // pick second, if any, and if second.score > 0
+    if(scoreAndArc.size() > 1 && scoreAndArc[1].first > 0.0)
+        return scoreAndArc[1].second;
+    else
+        return scoreAndArc[0].second;
+}
+
+Arc* selectAtRandom(Node* n)
+{
+    if(n->getNumInArcs() == 0)
+        return nullptr;
+
+    // collect all in arcs and their scores
+    typedef std::pair<double, Arc*> SnA;
+    std::vector< SnA > scoreAndArc;
+    for(Node::ArcIt it = n->getInArcsBegin(); it != n->getInArcsEnd(); ++it)
+    {
+        double cs = (*it)->getCurrentScore();
+        scoreAndArc.push_back(SnA(cs, *it));
+    }
+
+    // sort descending by score
+    std::sort(scoreAndArc.begin(), scoreAndArc.end(), [](const SnA& a, const SnA& b){
+        return a.first > b.first;
+    });
+
+    // count number of valid scores
+    size_t numNonNegative = std::count_if(scoreAndArc.begin(), scoreAndArc.end(), [](const SnA& a){
+       return a.first >= 0.0;
+    });
+
+    // pick at random in that range:
+    size_t random = 0;
+    if(numNonNegative > 0)
+    {
+        std::default_random_engine generator;
+        std::uniform_int_distribution<int> distribution(0,numNonNegative - 1);
+        random = distribution(generator);
+    }
+    return scoreAndArc[random].second;
 }
 
 } // namespace dpct

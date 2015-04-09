@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <functional>
+#include <map>
 
 #include "node.h"
 #include "arc.h"
@@ -10,6 +11,34 @@
 
 namespace dpct
 {
+
+template<typename T, typename U>
+class OriginData : public UserData
+{
+public:
+    OriginData(const std::vector<T>& origin):
+        origin_(origin)
+    {}
+
+    virtual std::string toString() const { return "OriginData"; }
+    std::vector<T>& getOriginsReverseOrder() { return origin_; }
+    std::vector<U>& getConnectorsReverseOrder() { return connector_; }
+
+    void push_back_connector(U& u) { connector_.push_back(u); }
+    void push_back(OriginData& other)
+    {
+        origin_.insert(origin_.end(), other.origin_.begin(), other.origin_.end());
+        connector_.insert(connector_.end(), other.connector_.begin(), other.connector_.end());
+    }
+
+private:
+    std::string name_;
+    std::vector<T> origin_;
+    std::vector<U> connector_;
+};
+
+typedef OriginData<Node*, Arc*> NodeOriginData;
+typedef OriginData<Arc*, Node*> ArcOriginData;
 
 class Graph
 {
@@ -19,6 +48,8 @@ public:
 	typedef std::vector<NodePtr> NodeVector;
 	typedef std::vector<NodeVector> NodeVectorVector;
 	typedef std::vector<ArcPtr> ArcVector;
+    typedef std::map<Node*, bool> NodeSelectionMap;
+    typedef std::map<Arc*, bool>  ArcSelectionMap;
 
 	typedef std::function<void(Node*)> VisitorFunction;
 
@@ -35,9 +66,18 @@ public:
 	};
 
 public:
-	// constructor
+    // constructors:
 	Graph() = delete;
-	Graph(const Graph&) = delete;
+
+    // selective copy constructor, copies "special" and selected nodes.
+    // if maps are empty, copies everything.
+    // nodes/arcs not present in the map are taken as selected, add them with
+    // the value FALSE to make sure they are not copied
+    Graph(Graph& other,
+          NodeSelectionMap node_selection_map = std::map<Node*, bool>(),
+          ArcSelectionMap arc_selection_map = std::map<Arc*, bool>());
+
+    // create with config
 	Graph(const Configuration& config);
 
 	// Add a new node to the graph, expecting timesteps to begin with 0!
@@ -73,9 +113,30 @@ public:
     Node& getSinkNode() { return sinkNode_; }
 	void visitNodesInTimestep(size_t timestep, VisitorFunction func);
     void visitSpecialNodes(VisitorFunction func);
-    bool isSpecialNode(Node *n) const;
+    bool isSpecialNode(const Node *n) const;
 
 	void reset();
+
+    // selection map creation. Use in conjunction with selective copy constructor
+
+    // get maps where all nodes/arcs are set to false
+    NodeSelectionMap getEmptyNodeSelectionMap() const;
+    ArcSelectionMap getEmptyArcSelectionMap() const;
+    // select node and its "special arcs"
+    void selectNode(NodeSelectionMap& node_selection_map,
+                    ArcSelectionMap& arc_selection_map,
+                    Node *n) const;
+    // select arc, and source and target node if they are not active yet
+    void selectArc(NodeSelectionMap& node_selection_map,
+                   ArcSelectionMap& arc_selection_map,
+                   Arc *a) const;
+
+    void contractLoneArcs(bool usedArcsScoreZero = false);
+
+protected:
+    void connectSpecialNodes();
+    bool removeArc(Arc *a); // remove arc and unregister it from source and target nodes
+    bool removeNode(Node *n); // remove node that has no in and out arcs! (assertion in DEBUG mode)
 
 protected:
 	Configuration config_;
@@ -91,6 +152,7 @@ protected:
 	NodeVectorVector nodesPerTimestep_;
 	ArcVector arcs_;
 	size_t numNodes_;
+    bool isCopiedGraph_;
 };
 
 } // namespace dpct

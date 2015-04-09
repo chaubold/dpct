@@ -42,6 +42,17 @@ Arc::Arc(Node* source,
     update();
 }
 
+Arc::Arc(const Arc& a,
+        NodeMapFunc map_node,
+        UserDataPtr data):
+    Arc(map_node(a.sourceNode_),
+        map_node(a.targetNode_),
+        a.type_,
+        a.scoreDelta_,
+        map_node(a.dependsOnCellInNode_),
+        data)
+{}
+
 void Arc::reset()
 {
     used_ = 0;
@@ -54,6 +65,13 @@ void Arc::update()
 	currentScore_ = getScoreDelta() + sourceNode_->getCurrentScore();
     updateEnabledState();
     DEBUG_MSG(typeAsString() << "-Arc update: score is now " << currentScore_ << " (enabled=" << (enabled_?"true":"false") << ")");
+}
+
+void Arc::changeTargetTo(Node *other)
+{
+    targetNode_->removeInArc(this);
+    targetNode_ = other;
+    targetNode_->registerInArc(this);
 }
 
 std::string Arc::typeAsString()
@@ -83,9 +101,9 @@ void Arc::updateEnabledState()
 	}
 }
 
-void Arc::markUsed(bool enabled)
+void Arc::markUsed(bool used)
 {
-    if(enabled)
+    if(used)
         used_++;
     else
     {

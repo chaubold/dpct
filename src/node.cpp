@@ -29,6 +29,10 @@ Node::Node(const std::vector<double>& cellCountScoreDelta,
     }
 }
 
+Node::Node(const Node& n, UserDataPtr data):
+    Node(n.cellCountScoreDelta_, data)
+{}
+
 void Node::registerInArc(Arc* arc)
 {
     inArcs_.push_back(arc);
@@ -121,6 +125,27 @@ void Node::updateBestInArcAndScore()
         {
             DEBUG_MSG("Node update: score is now " << currentScore_);
         }
+    }
+}
+
+void Node::accumulateScoreDelta(Node *other)
+{
+    assert(other->cellCountScoreDelta_.size() == cellCountScoreDelta_.size());
+    for(size_t i = 0; i < cellCountScoreDelta_.size(); i++)
+    {
+        cellCountScoreDelta_[i] += other->cellCountScoreDelta_[i];
+    }
+}
+
+void Node::addArcCost(Arc* other, bool usedArcsScoreZero)
+{
+    size_t numStatesToChange = std::min<size_t>(1, cellCountScoreDelta_.size());
+    if(!usedArcsScoreZero)
+        numStatesToChange = cellCountScoreDelta_.size();
+
+    for(size_t i = 1; i < numStatesToChange; i++)
+    {
+        cellCountScoreDelta_[i] += other->getPlainScoreDelta();
     }
 }
 

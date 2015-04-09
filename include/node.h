@@ -17,9 +17,16 @@ class Node : public IUserDataHolder, public IArcNotifier
 {
 public:
 	typedef std::vector<Arc*>::iterator ArcIt;
+    typedef std::vector<Arc*>::const_iterator ConstArcIt;
 
 public:
-	Node(const std::vector<double>& cellCountScoreDelta = {},
+    Node() = delete;
+    Node(const Node&) = delete;
+
+    Node(const std::vector<double>& cellCountScoreDelta = {},
+         UserDataPtr data = UserDataPtr());
+    // this dedicated copy constructor does NOT copy connected arcs, but only node internals
+    Node(const Node& n,
          UserDataPtr data = UserDataPtr());
 
 	void increaseCellCount();
@@ -36,12 +43,20 @@ public:
 	ArcIt getInArcsEnd()    { return inArcs_.end(); }
 	ArcIt getOutArcsBegin() { return outArcs_.begin(); }
 	ArcIt getOutArcsEnd()   { return outArcs_.end(); }
+    ConstArcIt getInArcsBegin() const { return inArcs_.begin(); }
+    ConstArcIt getInArcsEnd()   const { return inArcs_.end(); }
+    ConstArcIt getOutArcsBegin()const { return outArcs_.begin(); }
+    ConstArcIt getOutArcsEnd()  const { return outArcs_.end(); }
+
     Arc*  getBestInArc() const     { return bestInArc_; }
     size_t getCellCount() const    { return cellCount_; }
     double getCurrentScore() const { return currentScore_; }
 
     size_t getNumInArcs() const  { return inArcs_.size(); }
     size_t getNumOutArcs() const { return outArcs_.size(); }
+
+    void accumulateScoreDelta(Node* other);
+    void addArcCost(Arc *other, bool usedArcsScoreZero);
 
 protected:
     double getScoreDeltaForCurrentCellCount();

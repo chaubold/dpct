@@ -7,7 +7,7 @@
 #define DEBUG_MSG(str) do { } while ( false )
 #endif
 
-#define LOG_MSG(str) do { std::cout << "Log: " str << std::endl; } while( false )
+#define LOG_MSG(str) do { std::cout << "Log: " << str << std::endl; } while( false )
 
 // int main()
 // {
