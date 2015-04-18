@@ -11,26 +11,26 @@
 namespace dpct
 {
 
-Node::Node(const std::vector<double>& cellCountScoreDelta,
+Node::Node(const std::vector<double>& cellCountScore,
            UserDataPtr data):
     IUserDataHolder(data),
-    cellCountScoreDelta_(cellCountScoreDelta),
+    cellCountScore_(cellCountScore),
     bestInArc_(nullptr),
     cellCount_(0),
     currentScore_(0.0)
 {
-    if(cellCountScoreDelta_.size() > 1)
+    if(cellCountScore_.size() > 1)
     {
-        currentScore_ = cellCountScoreDelta_[1] - cellCountScoreDelta_[0];
+        currentScore_ = cellCountScore_[1] - cellCountScore_[0];
     }
-    else if(cellCountScoreDelta_.size() == 1)
+    else if(cellCountScore_.size() == 1)
     {
         throw std::runtime_error("Node - Constructor: Cannot use a cellCountScoreDelta table with only one state, need at least two!");
     }
 }
 
 Node::Node(const Node& n, UserDataPtr data):
-    Node(n.cellCountScoreDelta_, data)
+    Node(n.cellCountScore_, data)
 {}
 
 void Node::registerInArc(Arc* arc)
@@ -80,13 +80,19 @@ void Node::increaseCellCount()
     notifyObserverArcs([](Arc* a){ a->update(); });
 }
 
+void Node::addToCellCountScore(size_t state, double score)
+{
+    assert(cellCountScore_.size() > state);
+    cellCountScore_[state] += score;
+}
+
 double Node::getScoreDeltaForCurrentCellCount()
 {
-    if(cellCountScoreDelta_.size() > cellCount_ + 1)
+    if(cellCountScore_.size() > cellCount_ + 1)
     {
-        return cellCountScoreDelta_[cellCount_ + 1] - cellCountScoreDelta_[cellCount_];
+        return cellCountScore_[cellCount_ + 1] - cellCountScore_[cellCount_];
     }
-    else if(cellCountScoreDelta_.size() > 0)
+    else if(cellCountScore_.size() > 0)
     {
         return std::numeric_limits<double>::lowest();
     }
@@ -130,22 +136,22 @@ void Node::updateBestInArcAndScore()
 
 void Node::accumulateScoreDelta(Node *other)
 {
-    assert(other->cellCountScoreDelta_.size() == cellCountScoreDelta_.size());
-    for(size_t i = 0; i < cellCountScoreDelta_.size(); i++)
+    assert(other->cellCountScore_.size() == cellCountScore_.size());
+    for(size_t i = 0; i < cellCountScore_.size(); i++)
     {
-        cellCountScoreDelta_[i] += other->cellCountScoreDelta_[i];
+        cellCountScore_[i] += other->cellCountScore_[i];
     }
 }
 
 void Node::addArcCost(Arc* other, bool usedArcsScoreZero)
 {
-    size_t numStatesToChange = std::min<size_t>(1, cellCountScoreDelta_.size());
+    size_t numStatesToChange = std::min<size_t>(1, cellCountScore_.size());
     if(!usedArcsScoreZero)
-        numStatesToChange = cellCountScoreDelta_.size();
+        numStatesToChange = cellCountScore_.size();
 
     for(size_t i = 1; i < numStatesToChange; i++)
     {
-        cellCountScoreDelta_[i] += other->getPlainScoreDelta();
+        cellCountScore_[i] += other->getPlainScoreDelta();
     }
 }
 

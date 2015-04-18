@@ -23,13 +23,14 @@ public:
     Node() = delete;
     Node(const Node&) = delete;
 
-    Node(const std::vector<double>& cellCountScoreDelta = {},
+    Node(const std::vector<double>& cellCountScore = {},
          UserDataPtr data = UserDataPtr());
     // this dedicated copy constructor does NOT copy connected arcs, but only node internals
     Node(const Node& n,
          UserDataPtr data = UserDataPtr());
 
 	void increaseCellCount();
+    void addToCellCountScore(size_t state, double score);
 
 	void registerInArc(Arc* arc);
 	void registerOutArc(Arc* arc);
@@ -67,7 +68,7 @@ protected:
 	std::vector<Arc*> outArcs_;
 	size_t cellCount_; // do we also need to store how many cells are already dividing?
 	Arc* bestInArc_;
-	std::vector<double> cellCountScoreDelta_;
+    std::vector<double> cellCountScore_;
 	double currentScore_;
 };
 
