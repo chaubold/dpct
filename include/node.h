@@ -52,6 +52,7 @@ public:
     Arc*  getBestInArc() const     { return bestInArc_; }
     size_t getCellCount() const    { return cellCount_; }
     double getCurrentScore() const { return currentScore_; }
+    size_t getNumStates() const {return cellCountScore_.size(); }
 
     size_t getNumInArcs() const  { return inArcs_.size(); }
     size_t getNumOutArcs() const { return outArcs_.size(); }
