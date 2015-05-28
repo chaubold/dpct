@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE(magnusson_simple_swap_test)
     g.addMoveArc(n4, n5, 0.0);
     g.addMoveArc(n4, n6, 0.0);
 
-    Magnusson tracker(&g, true);
+    Magnusson tracker(&g, true, true);
     std::vector<TrackingAlgorithm::Path> paths;
     double score = tracker.track(paths);
 
@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(magnusson_simple_swap_test_with_app_dis)
     g.addMoveArc(n4, n5, 0.0);
     g.addMoveArc(n4, n6, 0.0);
 
-    Magnusson tracker(&g, true);
+    Magnusson tracker(&g, true, true);
     std::vector<TrackingAlgorithm::Path> paths;
     double score = tracker.track(paths);
 
@@ -188,7 +188,7 @@ BOOST_AUTO_TEST_CASE(magnusson_two_possible_swaps)
     g.addMoveArc(n11, n5, 0.0);
     g.addMoveArc(n4, n12, 0.0);
 
-    Magnusson tracker(&g, true);
+    Magnusson tracker(&g, true, true);
     std::vector<TrackingAlgorithm::Path> paths;
     double score = tracker.track(paths);
 
@@ -305,7 +305,7 @@ BOOST_AUTO_TEST_CASE(test_full_magnusson_with_swap)
 
     // -----------------------------------------------------
     // Tracking
-    Magnusson tracker(&g, true);
+    Magnusson tracker(&g, true, true);
     std::vector<TrackingAlgorithm::Path> paths;
     double score = tracker.track(paths);
 
@@ -328,7 +328,7 @@ BOOST_AUTO_TEST_CASE(test_full_magnusson_graph_constness)
 
     // -----------------------------------------------------
     // Tracking
-    Magnusson tracker(&g, true);
+    Magnusson tracker(&g, true, true);
     std::vector<TrackingAlgorithm::Path> paths;
     double score = tracker.track(paths);
 

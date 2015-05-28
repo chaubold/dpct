@@ -60,6 +60,7 @@ public:
     void accumulateScoreDelta(Node* other);
     void addArcCost(Arc *other, bool usedArcsScoreZero);
 
+    friend std::ostream& operator<<(std::ostream& lhs, const Node& rhs);
 protected:
     double getScoreDeltaForCurrentCellCount();
 
@@ -72,6 +73,8 @@ protected:
     std::vector<double> cellCountScore_;
 	double currentScore_;
 };
+
+std::ostream& operator<<(std::ostream& lhs, const Node& rhs);
 
 } // namespace dpct
 

@@ -84,6 +84,7 @@ void Node::addToCellCountScore(size_t state, double score)
 {
     assert(cellCountScore_.size() > state);
     cellCountScore_[state] += score;
+    updateBestInArcAndScore();
 }
 
 double Node::getScoreDeltaForCurrentCellCount()
@@ -155,5 +156,16 @@ void Node::addArcCost(Arc* other, bool usedArcsScoreZero)
     }
 }
 
+std::ostream& operator<<(std::ostream& lhs, const Node& rhs)
+{
+    lhs << "Node with scores(";
+    for(double score: rhs.cellCountScore_)
+    {
+        lhs << score << ", ";
+    }
+    lhs << "), " << rhs.inArcs_.size() << " in-arcs and "
+        << rhs.outArcs_.size() << " out arcs";
+    return lhs;
+}
 
 } // namespace dpct

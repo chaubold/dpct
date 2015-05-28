@@ -74,9 +74,9 @@ double Magnusson::track(Solution &paths)
             }
 
             // first remove all swap arcs, then add new ones!
-            removeSwapArcs();
-            for(Path &path : paths)
-                insertSwapArcsForNewUsedPath(path);
+//            removeSwapArcs();
+//            for(Path &path : paths)
+//                insertSwapArcsForNewUsedPath(path);
 
             insertSwapArcsForNewUsedPath(p);
         }
@@ -94,8 +94,9 @@ double Magnusson::track(Solution &paths)
         paths.push_back(p);
         score += scoreDelta;
         std::chrono::time_point<std::chrono::high_resolution_clock> td = std::chrono::high_resolution_clock::now();
-        std::cout << "Found " << paths.size() << " paths..., last path took: " << (td - ta).count() << " sec ("
-                  << (tb-ta).count() << " backtrack, " << (tc-tb).count() << "swap arc setup, " << (td-tc).count() << " cost update)"
+        std::cout << "Found " << paths.size() << " paths..., last path took: " << std::chrono::duration<double>(td - ta).count() << " sec ("
+                  << std::chrono::duration<double>(tb-ta).count() << " backtrack, " << std::chrono::duration<double>(tc-tb).count()
+                  << "swap arc setup, " << std::chrono::duration<double>(td-tc).count() << " cost update)"
                   << std::endl;
 //        std::cout.flush();
     };

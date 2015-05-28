@@ -2,6 +2,7 @@
 #include "node.h"
 #include "log.h"
 
+#include "magnusson.h"
 #include <assert.h>
 
 namespace dpct
@@ -95,6 +96,12 @@ void Arc::updateEnabledState()
             DEBUG_MSG("Enabling formerly disabled " << typeAsString() << "-arc");
 		enabled_ = dependsOnCellInNode_->getCellCount() > 0; // or == 1?
 	}
+    else if(type_ == Swap)
+    {
+        // check that the link that this swap should exchange with is still used:
+        Arc* arcToCut = std::static_pointer_cast<MagnussonSwapArcUserData>(this->getUserData())->getCutArc();
+        enabled_ = arcToCut->used_ > 0;
+    }
 	else
 	{
         enabled_ = true;
@@ -111,6 +118,7 @@ void Arc::markUsed(bool used)
             throw std::runtime_error("Cannot reduce use count of arc that is not used!");
         used_--;
     }
+    updateEnabledState();
 }
 
 } // namespace dpct
