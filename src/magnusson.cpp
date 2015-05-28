@@ -42,6 +42,7 @@ double Magnusson::track(Solution &paths)
 
     while(true)
     {
+        std::chrono::time_point<std::chrono::high_resolution_clock> ta = std::chrono::high_resolution_clock::now();
         // backtrack best path, increase cell counts -> invalidates scores!
         Path p;
         backtrack(&(graph_->getSinkNode()), p, std::bind(&Magnusson::increaseCellCount, this, _1));
@@ -55,6 +56,8 @@ double Magnusson::track(Solution &paths)
             DEBUG_MSG("Path has negative reward, stopping here with a total number of " << paths.size() << " cells added");
             break;
         }
+
+        std::chrono::time_point<std::chrono::high_resolution_clock> tb = std::chrono::high_resolution_clock::now();
 
         // insert swap arcs
         if(withSwap_)
@@ -78,6 +81,8 @@ double Magnusson::track(Solution &paths)
             insertSwapArcsForNewUsedPath(p);
         }
 
+        std::chrono::time_point<std::chrono::high_resolution_clock> tc = std::chrono::high_resolution_clock::now();
+
         // update scores from timestep 0 to the end
         for(size_t t = 0; t < graph_->getNumTimesteps(); ++t)
         {
@@ -88,8 +93,11 @@ double Magnusson::track(Solution &paths)
         // add path to solution
         paths.push_back(p);
         score += scoreDelta;
-        std::cout << "\rFound " << paths.size() << " paths...";
-        std::cout.flush();
+        std::chrono::time_point<std::chrono::high_resolution_clock> td = std::chrono::high_resolution_clock::now();
+        std::cout << "Found " << paths.size() << " paths..., last path took: " << (td - ta).count() << " sec ("
+                  << (tb-ta).count() << " backtrack, " << (tc-tb).count() << "swap arc setup, " << (td-tc).count() << " cost update)"
+                  << std::endl;
+//        std::cout.flush();
     };
 
     // done
