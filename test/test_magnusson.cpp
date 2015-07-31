@@ -337,6 +337,80 @@ BOOST_AUTO_TEST_CASE(test_full_magnusson_graph_constness)
     BOOST_CHECK_EQUAL(g.getNumTimesteps(), num_timesteps);
 }
 
+void updateNode(Node* n)
+{
+    n->updateBestInArcAndScore();
+    
+    for(Node::ArcIt outArc = n->getOutArcsBegin(); outArc != n->getOutArcsEnd(); ++outArc)
+    {
+        (*outArc)->update();
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_backward_path)
+{
+    using std::placeholders::_1;
+    Graph::Configuration config(true, true, true);
+    Graph g(config);
+
+    buildGraph(g);
+
+    size_t num_arcs = g.getNumArcs();
+    size_t num_timesteps = g.getNumTimesteps();
+    size_t num_nodes = g.getNumNodes();
+
+    // -----------------------------------------------------
+    // Tracking
+    Magnusson tracker(&g, true, true);
+    // init best in arcs
+    for(size_t t = 0; t < g.getNumTimesteps(); ++t)
+    {
+        g.visitNodesInTimestep(t, std::bind(&updateNode, _1));
+    }
+    g.visitSpecialNodes(std::bind(&updateNode, _1));
+
+    TrackingAlgorithm::Solution paths;
+    tracker.findNonintersectingBackwardPaths(&g.getSourceNode(), &g.getSinkNode(), paths);
+
+    BOOST_CHECK(paths.size() > 0);
+    BOOST_CHECK(paths.size() <= g.getSinkNode().getNumInArcs());
+
+    // test that none of the paths overlap
+    std::map<const Arc*, size_t> arcUseCount;
+    for(TrackingAlgorithm::Path& p : paths)
+    {
+        for(const Arc* a : p)
+        {
+            BOOST_CHECK(arcUseCount.find(a) == arcUseCount.end());
+            arcUseCount[a] = 1;
+        }
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_full_magnusson_fast_1st_iter)
+{
+    Graph::Configuration config(true, true, true);
+    Graph g(config);
+
+    buildGraph(g);
+    
+    // -----------------------------------------------------
+    // Tracking
+    Magnusson tracker(&g, false, false, true);
+    std::vector<TrackingAlgorithm::Path> paths;
+    double score = tracker.track(paths);
+
+    BOOST_CHECK(paths.size() <= 5);
+    BOOST_CHECK(score <= 44.0);
+
+    std::cout << "Tracker returned score " << score << std::endl;
+
+    // Magnusson tracker2(&g, false, false, false);
+    // std::vector<TrackingAlgorithm::Path> paths2;
+    // score = tracker2.track(paths2);
+    // BOOST_CHECK(tracker.getElapsedSeconds() < tracker2.getElapsedSeconds());
+}
+
 BOOST_AUTO_TEST_CASE(magnusson_selector_func)
 {
     Graph::Configuration config(false, false, false);

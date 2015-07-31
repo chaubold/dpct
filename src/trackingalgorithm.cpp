@@ -47,6 +47,60 @@ void TrackingAlgorithm::breadthFirstSearchVisitor(Node* begin, VisitorFunction f
 	}
 }
 
+void TrackingAlgorithm::findNonintersectingBackwardPaths(Node* begin, Node* end, Solution& paths)
+{
+    // flow along the used arcs in the paths, where "forward flow" means from end to begin
+    std::map<const Arc*, uint8_t> forward_flows;
+
+    // init flows to zero
+    VisitorFunction vis = [&](Node* n)
+    {
+        forward_flows[n->getBestInArc()] = 0;
+    };
+    breadthFirstSearchVisitor(begin, vis);
+
+    // function to find a path with positive residual flow (recursively)
+    std::function<bool(const Node*, const Node*, Path&)> findGoodPath = [&](const Node* begin, const Node* end, Path& p)
+    {
+        if(begin == end)
+            return true;
+
+        Arc* a = end->getBestInArc();
+        int residual_capacity = 1 - forward_flows[a];
+        if(residual_capacity > 0)
+        {
+            p.insert(p.begin(), a);
+            return findGoodPath(begin, a->getSourceNode(), p);
+        }
+        else
+            return false;
+    };
+
+    std::function<bool(const Node*, const Node*, Path&)> findGoodPathFromSource = [&](const Node* begin, const Node* end, Path& p)
+    {
+        for(Node::ConstArcIt a = end->getInArcsBegin(); a != end->getInArcsEnd(); ++a)
+        {
+            p.clear();
+            p.push_back(*a);
+            if(findGoodPath(begin, (*a)->getSourceNode(), p))
+                return true;
+        }
+        return false;
+    };  
+
+    paths.clear();
+    Path currentPath;
+    while(findGoodPathFromSource(begin, end, currentPath))
+    {
+        // if we found a path, we know that its residual flow == 1
+        for(const Arc* a : currentPath)
+        {
+            forward_flows[a] += 1;
+        }
+        paths.push_back(currentPath);
+    }
+}
+
 void TrackingAlgorithm::printPath(TrackingAlgorithm::Path& p)
 {
     std::function<std::string(Node*)> nodeName = [](Node* n)

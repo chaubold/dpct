@@ -13,11 +13,12 @@ using std::placeholders::_1;
 namespace dpct
 {
 
-Magnusson::Magnusson(Graph* graph, bool withSwap, bool usedArcsScoreZero):
+Magnusson::Magnusson(Graph* graph, bool withSwap, bool usedArcsScoreZero, bool useFastFirstIter):
     TrackingAlgorithm(graph),
     withSwap_(withSwap),
     usedArcsScoreZero_(usedArcsScoreZero),
-    selectorFunction_( selectBestInArc )
+    useFastFirstIter_(useFastFirstIter),
+    selectorFunction_( selectBestInArc ) // globally defined function
 {}
 
 void Magnusson::setPathStartSelectorFunction(SelectorFunction func)
@@ -40,12 +41,46 @@ double Magnusson::track(Solution &paths)
 
     double scoreDelta = 0.0;
 
+    if(useFastFirstIter_)
+    {
+        DEBUG_MSG("Finding all good tracks from sink for first iteration");
+        Solution availablePaths;
+        findNonintersectingBackwardPaths(&graph_->getSourceNode(), &graph_->getSinkNode(), availablePaths);
+
+        // insert all paths at once
+        for(Path& p : availablePaths)
+        {
+            // update cell counts
+            increaseCellCount(p.front()->getSourceNode());
+            for(Arc* a : p)
+                increaseCellCount(a->getTargetNode());
+
+            // update score
+            scoreDelta = p.back()->getCurrentScore();
+            score += scoreDelta;
+
+            // insert swap arcs and add to solution
+            insertSwapArcsForNewUsedPath(p);
+            paths.push_back(p);
+            DEBUG_MSG("Adding path of length " << p.size() << " has score: " << p.back()->getCurrentScore());
+            std::cout << "\rFound " << paths.size() << " paths...";
+            std::cout.flush();
+        }
+
+        // update only once
+        for(size_t t = 0; t < graph_->getNumTimesteps(); ++t)
+        {
+            graph_->visitNodesInTimestep(t, std::bind(&Magnusson::updateNode, this, _1));
+        }
+        graph_->visitSpecialNodes(std::bind(&Magnusson::updateNode, this, _1));
+    }
+
     while(true)
     {
-        std::chrono::time_point<std::chrono::high_resolution_clock> ta = std::chrono::high_resolution_clock::now();
         // backtrack best path, increase cell counts -> invalidates scores!
         Path p;
         backtrack(&(graph_->getSinkNode()), p, std::bind(&Magnusson::increaseCellCount, this, _1));
+
         DEBUG_MSG("Current best path of length " << p.size() << " has score: " << p.back()->getCurrentScore());
         printPath(p);
         scoreDelta = p.back()->getCurrentScore();
@@ -56,8 +91,6 @@ double Magnusson::track(Solution &paths)
             DEBUG_MSG("Path has negative reward, stopping here with a total number of " << paths.size() << " cells added");
             break;
         }
-
-        std::chrono::time_point<std::chrono::high_resolution_clock> tb = std::chrono::high_resolution_clock::now();
 
         // insert swap arcs
         if(withSwap_)
@@ -73,15 +106,8 @@ double Magnusson::track(Solution &paths)
                 }
             }
 
-            // first remove all swap arcs, then add new ones!
-//            removeSwapArcs();
-//            for(Path &path : paths)
-//                insertSwapArcsForNewUsedPath(path);
-
             insertSwapArcsForNewUsedPath(p);
         }
-
-        std::chrono::time_point<std::chrono::high_resolution_clock> tc = std::chrono::high_resolution_clock::now();
 
         // update scores from timestep 0 to the end
         for(size_t t = 0; t < graph_->getNumTimesteps(); ++t)
@@ -96,7 +122,7 @@ double Magnusson::track(Solution &paths)
         std::chrono::time_point<std::chrono::high_resolution_clock> td = std::chrono::high_resolution_clock::now();
         std::cout << "\rFound " << paths.size() << " paths...";
         std::cout.flush();
-    };
+    }
 
     // done
     removeSwapArcs();
@@ -108,7 +134,6 @@ double Magnusson::track(Solution &paths)
 void Magnusson::updateNode(Node* n)
 {
 	n->updateBestInArcAndScore();
-	double score = n->getCurrentScore();
 
 	for(Node::ArcIt outArc = n->getOutArcsBegin(); outArc != n->getOutArcsEnd(); ++outArc)
 	{

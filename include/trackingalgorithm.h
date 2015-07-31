@@ -28,6 +28,7 @@ public:
 	double getElapsedSeconds();
 
     Solution translateToOriginGraph(Solution& sol);
+    void findNonintersectingBackwardPaths(Node* begin, Node* end, Solution& paths);
 
     void printPath(TrackingAlgorithm::Path &p);
 protected:

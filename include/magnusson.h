@@ -45,7 +45,7 @@ public:
     typedef std::function<Arc*(Node*)> SelectorFunction;
 
 public:
-    Magnusson(Graph* graph, bool withSwap, bool usedArcsScoreZero = false);
+    Magnusson(Graph* graph, bool withSwap, bool usedArcsScoreZero = false, bool useFastFirstIter = false);
 
     // specify a strategy to pick a path that starts from a node
     // through an arc.
@@ -61,18 +61,21 @@ private:
                    TrackingAlgorithm::VisitorFunction nodeVisitor);
 
     //--------------------------------------
-    // swap arc members
+    // config
     bool withSwap_;
     bool usedArcsScoreZero_;
+    SelectorFunction selectorFunction_;
+
+    // swap arc members
+    bool useFastFirstIter_;
     std::vector<Arc*> swapArcs_;
+    
     // swap arc methods
     void insertSwapArcsForNewUsedPath(Path& p);
     void cleanUpUsedSwapArcs(Path& p, std::vector<Path> &paths);
     void removeSwapArcs();
     void removeSwapArc(Arc* a);
     void removeArc(Arc *a);
-
-    SelectorFunction selectorFunction_;
 };
 
 
