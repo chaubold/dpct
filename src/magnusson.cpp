@@ -26,6 +26,11 @@ void Magnusson::setPathStartSelectorFunction(SelectorFunction func)
     selectorFunction_ = func;
 }
 
+void Magnusson::setMotionModelScoreFunction(MotionModelScoreFunction func)
+{
+    motionModelScoreFunction_ = func;
+}
+
 double Magnusson::track(Solution &paths)
 {
     tic();
@@ -134,10 +139,30 @@ double Magnusson::track(Solution &paths)
 void Magnusson::updateNode(Node* n)
 {
 	n->updateBestInArcAndScore();
+    Node* predecessor = nullptr;
+    double motionModelScoreDelta = 0.0;
+
+    if(motionModelScoreFunction_)
+    {
+        Arc* a = n->getBestInArc();
+        if(a)
+        {
+            predecessor = a->getSourceNode();
+        }
+    }
 
 	for(Node::ArcIt outArc = n->getOutArcsBegin(); outArc != n->getOutArcsEnd(); ++outArc)
 	{
-		(*outArc)->update();
+        if(predecessor && !graph_->isSpecialNode(predecessor) && !graph_->isSpecialNode(n) && !graph_->isSpecialNode((*outArc)->getTargetNode()))
+        {
+            motionModelScoreDelta = motionModelScoreFunction_(predecessor, n, (*outArc)->getTargetNode());
+        }
+        else
+        {
+            motionModelScoreDelta = 0.0;
+        }
+
+		(*outArc)->update(motionModelScoreDelta);
 	}
 }
 

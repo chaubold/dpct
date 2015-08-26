@@ -61,9 +61,9 @@ void Arc::reset()
 	updateEnabledState();
 }
 
-void Arc::update()
+void Arc::update(double additionalDelta)
 {
-	currentScore_ = getScoreDelta() + sourceNode_->getCurrentScore();
+	currentScore_ = getScoreDelta() + sourceNode_->getCurrentScore() + additionalDelta;
     updateEnabledState();
     DEBUG_MSG(typeAsString() << "-Arc update: score is now " << currentScore_ << " (enabled=" << (enabled_?"true":"false") << ")");
 }

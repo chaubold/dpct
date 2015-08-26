@@ -43,6 +43,7 @@ class Magnusson : public TrackingAlgorithm
 {
 public:
     typedef std::function<Arc*(Node*)> SelectorFunction;
+    typedef std::function<double(Node*, Node*, Node*)> MotionModelScoreFunction;
 
 public:
     Magnusson(Graph* graph, bool withSwap, bool usedArcsScoreZero = false, bool useFastFirstIter = false);
@@ -51,6 +52,11 @@ public:
     // through an arc.
     // defaults to using node->getBestInArc()
     void setPathStartSelectorFunction(SelectorFunction func);
+
+    // specify a motion model. This will be added to the score of each
+    // arc while building up paths, so is only evaluated once per arc
+    // even though it gets 2 predecessors as input
+    void setMotionModelScoreFunction(MotionModelScoreFunction func);
 
     virtual double track(Solution& paths);
 private:
@@ -65,6 +71,9 @@ private:
     bool withSwap_;
     bool usedArcsScoreZero_;
     SelectorFunction selectorFunction_;
+
+    // motion model
+    MotionModelScoreFunction motionModelScoreFunction_;
 
     // swap arc members
     bool useFastFirstIter_;

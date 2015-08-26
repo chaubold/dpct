@@ -50,7 +50,7 @@ public:
     void markUsed(bool used = true);
 
 	void reset();
-	void update();
+	void update(double additionalDelta = 0.0);
 
     void changeTargetTo(Node* other);
 

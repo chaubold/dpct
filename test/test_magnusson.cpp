@@ -503,3 +503,73 @@ BOOST_AUTO_TEST_CASE(magnusson_selector_func_random)
     BOOST_CHECK(score >= 17.0);
     BOOST_CHECK(paths.size() >= 1);
 }
+
+class PositionData2D : public UserData
+{
+public:
+    PositionData2D(double x, double y):
+        x_(x),
+        y_(y)
+    {}
+
+    virtual std::string toString() const 
+    { 
+        std::stringstream s;
+        s << "(" << x_ << ", " << y_ << ")"; 
+        return s.str();
+    }
+
+    double X() const { return x_; }
+    double Y() const { return y_; }
+private:
+    double x_, y_;
+};
+
+BOOST_AUTO_TEST_CASE(test_full_magnusson_motion_model)
+{
+    Graph::Configuration config(true, true, true);
+    Graph g(config);
+
+    Graph::NodePtr n1 = g.addNode(0, {0, 1}, 0.0, 0.0, true, false, std::make_shared<PositionData2D>(0,0));
+    Graph::NodePtr n2 = g.addNode(0, {0, 1}, 0.0, 0.0, true, false, std::make_shared<PositionData2D>(1,0));
+
+    Graph::NodePtr n3 = g.addNode(1, {0, 5}, 0.0, 0.0, false, false, std::make_shared<PositionData2D>(0,1));
+    Graph::NodePtr n4 = g.addNode(1, {0, 15}, 0.0, 0.0, false, false, std::make_shared<PositionData2D>(1,1));
+
+    Graph::NodePtr n5 = g.addNode(2, {0, 2}, 0.0, 0.0, false, true, std::make_shared<PositionData2D>(0,2));
+    Graph::NodePtr n6 = g.addNode(2, {0, 1}, 0.0, 0.0, false, true, std::make_shared<PositionData2D>(1,2));
+
+    g.addMoveArc(n1, n3, 0.0);
+    g.addMoveArc(n2, n4, 0.0);
+    g.addMoveArc(n3, n5, 4.0);
+    g.addMoveArc(n4, n5, 0.0);
+    g.addMoveArc(n4, n6, 0.0);
+
+    // set up motion model
+    Magnusson::MotionModelScoreFunction momoscofu = [=](Node* a, Node* b, Node* c)
+    {
+        typedef std::shared_ptr<PositionData2D> Pos2DPtr;
+        Pos2DPtr posA = std::static_pointer_cast<PositionData2D>(a->getUserData());
+        Pos2DPtr posB = std::static_pointer_cast<PositionData2D>(b->getUserData());
+        Pos2DPtr posC = std::static_pointer_cast<PositionData2D>(c->getUserData());
+        double dist1 = sqrt( pow(posA->X() - posB->X(), 2.0) + pow(posA->Y() - posB->Y(), 2.0) );
+        double dist2 = sqrt( pow(posC->X() - posB->X(), 2.0) + pow(posC->Y() - posB->Y(), 2.0) );
+
+        double velocityMagnitude = fabsf(dist1 - dist2);
+        std::cout << "Points: {" << posA->toString() << ", " << posB->toString() << ", " << posC->toString()
+                  << "} have distances " << dist1 << ", " << dist2 << " and vel " << velocityMagnitude << std::endl;
+        return -velocityMagnitude;
+    };
+    
+    // -----------------------------------------------------
+    // Tracking
+    Magnusson tracker(&g, false, false);
+    std::vector<TrackingAlgorithm::Path> paths;
+    tracker.setMotionModelScoreFunction(momoscofu);
+    double score = tracker.track(paths);
+
+    BOOST_CHECK_EQUAL(paths.size(), 3);
+    BOOST_CHECK(score < 24.6 && score > 24.5); // should be 25 - (sqrt(2)-1)
+
+    std::cout << "Tracker returned score " << score << std::endl;
+}
