@@ -153,9 +153,12 @@ void Magnusson::updateNode(Node* n)
 
 	for(Node::ArcIt outArc = n->getOutArcsBegin(); outArc != n->getOutArcsEnd(); ++outArc)
 	{
-        if(predecessor && !graph_->isSpecialNode(predecessor) && !graph_->isSpecialNode(n) && !graph_->isSpecialNode((*outArc)->getTargetNode()))
+        if(motionModelScoreFunction_ && (*outArc)->getType() == Arc::Move)
         {
-            motionModelScoreDelta = motionModelScoreFunction_(predecessor, n, (*outArc)->getTargetNode());
+            Node *predecessorParam = graph_->isSpecialNode(predecessor) ? nullptr : predecessor;
+            Node *nParam = graph_->isSpecialNode(n) ? nullptr : n;
+            Node *targetParam = graph_->isSpecialNode((*outArc)->getTargetNode()) ? nullptr : (*outArc)->getTargetNode();
+            motionModelScoreDelta = motionModelScoreFunction_(predecessorParam, nParam, targetParam);
         }
         else
         {
