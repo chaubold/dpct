@@ -133,8 +133,8 @@ void Node::updateBestInArcAndScore()
         {
             DEBUG_MSG("Node update: score is now " << currentScore_);
         }
-    }
 #endif
+    }
 }
 
 void Node::accumulateScoreDelta(Node *other)
