@@ -61,6 +61,7 @@ public:
     void addArcCost(Arc *other, bool usedArcsScoreZero);
 
     friend std::ostream& operator<<(std::ostream& lhs, const Node& rhs);
+
 protected:
     double getScoreDeltaForCurrentCellCount();
 

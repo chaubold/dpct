@@ -42,10 +42,14 @@ private:
 class Magnusson : public TrackingAlgorithm
 {
 public:
+    //--------------------------------------
+    // typedefs
     typedef std::function<Arc*(Node*)> SelectorFunction;
     typedef std::function<double(Node*, Node*, Node*)> MotionModelScoreFunction;
 
 public:
+    //--------------------------------------
+    // API
     Magnusson(Graph* graph, bool withSwap, bool usedArcsScoreZero = false, bool useFastFirstIter = false);
 
     // specify a strategy to pick a path that starts from a node
@@ -58,8 +62,13 @@ public:
     // even though it gets 2 predecessors as input
     void setMotionModelScoreFunction(MotionModelScoreFunction func);
 
+    // Find a set of paths through the graph that maximize the score.
+    // Iterates until no path with positive score change can be found any more.
     virtual double track(Solution& paths);
+
 private:
+    //--------------------------------------
+    // methods
 	void updateNode(Node* n);
 	void increaseCellCount(Node* n);
     void backtrack(Node* start,
@@ -68,7 +77,10 @@ private:
     void batchFirstIteration(double& score, Solution& paths);
     void updateNodesByTimestep();
 
+private:
     //--------------------------------------
+    // members
+
     // config
     bool withSwap_;
     bool usedArcsScoreZero_;

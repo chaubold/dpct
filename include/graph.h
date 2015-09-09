@@ -134,11 +134,15 @@ public:
     void contractLoneArcs(bool usedArcsScoreZero = false);
 
 protected:
+    //--------------------------------------
+    // methods
     void connectSpecialNodes();
     bool removeArc(Arc *a); // remove arc and unregister it from source and target nodes
     bool removeNode(Node *n); // remove node that has no in and out arcs! (assertion in DEBUG mode)
 
 protected:
+    //--------------------------------------
+    // members
 	Configuration config_;
 
 	Node sourceNode_;
