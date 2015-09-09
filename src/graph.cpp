@@ -294,9 +294,11 @@ void Graph::visitNodesInTimestep(size_t timestep, Graph::VisitorFunction func)
 {
 	assert(timestep < nodesPerTimestep_.size());
 
-	for(NodeVector::iterator it = nodesPerTimestep_[timestep].begin(); it != nodesPerTimestep_[timestep].end(); ++it)
+    #pragma omp parallel for
+	// for(NodeVector::iterator it = nodesPerTimestep_[timestep].begin(); it != nodesPerTimestep_[timestep].end(); ++it)
+    for(size_t i = 0; i < nodesPerTimestep_[timestep].size(); i++)
 	{
-		func(it->get());
+		func(nodesPerTimestep_[timestep][i].get());
     }
 }
 
