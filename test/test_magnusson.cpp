@@ -546,9 +546,16 @@ BOOST_AUTO_TEST_CASE(test_full_magnusson_motion_model)
     g.addMoveArc(n4, n6, 0.0);
 
     // set up motion model
-    Magnusson::MotionModelScoreFunction momoscofu = [=](Node* a, Node* b, Node* c)
+    Magnusson::MotionModelScoreFunction momoscofu = [&](Node* a, Node* b, Node* c)
     {
         typedef std::shared_ptr<PositionData2D> Pos2DPtr;
+
+        // only evaluate if we're looking at 3 proper nodes, otherwise return default value
+        if(a == nullptr || b == nullptr || c == nullptr || g.isSpecialNode(a) || g.isSpecialNode(b) || g.isSpecialNode(c))
+        {
+            return -10.0;
+        }
+
         Pos2DPtr posA = std::static_pointer_cast<PositionData2D>(a->getUserData());
         Pos2DPtr posB = std::static_pointer_cast<PositionData2D>(b->getUserData());
         Pos2DPtr posC = std::static_pointer_cast<PositionData2D>(c->getUserData());
