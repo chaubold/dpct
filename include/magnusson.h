@@ -65,6 +65,8 @@ private:
     void backtrack(Node* start,
                    Path& p,
                    TrackingAlgorithm::VisitorFunction nodeVisitor);
+    void batchFirstIteration(double& score, Solution& paths);
+    void updateNodesByTimestep();
 
     //--------------------------------------
     // config

@@ -31,53 +31,60 @@ void Magnusson::setMotionModelScoreFunction(MotionModelScoreFunction func)
     motionModelScoreFunction_ = func;
 }
 
-double Magnusson::track(Solution &paths)
+void Magnusson::batchFirstIteration(double& score, Solution& paths)
+{
+    DEBUG_MSG("Finding all good tracks from sink for first iteration");
+    Solution availablePaths;
+    double scoreDelta;
+    
+    findNonintersectingBackwardPaths(&graph_->getSourceNode(), &graph_->getSinkNode(), availablePaths);
+
+    // insert all paths at once
+    for(Path& p : availablePaths)
+    {
+        // update cell counts
+        increaseCellCount(p.front()->getSourceNode());
+        for(Arc* a : p)
+            increaseCellCount(a->getTargetNode());
+
+        // update score
+        scoreDelta = p.back()->getCurrentScore();
+        score += scoreDelta;
+
+        // insert swap arcs and add to solution
+        insertSwapArcsForNewUsedPath(p);
+        paths.push_back(p);
+        DEBUG_MSG("Adding path of length " << p.size() << " has score: " << p.back()->getCurrentScore());
+        std::cout << "\rFound " << paths.size() << " paths...";
+        std::cout.flush();
+    }
+
+    // update only once
+    updateNodesByTimestep();
+}
+
+void Magnusson::updateNodesByTimestep()
+{
+    for(size_t t = 0; t < graph_->getNumTimesteps(); ++t)
+    {
+        graph_->visitNodesInTimestep(t, std::bind(&Magnusson::updateNode, this, _1));
+    }
+    graph_->visitSpecialNodes(std::bind(&Magnusson::updateNode, this, _1));
+}
+
+double Magnusson::track(Solution& paths)
 {
     tic();
 	paths.clear();
 	double score = 0;
+    double scoreDelta = 0.0;
 
 	// update scores from timestep 0 to the end
-	for(size_t t = 0; t < graph_->getNumTimesteps(); ++t)
-	{
-		graph_->visitNodesInTimestep(t, std::bind(&Magnusson::updateNode, this, _1));
-	}
-    graph_->visitSpecialNodes(std::bind(&Magnusson::updateNode, this, _1));
-
-    double scoreDelta = 0.0;
+	updateNodesByTimestep();
 
     if(useFastFirstIter_)
     {
-        DEBUG_MSG("Finding all good tracks from sink for first iteration");
-        Solution availablePaths;
-        findNonintersectingBackwardPaths(&graph_->getSourceNode(), &graph_->getSinkNode(), availablePaths);
-
-        // insert all paths at once
-        for(Path& p : availablePaths)
-        {
-            // update cell counts
-            increaseCellCount(p.front()->getSourceNode());
-            for(Arc* a : p)
-                increaseCellCount(a->getTargetNode());
-
-            // update score
-            scoreDelta = p.back()->getCurrentScore();
-            score += scoreDelta;
-
-            // insert swap arcs and add to solution
-            insertSwapArcsForNewUsedPath(p);
-            paths.push_back(p);
-            DEBUG_MSG("Adding path of length " << p.size() << " has score: " << p.back()->getCurrentScore());
-            std::cout << "\rFound " << paths.size() << " paths...";
-            std::cout.flush();
-        }
-
-        // update only once
-        for(size_t t = 0; t < graph_->getNumTimesteps(); ++t)
-        {
-            graph_->visitNodesInTimestep(t, std::bind(&Magnusson::updateNode, this, _1));
-        }
-        graph_->visitSpecialNodes(std::bind(&Magnusson::updateNode, this, _1));
+        batchFirstIteration(score, paths);
     }
 
     while(true)
@@ -115,11 +122,7 @@ double Magnusson::track(Solution &paths)
         }
 
         // update scores from timestep 0 to the end
-        for(size_t t = 0; t < graph_->getNumTimesteps(); ++t)
-        {
-            graph_->visitNodesInTimestep(t, std::bind(&Magnusson::updateNode, this, _1));
-        }
-        graph_->visitSpecialNodes(std::bind(&Magnusson::updateNode, this, _1));
+        updateNodesByTimestep();
 
         // add path to solution
         paths.push_back(p);
@@ -313,7 +316,7 @@ void Magnusson::cleanUpUsedSwapArcs(TrackingAlgorithm::Path &p, std::vector<Path
         foundSwapArc = false;
         for(std::vector<Arc*>::reverse_iterator p_it = p.rbegin(); p_it != p.rend(); ++p_it)
         {
-            // FIXME: sometimes points to free'd memory location
+            // FIXME: sometimes points to free'd memory location?
             Arc* arc = *p_it;
             if(arc->getType() == Arc::Swap)
             {
@@ -417,8 +420,9 @@ void Magnusson::removeSwapArcs()
     swapArcs_.clear();
 }
 
+// -------------------------------------------------------------------------
 // path selection strategies
-
+// -------------------------------------------------------------------------
 Arc* selectBestInArc(Node* n)
 {
     return n->getBestInArc();

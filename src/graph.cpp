@@ -312,7 +312,7 @@ void Graph::visitSpecialNodes(Graph::VisitorFunction func)
 bool Graph::isSpecialNode(const Node *n) const
 {
     if(n == &sourceNode_)
-    	return true;
+        return true;
 
     if(n == &appearanceNode_)
     	return true;
