@@ -8,7 +8,6 @@
 
 using namespace dpct;
 
-
 void buildGraph(Graph& g)
 {
     double appearanceScore = -200;

@@ -124,6 +124,7 @@ void Node::updateBestInArcAndScore()
     {
         currentScore_ = bestScore + getScoreDeltaForCurrentCellCount();
         bestInArc_ = bestArc;
+#ifdef DEBUG_LOG
         if(getUserData())
         {
             DEBUG_MSG("Node (" << *(std::static_pointer_cast<NameData>(getUserData())) << ") update: score is now " << currentScore_);
@@ -133,6 +134,7 @@ void Node::updateBestInArcAndScore()
             DEBUG_MSG("Node update: score is now " << currentScore_);
         }
     }
+#endif
 }
 
 void Node::accumulateScoreDelta(Node *other)

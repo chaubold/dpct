@@ -93,8 +93,10 @@ void Arc::updateEnabledState()
 {
 	if(dependsOnCellInNode_ != nullptr)
 	{
+#ifdef DEBUG_LOG
         if(enabled_ == false && dependsOnCellInNode_->getCellCount() > 0)
             DEBUG_MSG("Enabling formerly disabled " << typeAsString() << "-arc");
+#endif
 		enabled_ = dependsOnCellInNode_->getCellCount() > 0; // or == 1?
 	}
     else if(type_ == Swap)
