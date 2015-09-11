@@ -61,7 +61,7 @@ public:
     double getPlainScoreDelta() const { return scoreDelta_; }
     Node* getObservedNode() const { return dependsOnCellInNode_; }
 
-    std::string typeAsString();
+    std::string typeAsString() const;
 
 protected:
 	void updateEnabledState();

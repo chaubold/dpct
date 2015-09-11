@@ -110,7 +110,7 @@ void Node::updateBestInArcAndScore()
 
     DEBUG_MSG("Updating node with " << inArcs_.size() << " inArcs and " << outArcs_.size() << " out arcs");
 
-    for(ArcIt it = inArcs_.begin(); it != inArcs_.end(); ++it)
+    for(ConstArcIt it = inArcs_.begin(); it != inArcs_.end(); ++it)
     {
         double cs = (*it)->getCurrentScore();
         if((cs > bestScore || bestArc == nullptr) && (*it)->isEnabled())

@@ -76,7 +76,7 @@ void Arc::changeTargetTo(Node *other)
     targetNode_->registerInArc(this);
 }
 
-std::string Arc::typeAsString()
+std::string Arc::typeAsString() const
 {
     switch(type_)
     {
