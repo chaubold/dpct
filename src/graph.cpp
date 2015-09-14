@@ -509,4 +509,33 @@ void Graph::contractLoneArcs(bool usedArcsScoreZero)
     }
 }
 
+void Graph::print() const
+{
+	LOG_MSG("Source Node: " << &sourceNode_);
+	LOG_MSG("Sink Node: " << &sinkNode_);
+	// LOG_MSG("Appearance Node: " << &appearanceNode_);
+	// LOG_MSG("Disappearance Node: " << &disappearanceNode_);
+	// LOG_MSG("Division Node: " << &divisionNode_);
+
+	for(NodeVector nv : nodesPerTimestep_)
+	{
+		LOG_MSG("&&&&&&&&&&&&&& Next timestep &&&&&&&&&&&&&&&\n\n");
+		
+		for(NodePtr np : nv)
+		{
+			LOG_MSG("Node " << np.get() << " is " << np->getUserData()->toString());
+			LOG_MSG("and has in Arcs:");
+			for(Node::ConstArcIt it = np->getInArcsBegin(); it != np->getInArcsEnd(); ++it)
+			{
+				LOG_MSG("\tArc from " << (*it)->getSourceNode() << " - " << std::string(((*it)->isEnabled()) ? "enabled" : "disabled"));
+			}
+			LOG_MSG("and out Arcs:");
+			for(Node::ConstArcIt it = np->getOutArcsBegin(); it != np->getOutArcsEnd(); ++it)
+			{
+				LOG_MSG("\tArc to " << (*it)->getTargetNode() << " - " << std::string(((*it)->isEnabled()) ? "enabled" : "disabled"));
+			}
+		}
+	}
+}
+
 } // namespace dpct

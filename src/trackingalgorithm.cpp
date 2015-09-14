@@ -103,6 +103,7 @@ void TrackingAlgorithm::findNonintersectingBackwardPaths(Node* begin, Node* end,
 
 void TrackingAlgorithm::printPath(TrackingAlgorithm::Path& p)
 {
+#ifdef DEBUG_LOG
     std::function<std::string(Node*)> nodeName = [](Node* n)
     {
         std::stringstream s;
@@ -130,6 +131,7 @@ void TrackingAlgorithm::printPath(TrackingAlgorithm::Path& p)
                   << " with cellCount " <<  (*it)->getTargetNode()->getCellCount()
                   << " and score " <<  (*it)->getTargetNode()->getCurrentScore());
     }
+#endif
 }
 
 void TrackingAlgorithm::tic()

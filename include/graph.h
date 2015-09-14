@@ -117,6 +117,10 @@ public:
 
 	void reset();
 
+    // debug graph output
+    void print() const;
+
+    //---------------------------------------------------------------------------
     // selection map creation. Use in conjunction with selective copy constructor
 
     // get maps where all nodes/arcs are set to false
