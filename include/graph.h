@@ -140,7 +140,6 @@ public:
 protected:
     //--------------------------------------
     // methods
-    void connectSpecialNodes();
     bool removeArc(Arc *a); // remove arc and unregister it from source and target nodes
     bool removeNode(Node *n); // remove node that has no in and out arcs! (assertion in DEBUG mode)
 
@@ -151,9 +150,6 @@ protected:
 
 	Node sourceNode_;
 	Node sinkNode_;
-	Node appearanceNode_;
-	Node disappearanceNode_;
-	Node divisionNode_;
 
 	// hold a reference to all nodes such that they only get deleted when the graph
 	// is destructed

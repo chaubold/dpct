@@ -26,12 +26,6 @@ Graph::Graph(Graph &other,
                   new NodeOriginData( { &other.sinkNode_ } ))),
     sourceNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>(
                     new NodeOriginData( { &other.sourceNode_ } ))),
-    appearanceNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>(
-                        new NodeOriginData( { &other.appearanceNode_ } ))),
-    disappearanceNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>(
-                           new NodeOriginData( { &other.disappearanceNode_ } ))),
-    divisionNode_(std::vector<double>(), std::shared_ptr<NodeOriginData>(
-                      new NodeOriginData( { &other.divisionNode_ } ))),
     isCopiedGraph_(true)
 {
     // copy selected nodes, and keep a mapping
@@ -62,12 +56,6 @@ Graph::Graph(Graph &other,
             return &sinkNode_;
         else if(n == &other.sourceNode_)
             return &sourceNode_;
-        else if(n == &other.appearanceNode_)
-            return &appearanceNode_;
-        else if(n == &other.disappearanceNode_)
-            return &disappearanceNode_;
-        else if(n == &other.divisionNode_)
-            return &divisionNode_;
         else
             return node_map[n];
     };
@@ -127,43 +115,8 @@ Graph::Graph(const Graph::Configuration& config):
     numNodes_(0),
     sinkNode_(std::vector<double>(), std::make_shared<NameData>("Sink")),
     sourceNode_(std::vector<double>(), std::make_shared<NameData>("Source")),
-    appearanceNode_(std::vector<double>(), std::make_shared<NameData>("Appearance")),
-    disappearanceNode_(std::vector<double>(), std::make_shared<NameData>("Disappearance")),
-    divisionNode_(std::vector<double>(), std::make_shared<NameData>("Division")),
     isCopiedGraph_(false)
 {
-    connectSpecialNodes();
-}
-
-void Graph::connectSpecialNodes()
-{
-    // connect the "special" nodes to source and sink
-    if(config_.withAppearance)
-    {
-        ArcPtr sourceToAppNode(new Arc(&sourceNode_,
-            &appearanceNode_,
-            Arc::Dummy,
-            0.0));
-        arcs_.push_back(sourceToAppNode);
-    }
-
-    if(config_.withDivision)
-    {
-        ArcPtr sourceToDivisionNode(new Arc(&sourceNode_,
-            &divisionNode_,
-            Arc::Dummy,
-            0.0));
-        arcs_.push_back(sourceToDivisionNode);
-    }
-
-    if(config_.withDisappearance)
-    {
-        ArcPtr disToSinkNode(new Arc(&disappearanceNode_,
-            &sinkNode_,
-            Arc::Dummy,
-            0.0));
-        arcs_.push_back(disToSinkNode);
-    }
 }
 
 Graph::NodePtr Graph::addNode(size_t timestep,
@@ -185,7 +138,7 @@ Graph::NodePtr Graph::addNode(size_t timestep,
 	// create appearance and division arcs if enabled and not in first time frame
 	if(config_.withAppearance && !connectToSource)
 	{
-		ArcPtr arc(new Arc(&appearanceNode_,
+		ArcPtr arc(new Arc(&sourceNode_,
 			node.get(),
 			Arc::Appearance,
 			appearanceScoreDelta,
@@ -198,7 +151,7 @@ Graph::NodePtr Graph::addNode(size_t timestep,
 	if(config_.withDisappearance && !connectToSink)
 	{
 		ArcPtr arc(new Arc(node.get(),
-			&disappearanceNode_,
+			&sinkNode_,
 			Arc::Disappearance,
 			disappearanceScoreDelta,
 			nullptr,
@@ -256,7 +209,7 @@ Graph::ArcPtr Graph::allowMitosis(NodePtr parent,
 						NodePtr child,
 						double divisionScoreDelta)
 {
-	ArcPtr arc(new Arc(&divisionNode_, 
+	ArcPtr arc(new Arc(&sourceNode_, 
 		child.get(),
 		Arc::Division,
 		divisionScoreDelta,
@@ -285,9 +238,6 @@ void Graph::reset()
 
 	sourceNode_.reset();
 	sinkNode_.reset();
-	appearanceNode_.reset();
-	disappearanceNode_.reset();
-	divisionNode_.reset();
 }
 
 void Graph::visitNodesInTimestep(size_t timestep, Graph::VisitorFunction func)
@@ -303,9 +253,6 @@ void Graph::visitNodesInTimestep(size_t timestep, Graph::VisitorFunction func)
 void Graph::visitSpecialNodes(Graph::VisitorFunction func)
 {
     func(&sourceNode_);
-    func(&appearanceNode_);
-    func(&disappearanceNode_);
-    func(&divisionNode_);
     func(&sinkNode_);
 }
 
@@ -313,16 +260,6 @@ bool Graph::isSpecialNode(const Node *n) const
 {
     if(n == &sourceNode_)
         return true;
-
-    if(n == &appearanceNode_)
-    	return true;
-
-    if(n == &disappearanceNode_)
-    	return true;
-
-    if(n == &divisionNode_)
-    	return true;
-
     if(n == &sinkNode_)
     	return true;
     
