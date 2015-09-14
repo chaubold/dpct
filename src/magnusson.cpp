@@ -42,17 +42,25 @@ void Magnusson::batchFirstIteration(double& score, Solution& paths)
     // insert all paths at once
     for(Path& p : availablePaths)
     {
-        // update cell counts
+        // only add path if they increase the overall score
+        scoreDelta = p.back()->getCurrentScore();
+        if(scoreDelta < 0)
+            continue;
+
+        // update cell counts and score
         increaseCellCount(p.front()->getSourceNode());
         for(Arc* a : p)
             increaseCellCount(a->getTargetNode());
 
-        // update score
-        scoreDelta = p.back()->getCurrentScore();
         score += scoreDelta;
 
-        // insert swap arcs and add to solution
-        insertSwapArcsForNewUsedPath(p);
+        if(withSwap_)
+        {
+            // insert swap arcs
+            insertSwapArcsForNewUsedPath(p);
+        }
+
+        // add to solution
         paths.push_back(p);
         DEBUG_MSG("Adding path of length " << p.size() << " has score: " << p.back()->getCurrentScore());
         std::cout << "\rFound " << paths.size() << " paths...";

@@ -402,6 +402,7 @@ BOOST_AUTO_TEST_CASE(test_full_magnusson_fast_1st_iter)
 
     BOOST_CHECK(paths.size() <= 5);
     BOOST_CHECK(score <= 44.0);
+    BOOST_CHECK(score >= 0);
 
     std::cout << "Tracker returned score " << score << std::endl;
 
