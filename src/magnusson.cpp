@@ -240,7 +240,8 @@ void Magnusson::insertSwapArcsForNewUsedPath(TrackingAlgorithm::Path &p)
     for(Path::iterator it = p.begin(); it != p.end(); ++it)
     {
         // FIXME: sometimes points to a free'd memory location
-        if((*it)->getType() != Arc::Move) // only swap Moves for now
+        if((*it)->getType() == Arc::Division || (*it)->getType() == Arc::Dummy) 
+            // swap everything BUT divisions or dummy arcs (direct source/sink connection at first/last frame)...
             continue;
 
         Node *source = (*it)->getSourceNode();
@@ -264,7 +265,7 @@ void Magnusson::insertSwapArcsForNewUsedPath(TrackingAlgorithm::Path &p)
                 for(Node::ArcIt alternativeOutIt = alternativeSource->getOutArcsBegin(); alternativeOutIt != alternativeSource->getOutArcsEnd(); ++alternativeOutIt)
                 {
                     if( (*alternativeOutIt)->getTargetNode() == alternativeTarget
-                            && (*alternativeOutIt)->getType() == Arc::Move) // only swap Moves for now
+                            && (*alternativeOutIt)->getType() != Arc::Dummy) // do not swap with dummy arcs (is that possible at all?)
                             // && (*alternativeOutIt)->getType() != Arc::Swap) // is that needed? -> shouldn't be, could be "swapped" twice
                         score -= (*alternativeOutIt)->getScoreDelta();
                 }
@@ -309,6 +310,8 @@ void Magnusson::insertSwapArcsForNewUsedPath(TrackingAlgorithm::Path &p)
 
 void Magnusson::cleanUpUsedSwapArcs(TrackingAlgorithm::Path &p, std::vector<Path>& paths)
 {
+    std::vector<Arc*> usedSwapArcs;
+
     // if a swap arc was used, we can find the path that was affected by this and create the two paths after swapping
     bool foundSwapArc = true;
     while(foundSwapArc)
@@ -364,9 +367,13 @@ void Magnusson::cleanUpUsedSwapArcs(TrackingAlgorithm::Path &p, std::vector<Path
                                 arcToRemove->markUsed(false);
                             }
 
-                            // remove all swap arcs from graph that were referencing the edge, including "arc". TODO: what to do if edge was used several times?
-                            // LOG_MSG("updated two paths. removed swap arc between " << arc->getSourceNode()->getUserData()->toString() << " and " << arc->getTargetNode()->getUserData()->toString());
-                            // arcToRemove->notifyObserverArcs(std::bind(&Magnusson::removeSwapArc, this, _1));
+                            // remove all this swap arc
+                            usedSwapArcs.push_back(arc);
+ 
+#if DEBUG_LOG
+                            DEBUG_MSG("updated two paths. removed swap arc between " << arc->getSourceNode()->getUserData()->toString() << " and " << arc->getTargetNode()->getUserData()->toString());
+                            graph_->print();
+#endif
 
                             foundSwapArc = true;
                             break;
@@ -383,10 +390,22 @@ void Magnusson::cleanUpUsedSwapArcs(TrackingAlgorithm::Path &p, std::vector<Path
         }
     }
 
+    for(Arc* a: usedSwapArcs)
+    {
+        removeSwapArc(a);
+    }
+
+#ifdef DEBUG_LOG
+    DEBUG_MSG("Paths after removing swaps:");
+    printPath(p);
+    for(Path& path : paths)
+        printPath(path);
+
     for(Node::ArcIt p_it = p.begin(); p_it != p.end(); ++p_it)
     {
         assert((*p_it)->getType() != Arc::Swap);
     }
+#endif
 }
 
 void Magnusson::removeSwapArc(Arc* arc)
