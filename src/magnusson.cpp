@@ -160,24 +160,30 @@ void Magnusson::updateNode(Node* n)
         {
             predecessor = a->getSourceNode();
         }
+
+        for(Node::ArcIt outArc = n->getOutArcsBegin(); outArc != n->getOutArcsEnd(); ++outArc)
+        {
+            if((*outArc)->getType() == Arc::Move)
+            {
+                Node *predecessorParam = graph_->isSpecialNode(predecessor) ? nullptr : predecessor;
+                Node *nParam = graph_->isSpecialNode(n) ? nullptr : n;
+                Node *targetParam = graph_->isSpecialNode((*outArc)->getTargetNode()) ? nullptr : (*outArc)->getTargetNode();
+                motionModelScoreDelta = motionModelScoreFunction_(predecessorParam, nParam, targetParam);
+                (*outArc)->update(motionModelScoreDelta);
+            }
+            else
+            {
+                (*outArc)->update();
+            }
+        }
     }
-
-	for(Node::ArcIt outArc = n->getOutArcsBegin(); outArc != n->getOutArcsEnd(); ++outArc)
-	{
-        if(motionModelScoreFunction_ && (*outArc)->getType() == Arc::Move)
+    else
+    {
+        for(Node::ArcIt outArc = n->getOutArcsBegin(); outArc != n->getOutArcsEnd(); ++outArc)
         {
-            Node *predecessorParam = graph_->isSpecialNode(predecessor) ? nullptr : predecessor;
-            Node *nParam = graph_->isSpecialNode(n) ? nullptr : n;
-            Node *targetParam = graph_->isSpecialNode((*outArc)->getTargetNode()) ? nullptr : (*outArc)->getTargetNode();
-            motionModelScoreDelta = motionModelScoreFunction_(predecessorParam, nParam, targetParam);
+            (*outArc)->update();
         }
-        else
-        {
-            motionModelScoreDelta = 0.0;
-        }
-
-		(*outArc)->update(motionModelScoreDelta);
-	}
+    }
 }
 
 void Magnusson::increaseCellCount(Node* n)

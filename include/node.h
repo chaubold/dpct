@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <cstddef>
+#include <limits>
 
 #include "userdata.h"
 #include "iarcnotifier.h"
@@ -76,6 +77,22 @@ protected:
 };
 
 std::ostream& operator<<(std::ostream& lhs, const Node& rhs);
+
+inline double Node::getScoreDeltaForCurrentCellCount()
+{
+    if(cellCountScore_.size() > cellCount_ + 1)
+    {
+        return cellCountScore_[cellCount_ + 1] - cellCountScore_[cellCount_];
+    }
+    else if(cellCountScore_.size() > 0)
+    {
+        return std::numeric_limits<double>::lowest();
+    }
+    else
+    {
+        return 0.0;
+    }
+}
 
 } // namespace dpct
 

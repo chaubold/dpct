@@ -36,7 +36,6 @@ Node::Node(const Node& n, UserDataPtr data):
 void Node::registerInArc(Arc* arc)
 {
     inArcs_.push_back(arc);
-    updateBestInArcAndScore();
 }
 
 void Node::registerOutArc(Arc* arc)
@@ -50,7 +49,6 @@ bool Node::removeInArc(Arc *arc)
     if(it != inArcs_.end())
     {
         inArcs_.erase(it);
-        updateBestInArcAndScore();
         return true;
     }
     return false;
@@ -63,7 +61,6 @@ bool Node::removeOutArc(Arc *arc)
     if(it != outArcs_.end())
     {
         outArcs_.erase(it);
-        updateBestInArcAndScore();
         return true;
     }
     return false;
@@ -85,22 +82,6 @@ void Node::addToCellCountScore(size_t state, double score)
     assert(cellCountScore_.size() > state);
     cellCountScore_[state] += score;
     updateBestInArcAndScore();
-}
-
-double Node::getScoreDeltaForCurrentCellCount()
-{
-    if(cellCountScore_.size() > cellCount_ + 1)
-    {
-        return cellCountScore_[cellCount_ + 1] - cellCountScore_[cellCount_];
-    }
-    else if(cellCountScore_.size() > 0)
-    {
-        return std::numeric_limits<double>::lowest();
-    }
-    else
-    {
-        return 0.0;
-    }
 }
 
 void Node::updateBestInArcAndScore()
