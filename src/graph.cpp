@@ -5,6 +5,7 @@
 #include <iterator>
 #include <map>
 #include <algorithm>
+#include <fstream>
 
 namespace dpct
 {
@@ -450,9 +451,6 @@ void Graph::print() const
 {
 	LOG_MSG("Source Node: " << &sourceNode_);
 	LOG_MSG("Sink Node: " << &sinkNode_);
-	// LOG_MSG("Appearance Node: " << &appearanceNode_);
-	// LOG_MSG("Disappearance Node: " << &disappearanceNode_);
-	// LOG_MSG("Division Node: " << &divisionNode_);
 
 	for(NodeVector nv : nodesPerTimestep_)
 	{
@@ -473,6 +471,49 @@ void Graph::print() const
 			}
 		}
 	}
+}
+
+void Graph::printToDot(const std::string& filename) const
+{
+	std::ofstream out_file(filename.c_str());
+
+    if(!out_file.good())
+    {
+        throw std::runtime_error("Could not open file " + filename + " to save graph to");
+    }
+
+    out_file << "digraph G {\n";
+
+    // nodes
+	for(NodeVector nv : nodesPerTimestep_)
+	{	
+		for(NodePtr np : nv)
+		{
+			out_file << "\t" << (size_t)np.get() << " [ label=\"" << np->getUserData()->toString() << "\" ]; \n" << std::flush;
+		}
+	}
+
+	// source and sink
+	out_file << "\t" << (size_t)&sourceNode_ << " [ label=\"" << sourceNode_.getUserData()->toString() << "\" ]; \n" << std::flush;
+	out_file << "\t" << (size_t)&sinkNode_ << " [ label=\"" << sinkNode_.getUserData()->toString() << "\" ]; \n" << std::flush;
+
+	for(NodeVector nv : nodesPerTimestep_)
+	{	
+		for(NodePtr np : nv)
+		{	
+			for(Node::ConstArcIt it = np->getOutArcsBegin(); it != np->getOutArcsEnd(); ++it)
+			{
+				out_file << "\t" << (size_t)(*it)->getSourceNode() << " -> " << (size_t)(*it)->getTargetNode() << " [ label=\" " << (*it)->typeAsString() << " \" ];\n" << std::flush;
+			}
+		}
+	}
+
+	for(Node::ConstArcIt it = sourceNode_.getOutArcsBegin(); it != sourceNode_.getOutArcsEnd(); ++it)
+	{
+		out_file << "\t" << (size_t)(*it)->getSourceNode() << " -> " << (size_t)(*it)->getTargetNode() << " [ label=\" " << (*it)->typeAsString() << " \" ];\n" << std::flush;
+	}
+
+    out_file << "}";
 }
 
 } // namespace dpct

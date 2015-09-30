@@ -119,6 +119,7 @@ public:
 
     // debug graph output
     void print() const;
+    void printToDot(const std::string& filename) const;
 
     //---------------------------------------------------------------------------
     // selection map creation. Use in conjunction with selective copy constructor
