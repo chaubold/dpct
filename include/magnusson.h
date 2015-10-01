@@ -77,6 +77,16 @@ private:
     void batchFirstIteration(double& score, Solution& paths);
     void updateNodesByTimestep();
 
+    // swap arc methods
+    void insertSwapArcsForNewUsedPath(Path& p);
+    void insertMoveSwapArcs(Arc* a);
+    void insertAppearanceSwapArcs(Arc* a);
+    void insertDisappearanceSwapArcs(Arc* a);
+    void cleanUpUsedSwapArcs(Path& p, std::vector<Path> &paths);
+    void removeSwapArcs();
+    void removeSwapArc(Arc* a);
+    void removeArc(Arc *a);
+
 private:
     //--------------------------------------
     // members
@@ -92,13 +102,6 @@ private:
     // swap arc members
     bool useFastFirstIter_;
     std::vector<Arc*> swapArcs_;
-    
-    // swap arc methods
-    void insertSwapArcsForNewUsedPath(Path& p);
-    void cleanUpUsedSwapArcs(Path& p, std::vector<Path> &paths);
-    void removeSwapArcs();
-    void removeSwapArc(Arc* a);
-    void removeArc(Arc *a);
 };
 
 

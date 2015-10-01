@@ -253,73 +253,167 @@ void Magnusson::insertSwapArcsForNewUsedPath(TrackingAlgorithm::Path &p)
     */
     for(Path::iterator it = p.begin(); it != p.end(); ++it)
     {
-        // FIXME: sometimes points to a free'd memory location
-        if((*it)->getType() == Arc::Division || (*it)->getType() == Arc::Dummy) 
-            // swap everything BUT divisions or dummy arcs (direct source/sink connection at first/last frame)...
+        switch((*it)->getType())
+        {
+            // do not add swap arcs for division or dummy
+            case Arc::Division:
+            case Arc::Dummy:
+                break;
+            case Arc::Move:
+                insertMoveSwapArcs(*it);
+                break;
+            case Arc::Appearance:
+                insertAppearanceSwapArcs(*it);
+                break;
+            case Arc::Disappearance:
+                insertDisappearanceSwapArcs(*it);
+                break;
+            case Arc::Swap:
+                throw new std::runtime_error("There should not be swap arcs left after cleaning up the path");
+        }
+    }
+}
+
+void Magnusson::insertMoveSwapArcs(Arc* a)
+{
+    Node *source = a->getSourceNode();
+    Node *target = a->getTargetNode();
+
+    for(Node::ArcIt outIt = source->getOutArcsBegin(); outIt != source->getOutArcsEnd(); ++outIt)
+    {
+        Node *alternativeTarget = (*outIt)->getTargetNode();
+        if(alternativeTarget == target || graph_->isSpecialNode(alternativeTarget) || (*outIt)->getType() == Arc::Swap)
             continue;
 
-        Node *source = (*it)->getSourceNode();
-        Node *target = (*it)->getTargetNode();
+        for(Node::ArcIt inIt = target->getInArcsBegin(); inIt != target->getInArcsEnd(); ++inIt)
+        {
+            Node *alternativeSource = (*inIt)->getSourceNode();
+            if(alternativeSource == source || graph_->isSpecialNode(alternativeSource) || (*inIt)->getType() == Arc::Swap)
+                continue;
 
-        for(Node::ArcIt outIt = source->getOutArcsBegin(); outIt != source->getOutArcsEnd(); ++outIt)
+            // found a candidate
+            double score = (*outIt)->getScoreDelta() + (*inIt)->getScoreDelta() - a->getScoreDelta();
+
+            // if there is an arc connecting the two alternative nodes, subtract its score delta as well -> WHY???
+            // for(Node::ArcIt alternativeOutIt = alternativeSource->getOutArcsBegin(); alternativeOutIt != alternativeSource->getOutArcsEnd(); ++alternativeOutIt)
+            // {
+            //     if( (*alternativeOutIt)->getTargetNode() == alternativeTarget
+            //             && (*alternativeOutIt)->getType() != Arc::Dummy // do not swap with dummy arcs (is that possible at all?)
+            //             && (*alternativeOutIt)->getType() != Arc::Division
+            //             && (*alternativeOutIt)->getType() != Arc::Swap)
+            //         score -= (*alternativeOutIt)->getScoreDelta();
+            // }
+
+            // the swap arc does not depend on other nodes being part of a path,
+            // as this algorithm never removes cells and thus the previously populated nodes can be used in swaps.
+            // BUT: it needs to store a reference to the arc that it would cut, and the cleanup action is performed in cleanUpUsedSwapArcs()
+            Arc* arc = new Arc(alternativeSource,
+                                      alternativeTarget,
+                                      Arc::Swap,
+                                      score,
+                                      nullptr,
+                                      std::make_shared<MagnussonSwapArcUserData>(a, *inIt, *outIt)
+                                      );
+            a->registerObserverArc(arc);
+
+#ifdef DEBUG_LOG
+            std::stringstream debugString;
+            debugString << "!!! Adding Move SWAP ARC between ";
+            if(alternativeSource->getUserData())
+                debugString << alternativeSource->getUserData();
+            else
+                debugString << alternativeSource;
+            debugString << " and ";
+
+            if(alternativeTarget->getUserData())
+                debugString << alternativeTarget->getUserData();
+            else
+                debugString << alternativeTarget;
+
+            debugString << " with score " << score;
+            DEBUG_MSG(debugString.str());
+            DEBUG_MSG("\twith replacement arcs: in=" << *inIt << " and out=" << *outIt);
+            DEBUG_MSG("\tdeletes arc: " << a);
+#endif
+
+            swapArcs_.push_back(arc);
+        }
+    }
+}
+
+void Magnusson::insertAppearanceSwapArcs(Arc* a)
+{
+    Node *source = a->getSourceNode();
+    assert(source == &graph_->getSourceNode());
+    Node *target = a->getTargetNode();
+
+
+    for(Node::ArcIt inIt = target->getInArcsBegin(); inIt != target->getInArcsEnd(); ++inIt)
+    {
+        Node *alternativeSource = (*inIt)->getSourceNode();
+        if(alternativeSource == source || graph_->isSpecialNode(alternativeSource) || (*inIt)->getType() == Arc::Swap)
+            continue;
+
+        for(Node::ArcIt outIt = alternativeSource->getOutArcsBegin(); outIt != alternativeSource->getOutArcsEnd(); ++outIt)
         {
             Node *alternativeTarget = (*outIt)->getTargetNode();
             if(alternativeTarget == target || graph_->isSpecialNode(alternativeTarget) || (*outIt)->getType() == Arc::Swap)
                 continue;
 
-            for(Node::ArcIt inIt = target->getInArcsBegin(); inIt != target->getInArcsEnd(); ++inIt)
+            // find appearance arc of alternativeTarget
+            Arc* alternativeAppearanceArc = nullptr;
+            for(Node::ArcIt appIt = alternativeTarget->getInArcsBegin(); appIt != alternativeTarget->getInArcsEnd(); ++appIt)
             {
-                Node *alternativeSource = (*inIt)->getSourceNode();
-                if(alternativeSource == source || graph_->isSpecialNode(alternativeSource) || (*inIt)->getType() == Arc::Swap)
-                    continue;
-
-                // found a candidate
-                double score = (*outIt)->getScoreDelta() + (*inIt)->getScoreDelta() - (*it)->getScoreDelta();
-                // if there is an arc connecting the two alternative nodes, subtract its score delta as well
-                for(Node::ArcIt alternativeOutIt = alternativeSource->getOutArcsBegin(); alternativeOutIt != alternativeSource->getOutArcsEnd(); ++alternativeOutIt)
+                if((*appIt)->getSourceNode() == &graph_->getSourceNode())
                 {
-                    if( (*alternativeOutIt)->getTargetNode() == alternativeTarget
-                            && (*alternativeOutIt)->getType() != Arc::Dummy) // do not swap with dummy arcs (is that possible at all?)
-                            // && (*alternativeOutIt)->getType() != Arc::Swap) // is that needed? -> shouldn't be, could be "swapped" twice
-                        score -= (*alternativeOutIt)->getScoreDelta();
+                    alternativeAppearanceArc = *appIt;
+                    break;
                 }
+            }
 
-                // the swap arc does not depend on other nodes being part of a path,
-                // as this algorithm never removes cells and thus the previously populated nodes can be used in swaps.
-                // BUT: it needs to store a reference to the arc that it would cut, and the cleanup action is performed in cleanUpUsedSwapArcs()
-                Arc* arc = new Arc(alternativeSource,
-                                          alternativeTarget,
-                                          Arc::Swap,
-                                          score,
-                                          nullptr,
-                                          std::make_shared<MagnussonSwapArcUserData>(*it, *inIt, *outIt)
-                                          );
-                (*it)->registerObserverArc(arc);
+            // found a candidate
+            double score = alternativeAppearanceArc->getScoreDelta() + (*inIt)->getScoreDelta() - a->getScoreDelta();
+
+            // the swap arc does not depend on other nodes being part of a path,
+            // as this algorithm never removes cells and thus the previously populated nodes can be used in swaps.
+            // BUT: it needs to store a reference to the arc that it would cut, and the cleanup action is performed in cleanUpUsedSwapArcs()
+            Arc* arc = new Arc(alternativeSource,
+                                      alternativeTarget,
+                                      Arc::Swap,
+                                      score,
+                                      nullptr,
+                                      std::make_shared<MagnussonSwapArcUserData>(a, *inIt, alternativeAppearanceArc)
+                                      );
+            a->registerObserverArc(arc);
 
 #ifdef DEBUG_LOG
-                std::stringstream debugString;
-                debugString << "!!! Adding SWAP ARC between ";
-                if(alternativeSource->getUserData())
-                    debugString << alternativeSource->getUserData();
-                else
-                    debugString << alternativeSource;
-                debugString << " and ";
+            std::stringstream debugString;
+            debugString << "!!! Adding Appearance SWAP ARC between ";
+            if(alternativeSource->getUserData())
+                debugString << alternativeSource->getUserData();
+            else
+                debugString << alternativeSource;
+            debugString << " and ";
 
-                if(alternativeTarget->getUserData())
-                    debugString << alternativeTarget->getUserData();
-                else
-                    debugString << alternativeTarget;
+            if(alternativeTarget->getUserData())
+                debugString << alternativeTarget->getUserData();
+            else
+                debugString << alternativeTarget;
 
-                debugString << " with score " << score;
-                DEBUG_MSG(debugString.str());
-                DEBUG_MSG("\twith replacement arcs: in=" << *inIt << " and out=" << *outIt);
-                DEBUG_MSG("\tdeletes arc: " << *it);
+            debugString << " with score " << score;
+            DEBUG_MSG(debugString.str());
+            DEBUG_MSG("\twith replacement arcs: in=" << *inIt << " and out=" << alternativeAppearanceArc);
+            DEBUG_MSG("\tdeletes arc: " << a);
 #endif
 
-                swapArcs_.push_back(arc);
-            }
+            swapArcs_.push_back(arc);
         }
     }
+}
+
+void Magnusson::insertDisappearanceSwapArcs(Arc* a)
+{
+    
 }
 
 void Magnusson::cleanUpUsedSwapArcs(TrackingAlgorithm::Path &p, std::vector<Path>& paths)
