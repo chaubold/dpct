@@ -347,16 +347,20 @@ void Magnusson::insertAppearanceSwapArcs(Arc* a)
     assert(source == &graph_->getSourceNode());
     Node *target = a->getTargetNode();
 
-
     for(Node::ArcIt inIt = target->getInArcsBegin(); inIt != target->getInArcsEnd(); ++inIt)
     {
         Node *alternativeSource = (*inIt)->getSourceNode();
+        assert(alternativeSource != nullptr);
         if(alternativeSource == source || graph_->isSpecialNode(alternativeSource) || (*inIt)->getType() == Arc::Swap)
             continue;
+
+        typedef std::vector< std::tuple<Node*, Arc*, Arc*, double> > SwapCandidateVector;
+        SwapCandidateVector swapArcCandidates;
 
         for(Node::ArcIt outIt = alternativeSource->getOutArcsBegin(); outIt != alternativeSource->getOutArcsEnd(); ++outIt)
         {
             Node *alternativeTarget = (*outIt)->getTargetNode();
+            assert(alternativeTarget != nullptr);
             if(alternativeTarget == target || graph_->isSpecialNode(alternativeTarget) || (*outIt)->getType() == Arc::Swap)
                 continue;
 
@@ -371,20 +375,14 @@ void Magnusson::insertAppearanceSwapArcs(Arc* a)
                 }
             }
 
+            if(alternativeAppearanceArc == nullptr)
+                throw new std::runtime_error("alternative target did not have disappearance arc...");
+
             // found a candidate
             double score = alternativeAppearanceArc->getScoreDelta() + (*inIt)->getScoreDelta() - a->getScoreDelta();
 
-            // the swap arc does not depend on other nodes being part of a path,
-            // as this algorithm never removes cells and thus the previously populated nodes can be used in swaps.
-            // BUT: it needs to store a reference to the arc that it would cut, and the cleanup action is performed in cleanUpUsedSwapArcs()
-            Arc* arc = new Arc(alternativeSource,
-                                      alternativeTarget,
-                                      Arc::Swap,
-                                      score,
-                                      nullptr,
-                                      std::make_shared<MagnussonSwapArcUserData>(a, *inIt, alternativeAppearanceArc)
-                                      );
-            a->registerObserverArc(arc);
+            // save it for adding later (otherwise the iterator inIt is invalidated!)
+            swapArcCandidates.push_back(std::make_tuple(alternativeTarget, *inIt, alternativeAppearanceArc, score));
 
 #ifdef DEBUG_LOG
             std::stringstream debugString;
@@ -405,7 +403,24 @@ void Magnusson::insertAppearanceSwapArcs(Arc* a)
             DEBUG_MSG("\twith replacement arcs: in=" << *inIt << " and out=" << alternativeAppearanceArc);
             DEBUG_MSG("\tdeletes arc: " << a);
 #endif
+        }
 
+        for(SwapCandidateVector::iterator swapIt = swapArcCandidates.begin(); swapIt != swapArcCandidates.end(); ++swapIt)
+        {
+            Arc* alternativeAppearanceArc;
+            Arc* originalInArc;
+            Node* alternativeTarget;
+            double score;
+            std::tie(alternativeTarget, originalInArc, alternativeAppearanceArc, score) = *swapIt;
+
+            Arc* arc = new Arc(alternativeSource,
+                                      alternativeTarget,
+                                      Arc::Swap,
+                                      score,
+                                      nullptr,
+                                      std::make_shared<MagnussonSwapArcUserData>(a, originalInArc, alternativeAppearanceArc)
+                                      );
+            a->registerObserverArc(arc);
             swapArcs_.push_back(arc);
         }
     }
@@ -413,7 +428,93 @@ void Magnusson::insertAppearanceSwapArcs(Arc* a)
 
 void Magnusson::insertDisappearanceSwapArcs(Arc* a)
 {
-    
+    /*
+    When a disappearance swap arc is used while tracking,
+    it means the new track did end instead of another one, 
+    and the other track continued the path that the new one now picks up.
+    */
+
+    Node *source = a->getSourceNode();
+    Node *target = a->getTargetNode();
+    assert(target == &graph_->getSinkNode());
+
+    for(Node::ArcIt outIt = source->getOutArcsBegin(); outIt != source->getOutArcsEnd(); ++outIt)
+    {
+        Node *alternativeTarget = (*outIt)->getTargetNode();
+        assert(alternativeTarget != nullptr);
+        if(alternativeTarget == target || graph_->isSpecialNode(alternativeTarget) || (*outIt)->getType() == Arc::Swap)
+            continue;
+
+        typedef std::vector< std::tuple<Node*, Arc*, Arc*, double> > SwapCandidateVector;
+        SwapCandidateVector swapArcCandidates;
+
+        for(Node::ArcIt inIt = alternativeTarget->getInArcsBegin(); inIt != alternativeTarget->getInArcsEnd(); ++inIt)
+        {
+            Node *alternativeSource = (*inIt)->getSourceNode();
+            assert(alternativeSource != nullptr);
+            if(alternativeSource == source || graph_->isSpecialNode(alternativeSource) || (*inIt)->getType() == Arc::Swap)
+                continue;
+
+            // find diappearance arc of alternativeSource
+            Arc* alternativeDisappearanceArc = nullptr;
+            for(Node::ArcIt appIt = alternativeSource->getOutArcsBegin(); appIt != alternativeSource->getOutArcsEnd(); ++appIt)
+            {
+                if((*appIt)->getTargetNode() == &graph_->getSinkNode())
+                {
+                    alternativeDisappearanceArc = *appIt;
+                    break;
+                }
+            }
+
+            if(alternativeDisappearanceArc == nullptr)
+                throw new std::runtime_error("alternative target did not have disappearance arc...");
+
+            // found a candidate
+            double score = alternativeDisappearanceArc->getScoreDelta() + (*outIt)->getScoreDelta() - a->getScoreDelta();
+
+            // save it for adding later (otherwise the iterator inIt is invalidated!)
+            swapArcCandidates.push_back(std::make_tuple(alternativeSource, *outIt, alternativeDisappearanceArc, score));
+
+#ifdef DEBUG_LOG
+            std::stringstream debugString;
+            debugString << "!!! Adding Disappearance SWAP ARC between ";
+            if(alternativeSource->getUserData())
+                debugString << alternativeSource->getUserData();
+            else
+                debugString << alternativeSource;
+            debugString << " and ";
+
+            if(alternativeTarget->getUserData())
+                debugString << alternativeTarget->getUserData();
+            else
+                debugString << alternativeTarget;
+
+            debugString << " with score " << score;
+            DEBUG_MSG(debugString.str());
+            DEBUG_MSG("\twith replacement arcs: in=" << *outIt << " and out=" << alternativeDisappearanceArc);
+            DEBUG_MSG("\tdeletes arc: " << a);
+#endif
+        }
+
+        for(SwapCandidateVector::iterator swapIt = swapArcCandidates.begin(); swapIt != swapArcCandidates.end(); ++swapIt)
+        {
+            Arc* alternativeDisappearanceArc;
+            Arc* originalInArc;
+            Node* alternativeSource;
+            double score;
+            std::tie(alternativeSource, originalInArc, alternativeDisappearanceArc, score) = *swapIt;
+
+            Arc* arc = new Arc(alternativeSource,
+                                      alternativeTarget,
+                                      Arc::Swap,
+                                      score,
+                                      nullptr,
+                                      std::make_shared<MagnussonSwapArcUserData>(a, originalInArc, alternativeDisappearanceArc)
+                                      );
+            a->registerObserverArc(arc);
+            swapArcs_.push_back(arc);
+        }
+    }
 }
 
 void Magnusson::cleanUpUsedSwapArcs(TrackingAlgorithm::Path &p, std::vector<Path>& paths)
