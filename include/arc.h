@@ -48,6 +48,7 @@ public:
     // marking an arc as used has the consequence that each further appearance in a path
     // has a cost of zero, otherwise it will stay the same no matter how often it is used
     void markUsed(bool used = true);
+    size_t getUseCount() const { return used_; }
 
 	void reset();
 	void update();

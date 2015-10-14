@@ -280,7 +280,7 @@ BOOST_AUTO_TEST_CASE(test_full_magnusson_no_swap)
 	
     // -----------------------------------------------------
     // Tracking
-    Magnusson tracker(&g, false);
+    Magnusson tracker(&g, false, true);
     std::vector<TrackingAlgorithm::Path> paths;
     double score = tracker.track(paths);
 

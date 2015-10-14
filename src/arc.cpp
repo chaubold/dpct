@@ -105,7 +105,51 @@ void Arc::updateEnabledState()
         if(enabled_ == false && dependsOnCellInNode_->getCellCount() > 0)
             DEBUG_MSG("Enabling formerly disabled " << typeAsString() << "-arc");
 #endif
-		enabled_ = dependsOnCellInNode_->getCellCount() > 0; // or == 1?
+		if(type_ == Division)
+        {
+            if(used_ > 0)
+            {
+                // std::cout << "!!!!!!!!!!!!!!!!!!!!!!!! disabling division because it was already used!" << std::endl;
+                enabled_ = false;
+            }
+            else
+            {
+                enabled_ = dependsOnCellInNode_->getCellCount() == 1;
+                if(enabled_)
+                {
+                    size_t activeOutArcs = 0;
+                    
+                    // make sure that there is no active arc between the mother and daughter candidates yet
+                    for(Node::ConstArcIt outArcIt = dependsOnCellInNode_->getOutArcsBegin(); 
+                        outArcIt != dependsOnCellInNode_->getOutArcsEnd(); 
+                        ++outArcIt)
+                    {
+                        if((*outArcIt)->getTargetNode() == targetNode_)
+                        {
+                            if((*outArcIt)->getUseCount() > 0)
+                            {
+                                // std::cout << "!!!!!!!!!!!!!!!!!!!!!!!! disabling division because the very same link has been used as transition!" << std::endl;
+                                enabled_ = false;
+                                return;
+                            }
+                        }
+
+                        activeOutArcs += (*outArcIt)->getUseCount();
+                    }
+
+                    // make sure that we have only one active out arc
+                    if(activeOutArcs != 1)
+                    {
+                        enabled_ = false;
+                        // std::cout << "!!!!!!!!!!!!!!!!!!!!!!!! disabling division because mother node has " << activeOutArcs << " active outgoing arcs" << std::endl;
+                    }
+                }
+            }
+        }
+        else
+        {
+            enabled_ = dependsOnCellInNode_->getCellCount() > 0; // or == 1?
+        }
 	}
     else if(type_ == Swap)
     {
