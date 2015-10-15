@@ -74,7 +74,8 @@ void Node::reset()
 void Node::increaseCellCount()
 {
     cellCount_++;
-    notifyObserverArcs([](Arc* a){ a->update(); });
+    // TODO: remove the following as Graph::visitNodesPerTimestep performs the update anyway?
+    visitObserverArcs([](Arc* a){ a->update(); });
 }
 
 void Node::addToCellCountScore(size_t state, double score)

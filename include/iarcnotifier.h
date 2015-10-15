@@ -17,7 +17,7 @@ public:
 
 	void registerObserverArc(Arc* arc);
 
-	void notifyObserverArcs(NotificationFunction notificationFunc);
+	void visitObserverArcs(NotificationFunction notificationFunc);
 
 protected:
 	std::vector<Arc*> observerArcs_;

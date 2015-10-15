@@ -9,7 +9,7 @@ void IArcNotifier::registerObserverArc(Arc* arc)
     observerArcs_.push_back(arc);
 }
 
-void IArcNotifier::notifyObserverArcs(NotificationFunction notificationFunc)
+void IArcNotifier::visitObserverArcs(NotificationFunction notificationFunc)
 {
     for(std::vector<Arc*>::iterator it = observerArcs_.begin(); it != observerArcs_.end(); ++it)
     {
