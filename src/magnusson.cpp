@@ -19,7 +19,9 @@ Magnusson::Magnusson(Graph* graph, bool withSwap, bool usedArcsScoreZero, bool u
     usedArcsScoreZero_(usedArcsScoreZero),
     useFastFirstIter_(useFastFirstIter),
     selectorFunction_( selectBestInArc ) // globally defined function
-{}
+{
+    assert(usedArcsScoreZero == true);
+}
 
 void Magnusson::setPathStartSelectorFunction(SelectorFunction func)
 {

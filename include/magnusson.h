@@ -50,7 +50,8 @@ public:
 public:
     //--------------------------------------
     // API
-    Magnusson(Graph* graph, bool withSwap, bool usedArcsScoreZero = false, bool useFastFirstIter = false);
+    // WARNING: setting usedArcsScoreZero=false yields undefined behaviour at the moment!
+    Magnusson(Graph* graph, bool withSwap, bool usedArcsScoreZero = true, bool useFastFirstIter = false);
 
     // specify a strategy to pick a path that starts from a node
     // through an arc.
