@@ -49,6 +49,8 @@ public:
     ConstArcIt getInArcsEnd()   const { return inArcs_.end(); }
     ConstArcIt getOutArcsBegin()const { return outArcs_.begin(); }
     ConstArcIt getOutArcsEnd()  const { return outArcs_.end(); }
+    Arc* getAppearanceArc() const    { return appearanceArc_; }
+    Arc* getDisappearanceArc() const { return disappearanceArc_; }
 
     Arc*  getBestInArc() const     { return bestInArc_; }
     size_t getCellCount() const    { return cellCount_; }
@@ -70,6 +72,8 @@ protected:
 	// things every node needs
 	std::vector<Arc*> inArcs_;
 	std::vector<Arc*> outArcs_;
+    Arc* appearanceArc_;
+    Arc* disappearanceArc_;
 	size_t cellCount_; // do we also need to store how many cells are already dividing?
 	Arc* bestInArc_;
     std::vector<double> cellCountScore_;

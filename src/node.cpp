@@ -16,6 +16,8 @@ Node::Node(const std::vector<double>& cellCountScore,
     IUserDataHolder(data),
     cellCountScore_(cellCountScore),
     bestInArc_(nullptr),
+    appearanceArc_(nullptr),
+    disappearanceArc_(nullptr),
     cellCount_(0),
     currentScore_(0.0)
 {
@@ -35,16 +37,31 @@ Node::Node(const Node& n, UserDataPtr data):
 
 void Node::registerInArc(Arc* arc)
 {
+    if(arc->getType() == Arc::Appearance)
+    {
+        if(appearanceArc_ != nullptr)
+            throw std::runtime_error("Node can not have two appearance arcs!");
+        appearanceArc_ = arc;
+    }
     inArcs_.push_back(arc);
 }
 
 void Node::registerOutArc(Arc* arc)
 {
+    if(arc->getType() == Arc::Disappearance)
+    {
+        if(disappearanceArc_ != nullptr)
+            throw std::runtime_error("Node can not have two disappearance arcs!");
+        disappearanceArc_ = arc;
+    }
     outArcs_.push_back(arc);
 }
 
 bool Node::removeInArc(Arc *arc)
 {
+    if(arc == appearanceArc_)
+        appearanceArc_ = nullptr;
+
     ArcIt it = std::find(inArcs_.begin(), inArcs_.end(), arc);
     if(it != inArcs_.end())
     {
@@ -56,6 +73,9 @@ bool Node::removeInArc(Arc *arc)
 
 bool Node::removeOutArc(Arc *arc)
 {
+    if(arc == disappearanceArc_)
+        disappearanceArc_ = nullptr;
+
     DEBUG_MSG("Trying to remove out arc from a vector of size: " << outArcs_.size());
     ArcIt it = std::find(outArcs_.begin(), outArcs_.end(), arc);
     if(it != outArcs_.end())
