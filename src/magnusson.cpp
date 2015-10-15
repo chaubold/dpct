@@ -75,11 +75,14 @@ void Magnusson::batchFirstIteration(double& score, Solution& paths)
 
 void Magnusson::updateNodesByTimestep()
 {
+    updateNode(&graph_->getSourceNode());
+
     for(size_t t = 0; t < graph_->getNumTimesteps(); ++t)
     {
         graph_->visitNodesInTimestep(t, std::bind(&Magnusson::updateNode, this, _1));
     }
-    graph_->visitSpecialNodes(std::bind(&Magnusson::updateNode, this, _1));
+
+    updateNode(&graph_->getSinkNode());
 }
 
 double Magnusson::track(Solution& paths)
