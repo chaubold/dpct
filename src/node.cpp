@@ -160,6 +160,32 @@ void Node::addArcCost(Arc* other, bool usedArcsScoreZero)
     }
 }
 
+size_t Node::getMoveInArcUsedSum() const
+{
+    size_t sum = 0;
+    
+    for(const auto& arc : inArcs_)
+    {
+        if(arc->getType() == Arc::Move || arc->getType() == Arc::Division)
+            sum += arc->getUseCount();
+    }
+
+    return sum;
+}
+
+size_t Node::getMoveOutArcUsedSum() const
+{
+    size_t sum = 0;
+    
+    for(const auto& arc : outArcs_)
+    {
+        if(arc->getType() == Arc::Move)
+            sum += arc->getUseCount();
+    }
+
+    return sum;
+}
+
 std::ostream& operator<<(std::ostream& lhs, const Node& rhs)
 {
     lhs << "Node with scores(";

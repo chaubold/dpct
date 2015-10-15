@@ -49,6 +49,8 @@ public:
     ConstArcIt getInArcsEnd()   const { return inArcs_.end(); }
     ConstArcIt getOutArcsBegin()const { return outArcs_.begin(); }
     ConstArcIt getOutArcsEnd()  const { return outArcs_.end(); }
+    size_t getMoveInArcUsedSum() const;
+    size_t getMoveOutArcUsedSum() const;
     Arc* getAppearanceArc() const    { return appearanceArc_; }
     Arc* getDisappearanceArc() const { return disappearanceArc_; }
 
