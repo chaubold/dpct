@@ -99,14 +99,11 @@ std::string Arc::typeAsString() const
 
 void Arc::updateEnabledState()
 {
-	if(dependsOnCellInNode_ != nullptr)
-	{
-#ifdef DEBUG_LOG
-        if(enabled_ == false && dependsOnCellInNode_->getCellCount() > 0)
-            DEBUG_MSG("Enabling formerly disabled " << typeAsString() << "-arc");
-#endif
-		if(type_ == Division)
+	switch(type_)
+    {
+        case Division:
         {
+            assert(dependsOnCellInNode_ != nullptr);
             if(used_ > 0)
             {
                 // std::cout << "!!!!!!!!!!!!!!!!!!!!!!!! disabling division because it was already used!" << std::endl;
@@ -142,25 +139,48 @@ void Arc::updateEnabledState()
                     {
                         enabled_ = false;
                         // std::cout << "!!!!!!!!!!!!!!!!!!!!!!!! disabling division because mother node has " << activeOutArcs << " active outgoing arcs" << std::endl;
+                        return;
                     }
+
+                    size_t activeDivisions = 0;
+                    auto divisionCounter = [&](Arc* a){
+                        activeDivisions += a->getUseCount();
+                    };
+                    dependsOnCellInNode_->visitObserverArcs(divisionCounter);
+
+                    if(activeDivisions > 0)
+                        enabled_ = false;
                 }
             }
-        }
-        else
+        } break;
+        case Swap:
         {
-            enabled_ = dependsOnCellInNode_->getCellCount() > 0; // or == 1?
+            // check that the link that this swap should exchange with is still used:
+            Arc* arcToCut = std::static_pointer_cast<MagnussonSwapArcUserData>(this->getUserData())->getCutArc();
+            enabled_ = arcToCut->used_ > 0;
+        } break;
+        case Appearance:
+        {
+            enabled_ = targetNode_->getMoveInArcUsedSum() == 0;
+        } break;
+        case Disappearance:
+        {
+            enabled_ = sourceNode_->getMoveOutArcUsedSum() == 0;
+        } break;
+        case Move:
+        {
+            if(targetNode_->getAppearanceArc() != nullptr && targetNode_->getAppearanceArc()->getUseCount() > 0)
+                enabled_ = false;
+            else if(sourceNode_->getDisappearanceArc() != nullptr && sourceNode_->getDisappearanceArc()->getUseCount() > 0)
+                enabled_ = false;
+            else
+                enabled_ = true;
+        } break;
+    	default:
+    	{
+            enabled_ = true;
         }
-	}
-    else if(type_ == Swap)
-    {
-        // check that the link that this swap should exchange with is still used:
-        Arc* arcToCut = std::static_pointer_cast<MagnussonSwapArcUserData>(this->getUserData())->getCutArc();
-        enabled_ = arcToCut->used_ > 0;
     }
-	else
-	{
-        enabled_ = true;
-	}
 }
 
 void Arc::markUsed(bool used)
