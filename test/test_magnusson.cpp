@@ -41,7 +41,7 @@ BOOST_AUTO_TEST_CASE(two_cell_test_magnusson)
     double score = tracker.track(paths);
 
     std::cout << "Tracker returned score " << score << std::endl;
-    BOOST_CHECK_EQUAL(score, 11.0);
+    BOOST_CHECK_EQUAL(score, 10.0); // arc score is applied only once!
     BOOST_CHECK_EQUAL(paths.size(), 2);
 }
 
@@ -391,7 +391,7 @@ BOOST_AUTO_TEST_CASE(test_full_magnusson_fast_1st_iter)
     
     // -----------------------------------------------------
     // Tracking
-    Magnusson tracker(&g, false, false, true);
+    Magnusson tracker(&g, false, true, true);
     std::vector<TrackingAlgorithm::Path> paths;
     double score = tracker.track(paths);
 
