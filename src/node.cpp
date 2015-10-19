@@ -186,6 +186,31 @@ size_t Node::getMoveOutArcUsedSum() const
     return sum;
 }
 
+void Node::visitInArcs(const VisitorFunction& func)
+{
+    for(auto a : inArcs_)
+        func(a);
+}
+
+void Node::visitInArcs (const ConstVisitorFunction& func) const
+{
+    for(auto a : inArcs_)
+        func(a);
+}
+
+void Node::visitOutArcs(const VisitorFunction& func)
+{
+    for(auto a : outArcs_)
+        func(a);
+}
+
+void Node::visitOutArcs (const ConstVisitorFunction& func) const
+{
+    for(auto a : outArcs_)
+        func(a);
+}
+
+
 std::ostream& operator<<(std::ostream& lhs, const Node& rhs)
 {
     lhs << "Node with scores(";

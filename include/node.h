@@ -19,6 +19,8 @@ class Node : public IUserDataHolder, public IArcNotifier
 public:
 	typedef std::vector<Arc*>::iterator ArcIt;
     typedef std::vector<Arc*>::const_iterator ConstArcIt;
+    typedef std::function<void(Arc*)> VisitorFunction;
+    typedef std::function<void(const Arc*)> ConstVisitorFunction;
 
 public:
     Node() = delete;
@@ -49,6 +51,11 @@ public:
     ConstArcIt getInArcsEnd()   const { return inArcs_.end(); }
     ConstArcIt getOutArcsBegin()const { return outArcs_.begin(); }
     ConstArcIt getOutArcsEnd()  const { return outArcs_.end(); }
+    void visitInArcs(const VisitorFunction& func);
+    void visitInArcs (const ConstVisitorFunction& func) const;
+    void visitOutArcs(const VisitorFunction& func);
+    void visitOutArcs (const ConstVisitorFunction& func) const;
+
     size_t getMoveInArcUsedSum() const;
     size_t getMoveOutArcUsedSum() const;
     Arc* getAppearanceArc() const    { return appearanceArc_; }
