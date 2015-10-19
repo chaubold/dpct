@@ -158,6 +158,9 @@ protected:
 	ArcVector arcs_;
 	size_t numNodes_;
     bool isCopiedGraph_;
+
+public:
+    friend class LemonGraph;
 };
 
 } // namespace dpct

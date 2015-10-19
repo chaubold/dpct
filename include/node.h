@@ -74,7 +74,6 @@ public:
 
     friend std::ostream& operator<<(std::ostream& lhs, const Node& rhs);
 
-protected:
     double getScoreDeltaForCurrentCellCount();
 
 protected:
