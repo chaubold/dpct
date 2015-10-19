@@ -222,6 +222,7 @@ void Magnusson::backtrack(Node* start, TrackingAlgorithm::Path& p, TrackingAlgor
             bestArc = current->getBestInArc();
 
 		assert(bestArc != nullptr);
+        assert(bestArc->isEnabled());
 
         if(bestArc->getType() == Arc::Division || (usedArcsScoreZero_ && bestArc->getType() == Arc::Move))
             bestArc->markUsed();

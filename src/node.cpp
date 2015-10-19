@@ -137,6 +137,19 @@ void Node::updateBestInArcAndScore()
         }
 #endif
     }
+    else
+    {
+        bestInArc_ = nullptr;
+        // currentScore_ = std::numeric_limits<double>::lowest();
+        if(getUserData())
+        {
+            DEBUG_MSG("Node (" << *(std::static_pointer_cast<NameData>(getUserData())) << ") update: no good in-arc!");
+        }
+        else
+        {
+            DEBUG_MSG("Node update: no good in-arc!");
+        }
+    }
 }
 
 void Node::accumulateScoreDelta(Node *other)
