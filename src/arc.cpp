@@ -174,7 +174,20 @@ void Arc::updateEnabledState()
             else if(sourceNode_->getDisappearanceArc() != nullptr && sourceNode_->getDisappearanceArc()->getUseCount() > 0)
                 enabled_ = false;
             else
-                enabled_ = true;
+            {
+                size_t activeDivisions = 0;
+                auto divisionCounter = [&](Arc* a){
+                    activeDivisions += a->getUseCount();
+                };
+                sourceNode_->visitObserverArcs(divisionCounter);
+
+                if(activeDivisions > 0)
+                {
+                    enabled_ = false;
+                }
+                else
+                    enabled_ = true;
+            }
         } break;
     	default:
     	{
