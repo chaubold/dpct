@@ -18,6 +18,7 @@ Magnusson::Magnusson(Graph* graph, bool withSwap, bool usedArcsScoreZero, bool u
     withSwap_(withSwap),
     usedArcsScoreZero_(usedArcsScoreZero),
     useFastFirstIter_(useFastFirstIter),
+    maxNumPaths_(std::numeric_limits<size_t>::max()),
     selectorFunction_( selectBestInArc ) // globally defined function
 {
     assert(usedArcsScoreZero == true);
@@ -100,7 +101,7 @@ double Magnusson::track(Solution& paths)
         batchFirstIteration(score, paths);
     }
 
-    while(true)
+    while(paths.size() < maxNumPaths_)
     {
         // backtrack best path, increase cell counts -> invalidates scores!
         Path p;
