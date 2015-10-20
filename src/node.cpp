@@ -139,8 +139,8 @@ void Node::updateBestInArcAndScore()
     }
     else
     {
-        bestInArc_ = nullptr;
-        // currentScore_ = std::numeric_limits<double>::lowest();
+        // bestInArc_ = nullptr;
+        currentScore_ = std::numeric_limits<double>::lowest();
         if(getUserData())
         {
             DEBUG_MSG("Node (" << *(std::static_pointer_cast<NameData>(getUserData())) << ") update: no good in-arc!");

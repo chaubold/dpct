@@ -81,7 +81,7 @@ void Magnusson::updateNodesByTimestep()
     {
         graph_->visitNodesInTimestep(t, std::bind(&Magnusson::updateNode, this, _1));
     }
-
+    updateNode(&graph_->getSourceNode());
     updateNode(&graph_->getSinkNode());
 }
 
@@ -154,7 +154,10 @@ double Magnusson::track(Solution& paths)
 
 void Magnusson::updateNode(Node* n)
 {
-	n->updateBestInArcAndScore();
+    // do not try to find best in arc of source as there is none (yields -inf score otherwise)
+    if(n != &graph_->getSourceNode())
+	   n->updateBestInArcAndScore();
+
     Node* predecessor = nullptr;
     double motionModelScoreDelta = 0.0;
 
