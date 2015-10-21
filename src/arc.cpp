@@ -40,6 +40,7 @@ Arc::Arc(Node* source,
         dependsOnCellInNode_->registerObserverArc(this);
     }
 
+    updateEnabledState();
     update();
 }
 
@@ -64,7 +65,7 @@ void Arc::reset()
 void Arc::update()
 {
     currentScore_ = getScoreDelta() + sourceNode_->getCurrentScore();
-    updateEnabledState();
+    // updateEnabledState();
     DEBUG_MSG(typeAsString() << "-Arc update: score is now " << currentScore_ << " (enabled=" 
                << (enabled_?"true":"false") << ")" << " scoreDelta=" << scoreDelta_);
 }
@@ -72,7 +73,7 @@ void Arc::update()
 void Arc::update(double additionalDelta)
 {
 	currentScore_ = getScoreDelta() + sourceNode_->getCurrentScore() + additionalDelta;
-    updateEnabledState();
+    // updateEnabledState();
     DEBUG_MSG(typeAsString() << "-Arc update: score is now " << currentScore_ << " (enabled=" 
                << (enabled_?"true":"false") << ")" << " scoreDelta=" << scoreDelta_);
 }
@@ -142,11 +143,12 @@ void Arc::updateEnabledState()
                         return;
                     }
 
-                    size_t activeDivisions = 0;
-                    auto divisionCounter = [&](Arc* a){
-                        activeDivisions += a->getUseCount();
-                    };
-                    dependsOnCellInNode_->visitObserverArcs(divisionCounter);
+                    // size_t activeDivisions = 0;
+                    // auto divisionCounter = [&](Arc* a){
+                    //     activeDivisions += a->getUseCount();
+                    // };
+                    // dependsOnCellInNode_->visitObserverArcs(divisionCounter);
+                    size_t activeDivisions = dependsOnCellInNode_->getNumActiveDivisions();
 
                     if(activeDivisions > 0)
                         enabled_ = false;
@@ -175,12 +177,13 @@ void Arc::updateEnabledState()
                 enabled_ = false;
             else
             {
-                size_t activeDivisions = 0;
-                auto divisionCounter = [&](Arc* a){
-                    activeDivisions += a->getUseCount();
-                };
-                sourceNode_->visitObserverArcs(divisionCounter);
+                // size_t activeDivisions = 0;
+                // auto divisionCounter = [&](Arc* a){
+                //     activeDivisions += a->getUseCount();
+                // };
+                // sourceNode_->visitObserverArcs(divisionCounter);
 
+                size_t activeDivisions = sourceNode_->getNumActiveDivisions();
                 if(activeDivisions > 0)
                 {
                     enabled_ = false;
@@ -198,15 +201,46 @@ void Arc::updateEnabledState()
 
 void Arc::markUsed(bool used)
 {
+    static auto arcEnabler = [](Arc* a){
+        a->updateEnabledState();
+    };
+
     if(used)
+    {
         used_++;
+    }
     else
     {
         if(used_ == 0)
             throw std::runtime_error("Cannot reduce use count of arc that is not used!");
         used_--;
     }
-    updateEnabledState();
+    
+    int count = used ? 1 : -1;
+
+    if(type_ == Division)
+    {
+        dependsOnCellInNode_->increaseNumActiveDivisions(count);
+        targetNode_->increaseNumUsedInArcs(count);
+        dependsOnCellInNode_->visitObserverArcs(arcEnabler);
+        dependsOnCellInNode_->visitOutArcs(arcEnabler);
+        targetNode_->visitInArcs(arcEnabler);
+    }
+    else if(type_ == Move)
+    {
+        sourceNode_->increaseNumUsedOutArcs(count);
+        targetNode_->increaseNumUsedInArcs(count);
+        sourceNode_->visitObserverArcs(arcEnabler);
+        targetNode_->visitInArcs(arcEnabler);
+    }
+    else if(type_ == Appearance)
+    {
+        targetNode_->visitInArcs(arcEnabler);
+    }
+    else if(type_ == Disappearance)
+    {
+        sourceNode_->visitInArcs(arcEnabler);
+    }
 }
 
 } // namespace dpct

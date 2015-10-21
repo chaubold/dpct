@@ -65,6 +65,8 @@ public:
 
     std::string typeAsString() const;
 
+    friend class Node;
+
 protected:
 	void updateEnabledState();
 
