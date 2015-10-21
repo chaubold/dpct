@@ -279,7 +279,7 @@ void Magnusson::insertSwapArcsForNewUsedPath(TrackingAlgorithm::Path &p)
                 insertDisappearanceSwapArcs(*it);
                 break;
             case Arc::Swap:
-                throw new std::runtime_error("There should not be swap arcs left after cleaning up the path");
+                throw std::runtime_error("There should not be swap arcs left after cleaning up the path");
         }
     }
 }
@@ -386,7 +386,7 @@ void Magnusson::insertAppearanceSwapArcs(Arc* a)
             }
 
             if(alternativeAppearanceArc == nullptr)
-                throw new std::runtime_error("alternative target did not have disappearance arc...");
+                throw std::runtime_error("alternative target did not have disappearance arc...");
 
             // found a candidate
             double score = alternativeAppearanceArc->getScoreDelta() + (*inIt)->getScoreDelta() - a->getScoreDelta();
@@ -477,7 +477,7 @@ void Magnusson::insertDisappearanceSwapArcs(Arc* a)
             }
 
             if(alternativeDisappearanceArc == nullptr)
-                throw new std::runtime_error("alternative target did not have disappearance arc...");
+                throw std::runtime_error("alternative target did not have disappearance arc...");
 
             // found a candidate
             double score = alternativeDisappearanceArc->getScoreDelta() + (*outIt)->getScoreDelta() - a->getScoreDelta();
