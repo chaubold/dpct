@@ -157,7 +157,7 @@ void Arc::updateEnabledState()
         case Move:
         {
             enabled_ = (targetNode_->getAppearanceArc() == nullptr || targetNode_->getAppearanceArc()->getUseCount() == 0)
-                        && (sourceNode_->getDisappearanceArc() == nullptr || sourceNode_->getDisappearanceArc()->getUseCount() > 0)
+                        && (sourceNode_->getDisappearanceArc() == nullptr || sourceNode_->getDisappearanceArc()->getUseCount() == 0)
                         && sourceNode_->getNumActiveDivisions() == 0;
         } break;
     	default:
@@ -188,6 +188,10 @@ void Arc::markUsed(bool used)
 
     if(type_ == Division)
     {
+    	if(dependsOnCellInNode_->getCellCount() != 1)
+    		throw std::runtime_error("Using division arc where mother cell does not contain exactly one cell");
+    	if(dependsOnCellInNode_->getNumActiveDivisions() != 0)
+    		throw std::runtime_error("Using division arc where mother cell already has active divisions");
         dependsOnCellInNode_->increaseNumActiveDivisions(count);
         targetNode_->increaseNumUsedInArcs(count);
         dependsOnCellInNode_->visitObserverArcs(arcEnabler);
