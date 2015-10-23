@@ -295,13 +295,13 @@ void Magnusson::insertMoveSwapArcs(Arc* a)
     for(Node::ArcIt outIt = source->getOutArcsBegin(); outIt != source->getOutArcsEnd(); ++outIt)
     {
         Node *alternativeTarget = (*outIt)->getTargetNode();
-        if(alternativeTarget == target || graph_->isSpecialNode(alternativeTarget) || (*outIt)->getType() == Arc::Swap)
+        if(alternativeTarget == target || (*outIt)->getType() == Arc::Division || (*outIt)->getType() == Arc::Swap)
             continue;
 
         for(Node::ArcIt inIt = target->getInArcsBegin(); inIt != target->getInArcsEnd(); ++inIt)
         {
             Node *alternativeSource = (*inIt)->getSourceNode();
-            if(alternativeSource == source || graph_->isSpecialNode(alternativeSource) || (*inIt)->getType() == Arc::Swap)
+            if(alternativeSource == source || (*inIt)->getType() == Arc::Division || (*inIt)->getType() == Arc::Swap)
                 continue;
 
             // found a candidate
