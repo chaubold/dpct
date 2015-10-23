@@ -228,7 +228,7 @@ void Magnusson::backtrack(Node* start, TrackingAlgorithm::Path& p, TrackingAlgor
 		assert(bestArc != nullptr);
         assert(bestArc->isEnabled());
 
-        if(bestArc->getType() == Arc::Division || (usedArcsScoreZero_ && bestArc->getType() == Arc::Move))
+        if(bestArc->getType() != Arc::Dummy)
             bestArc->markUsed();
 		p.push_back(bestArc);
 		current = bestArc->getSourceNode();
@@ -279,7 +279,10 @@ void Magnusson::insertSwapArcsForNewUsedPath(TrackingAlgorithm::Path &p)
                 insertDisappearanceSwapArcs(*it);
                 break;
             case Arc::Swap:
+            {
+                printPath(p);
                 throw std::runtime_error("There should not be swap arcs left after cleaning up the path");
+            }
         }
     }
 }
