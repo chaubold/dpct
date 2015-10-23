@@ -114,7 +114,7 @@ void Arc::updateEnabledState()
             {
                 enabled_ = dependsOnCellInNode_->getCellCount() == 1 
                 			&& (dependsOnCellInNode_->getDisappearanceArc() == nullptr || dependsOnCellInNode_->getDisappearanceArc()->getUseCount() == 0)
-                			&& (targetNode_->getAppearanceArc() != nullptr || targetNode_->getAppearanceArc()->getUseCount() == 0)
+                			&& (targetNode_->getAppearanceArc() == nullptr || targetNode_->getAppearanceArc()->getUseCount() == 0)
                 			&& dependsOnCellInNode_->getNumActiveDivisions() == 0
                 			&& dependsOnCellInNode_->getMoveOutArcUsedSum() == 1;
                 if(enabled_)
@@ -188,10 +188,13 @@ void Arc::markUsed(bool used)
 
     if(type_ == Division)
     {
-    	if(dependsOnCellInNode_->getCellCount() != 1)
-    		throw std::runtime_error("Using division arc where mother cell does not contain exactly one cell");
-    	if(dependsOnCellInNode_->getNumActiveDivisions() != 0)
-    		throw std::runtime_error("Using division arc where mother cell already has active divisions");
+        if(used_)
+        {
+        	if(dependsOnCellInNode_->getCellCount() != 1)
+        		throw std::runtime_error("Using division arc where mother cell does not contain exactly one cell");
+        	if(dependsOnCellInNode_->getNumActiveDivisions() != 0)
+        		throw std::runtime_error("Using division arc where mother cell already has active divisions");
+        }
         dependsOnCellInNode_->increaseNumActiveDivisions(count);
         targetNode_->increaseNumUsedInArcs(count);
         dependsOnCellInNode_->visitObserverArcs(arcEnabler);
