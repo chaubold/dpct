@@ -90,9 +90,23 @@ void FlowGraph::maxFlowMinCostTracking()
 	}
 	while(std::get<0>(result).size() > 0 && std::get<2>(result) < 0.0);
 
+	cleanUpDuplicatedOutArcs();
+
 	std::chrono::time_point<std::chrono::high_resolution_clock> endTime_ = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed_seconds = endTime_ - startTime_;
 	LOG_MSG("Tracking took " << elapsed_seconds.count() << " secs");
+}
+
+void FlowGraph::cleanUpDuplicatedOutArcs()
+{
+	for(std::map<Node, Node>::iterator it = duplicateToParentMap_.begin(); it != duplicateToParentMap_.end(); ++it)
+	{
+		for(Graph::OutArcIt oa(baseGraph_, it->first); oa != lemon::INVALID; ++oa)
+		{
+			if(flowMap_[oa] != 0)
+				flowMap_[lemon::findArc(baseGraph_, it->second, baseGraph_.target(oa))] = flowMap_[oa];
+		}
+	}
 }
 
 /// use the current flow and arcEnabled maps to create a residual graph using the appropriate cost deltas
@@ -283,22 +297,6 @@ void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p, std::shared_ptr<Resi
 		DEBUG_MSG("Didn't find disappearance arc of " << baseGraph_.id(n));
 	};
 
-	auto sumOutFlow = [&](Node n)
-	{
-		int flow = 0;
-		for(Graph::OutArcIt oa(baseGraph_, n); oa != lemon::INVALID; ++oa)
-			flow += flowMap_[oa];
-		return flow;
-	};
-
-	auto sumInFlow = [&](Node n)
-	{
-		int flow = 0;
-		for(Graph::InArcIt ia(baseGraph_, n); ia != lemon::INVALID; ++ia)
-			flow += flowMap_[ia];
-		return flow;
-	};
-
 	// check all arcs on path whether they toggle other arc states
 	for(auto a : p)
 	{
@@ -365,6 +363,22 @@ void FlowGraph::printAllFlows()
 		DEBUG_MSG("\t(" << baseGraph_.id(baseGraph_.source(a)) << ", " 
 			<< baseGraph_.id(baseGraph_.target(a)) << "): " << flowMap_[a]);
 	}
+}
+
+int FlowGraph::sumOutFlow(Node n) const
+{
+	int flow = 0;
+	for(Graph::OutArcIt oa(baseGraph_, n); oa != lemon::INVALID; ++oa)
+		flow += flowMap_[oa];
+	return flow;
+}
+
+int FlowGraph::sumInFlow(Node n) const
+{
+	int flow = 0;
+	for(Graph::InArcIt ia(baseGraph_, n); ia != lemon::INVALID; ++ia)
+		flow += flowMap_[ia];
+	return flow;
 }
 
 } // end namespace dpct

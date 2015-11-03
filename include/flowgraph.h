@@ -51,6 +51,8 @@ public: // API
 
 	Node getSource() const { return source_; }
 	Node getTarget() const { return target_; }
+	int sumOutFlow(Node n) const;
+	int sumInFlow(Node n) const;
 
 	const FlowMap& getFlowMap() const { return flowMap_; }
 
@@ -70,6 +72,9 @@ private:
 	/// updates the arcEnabled map by checking which divisions should be enabled/disabled after this track
 	/// ATTENTION: assumes flow has been augmented for this path already!
 	void updateEnabledArcs(const Path& p, std::shared_ptr<ResidualGraph> residualGraph);
+
+	/// copy flow from the duplicated to the original arcs so it is seen by the user
+	void cleanUpDuplicatedOutArcs();
 
 	void printPath(const Path& p);
 	void printAllFlows();
