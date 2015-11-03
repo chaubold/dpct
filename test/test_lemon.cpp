@@ -3,6 +3,7 @@
 #include <iostream>
 #include <boost/test/unit_test.hpp>
 #include "graph.h"
+#include "flowgraph.h"
 
 #include <lemon/adaptors.h>
 #include <lemon/bellman_ford.h>
@@ -167,6 +168,7 @@ BOOST_AUTO_TEST_CASE(pure_lemon)
                 std::cout << "setting arc " << "(" << g.id(g.source(a)) << ", " << g.id(g.target(a))
                         << "), delta: " << delta 
                         << " new flow: " << flowMap[a]
+                        << (residualG.forward(a) ? " forward" : " backward")
                         << std::endl;
             }
         }
@@ -235,6 +237,7 @@ BOOST_AUTO_TEST_CASE(pure_lemon)
                 std::cout << "setting arc " << "(" << g.id(g.source(a)) << ", " << g.id(g.target(a))
                         << "), delta: " << delta 
                         << " new flow: " << flowMap[a]
+                        << (residualG.forward(a) ? " forward" : " backward")
                         << std::endl;
             }
         }
@@ -310,6 +313,7 @@ BOOST_AUTO_TEST_CASE(pure_lemon)
                 std::cout << "setting arc " << "(" << g.id(g.source(a)) << ", " << g.id(g.target(a))
                         << "), delta: " << delta 
                         << " new flow: " << flowMap[a]
+                        << (residualG.forward(a) ? " forward" : " backward")
                         << std::endl;
             }
         }
@@ -324,6 +328,7 @@ BOOST_AUTO_TEST_CASE(pure_lemon)
                 std::cout << "(" << residualG.id(residualG.source(it)) << "=" << g.id(residualG.source(it)) << ", " << residualG.id(residualG.target(it)) << "=" << g.id(residualG.target(it)) 
                         << "), delta: " << delta 
                         << " new flow: " << flowMap[lemon::findArc(g, residualG.target(it), residualG.source(it))]
+                        << (residualG.forward(it) ? " forward" : " backward")
                         << std::endl;
             }
         }
@@ -389,6 +394,7 @@ BOOST_AUTO_TEST_CASE(pure_lemon)
                 std::cout << "setting arc " << "(" << g.id(g.source(a)) << ", " << g.id(g.target(a))
                         << "), delta: " << delta 
                         << " new flow: " << flowMap[a]
+                        << (residualG.forward(a) ? " forward" : " backward")
                         << std::endl;
             }
         }
@@ -405,4 +411,37 @@ BOOST_AUTO_TEST_CASE(pure_lemon)
             std::cout << std::endl;
         }
     }
+}
+
+BOOST_AUTO_TEST_CASE( flowgraph_simple )
+{
+    FlowGraph g;
+    typedef FlowGraph::Node Node;
+    typedef FlowGraph::Arc Arc;
+
+    Node n_1_1 = g.addNode({0.0});
+    Node n_1_2 = g.addNode({0.0});
+    Node n_2_1 = g.addNode({0.0});
+    Node n_2_2 = g.addNode({0.0});
+    Node n_2_3 = g.addNode({0.0});
+
+    Node s = g.getSource();
+    Node t = g.getTarget();
+
+    Arc app1 = g.addArc(s, n_1_1, {0.0});
+    Arc app2 = g.addArc(s, n_1_2, {0.0});
+
+    Arc move1 = g.addArc(n_1_1, n_2_1, {-4.0});
+    Arc move2 = g.addArc(n_1_1, n_2_2, {-3.0});
+    Arc move3 = g.addArc(n_1_2, n_2_2, {-1.0});
+    Arc move4 = g.addArc(n_1_2, n_2_3, {-4.0});
+
+    Arc dis1 = g.addArc(n_2_1, t, {-2.0});
+    Arc dis2 = g.addArc(n_2_2, t, {-2.0});
+    Arc dis3 = g.addArc(n_2_3, t, {-4.0});
+
+    Arc div1 = g.allowMitosis(n_1_1, {-4.0});
+    Arc div2 = g.allowMitosis(n_1_2, {-4.0});
+
+    g.maxFlowMinCostTracking();
 }
