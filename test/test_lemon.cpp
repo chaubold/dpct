@@ -430,6 +430,9 @@ BOOST_AUTO_TEST_CASE( flowgraph_simple )
 
     Arc app1 = g.addArc(s, n_1_1, {0.0});
     Arc app2 = g.addArc(s, n_1_2, {0.0});
+    Arc app3 = g.addArc(s, n_2_1, {10.0});
+    Arc app4 = g.addArc(s, n_2_2, {10.0});
+    Arc app5 = g.addArc(s, n_2_3, {10.0});
 
     Arc move1 = g.addArc(n_1_1, n_2_1, {-4.0});
     Arc move2 = g.addArc(n_1_1, n_2_2, {-3.0});
@@ -439,6 +442,8 @@ BOOST_AUTO_TEST_CASE( flowgraph_simple )
     Arc dis1 = g.addArc(n_2_1, t, {-2.0});
     Arc dis2 = g.addArc(n_2_2, t, {-2.0});
     Arc dis3 = g.addArc(n_2_3, t, {-4.0});
+    Arc dis4 = g.addArc(n_1_1, t, {10.0});
+    Arc dis5 = g.addArc(n_1_2, t, {10.0});
 
     Arc div1 = g.allowMitosis(n_1_1, {-4.0});
     Arc div2 = g.allowMitosis(n_1_2, {-4.0});
