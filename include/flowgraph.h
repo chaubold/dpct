@@ -52,6 +52,8 @@ public: // API
 	Node getSource() const { return source_; }
 	Node getTarget() const { return target_; }
 
+	const FlowMap& getFlowMap() const { return flowMap_; }
+
 private:
 	/// use the current flow and arcEnabled maps to create a residual graph using the appropriate cost deltas
 	std::shared_ptr<ResidualGraph> createResidualGraph();
