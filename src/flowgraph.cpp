@@ -1,4 +1,6 @@
 #include "flowgraph.h"
+#include "log.h"
+
 #include <chrono>
 #include <assert.h>
 
@@ -65,24 +67,23 @@ void FlowGraph::maxFlowMinCostTracking()
 	ShortestPathResult result;
 	do
 	{
-		std::cout << "\n>>> Iteration" << std::endl;
-		std::cout << "Current Flow:" << std::endl;
+		LOG_MSG("\t>>> Iteration");
+		LOG_MSG("Current Flow:");
 		printAllFlows();
 
 		std::shared_ptr<ResidualGraph> residualGraph = createResidualGraph();
 		std::shared_ptr<ResidualDistMap> residualDistMap = createResidualDistanceMap(residualGraph);
 		result = findShortestPath(residualGraph, residualDistMap);
 
-		std::cout << "\tFound " << (std::get<1>(result) ? "path": "cycle") 
+		LOG_MSG("\tFound " << (std::get<1>(result) ? "path": "cycle")
 				<< " of length " << std::get<0>(result).size() 
-				<< " of distance " << std::get<2>(result) 
-				<< std::endl;
+				<< " of distance " << std::get<2>(result));
 
 		if(std::get<0>(result).size() > 0 && std::get<2>(result) < 0.0)
 		{
-			std::cout << "\tUpdating flow along path:";
-			printPath(std::get<0>(result));
-			std::cout << std::endl;
+#ifdef DEBUG_LOG
+			printPath(std::get<0>(result)); std::cout << std::endl;
+#endif
 			augmentUnitFlow(std::get<0>(result), residualGraph);
 			updateEnabledArcs(std::get<0>(result), residualGraph);
 		}
@@ -91,7 +92,7 @@ void FlowGraph::maxFlowMinCostTracking()
 
 	std::chrono::time_point<std::chrono::high_resolution_clock> endTime_ = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed_seconds = endTime_ - startTime_;
-	std::cout << "Tracking took " << elapsed_seconds.count() << " secs" << std::endl;
+	LOG_MSG("Tracking took " << elapsed_seconds.count() << " secs");
 }
 
 /// use the current flow and arcEnabled maps to create a residual graph using the appropriate cost deltas
@@ -197,23 +198,23 @@ void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p, std::shared_ptr<Resi
 	// define functions for enabling / disabling
 	auto toggleOutArcs = [&](Node n, bool state)
 	{
-		std::cout << "Setting out arcs of " << baseGraph_.id(n) << " to " << (state?"true":"false") << std::endl;
+		DEBUG_MSG("Setting out arcs of " << (baseGraph_.id(n)) << " to " << (state?"true":"false"));
 		for(Graph::OutArcIt oa(baseGraph_, n); oa != lemon::INVALID; ++oa)
 			arcEnabledMap_[oa] = state;
 	};
 
 	auto toggleInArcs = [&](Node n, bool state)
 	{
-		std::cout << "Setting in arcs of " << baseGraph_.id(n) << " to " << (state?"true":"false") << std::endl;
+		DEBUG_MSG("Setting in arcs of " << baseGraph_.id(n) << " to " << (state?"true":"false"));
 		for(Graph::InArcIt ia(baseGraph_, n); ia != lemon::INVALID; ++ia)
 			arcEnabledMap_[ia] = state;
 	};
 
 	auto toggleOutArcsBut = [&](Node n, Node exception, bool state)
 	{
-		std::cout << "Setting out arcs of " << baseGraph_.id(n) 
+		DEBUG_MSG("Setting out arcs of " << baseGraph_.id(n) 
 			<< " but " << baseGraph_.id(exception) 
-			<< " to " << (state?"true":"false") << std::endl;
+			<< " to " << (state?"true":"false"));
 		for(Graph::OutArcIt oa(baseGraph_, n); oa != lemon::INVALID; ++oa)
 		{
 			if(baseGraph_.target(oa) != exception)
@@ -223,9 +224,9 @@ void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p, std::shared_ptr<Resi
 
 	auto toggleInArcsBut = [&](Node n, Node exception, bool state)
 	{
-		std::cout << "Setting in arcs of " << baseGraph_.id(n) 
+		DEBUG_MSG("Setting in arcs of " << baseGraph_.id(n) 
 			<< " but " << baseGraph_.id(exception)
-			<< " to " << (state?"true":"false") << std::endl;
+			<< " to " << (state?"true":"false"));
 		for(Graph::InArcIt ia(baseGraph_, n); ia != lemon::INVALID; ++ia)
 		{
 			if(baseGraph_.source(ia) != exception)
@@ -235,10 +236,10 @@ void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p, std::shared_ptr<Resi
 
 	auto toggleDivision = [&](Node div, Node target, bool divState)
 	{
-		std::cout << "Setting division " << baseGraph_.id(div) << " to " << (divState?"true":"false") << std::endl;
+		DEBUG_MSG("Setting division " << baseGraph_.id(div) << " to " << (divState?"true":"false"));
 		for(Graph::InArcIt ia(baseGraph_, div); ia != lemon::INVALID; ++ia)
 		{
-			std::cout << "\ttoggling division arc " << baseGraph_.id(baseGraph_.source(ia)) << ", " << baseGraph_.id(baseGraph_.target(ia)) << std::endl;
+			DEBUG_MSG("\ttoggling division arc " << baseGraph_.id(baseGraph_.source(ia)) << ", " << baseGraph_.id(baseGraph_.target(ia)));
 			arcEnabledMap_[ia] = divState;
 		}
 
@@ -246,12 +247,12 @@ void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p, std::shared_ptr<Resi
 		{
 			if(baseGraph_.target(oa) == target)
 			{
-				std::cout << "\ttoggling move arc " << baseGraph_.id(baseGraph_.source(oa)) << ", " << baseGraph_.id(baseGraph_.target(oa)) << std::endl;
+				DEBUG_MSG("\ttoggling move arc " << baseGraph_.id(baseGraph_.source(oa)) << ", " << baseGraph_.id(baseGraph_.target(oa)));
 				arcEnabledMap_[oa] = !divState;
 				return;
 			}
 		}
-		std::cout << "was not able to find the arc to " << baseGraph_.id(target) << "!" << std::endl;
+		DEBUG_MSG("was not able to find the arc to " << baseGraph_.id(target) << "!");
 	};
 
 	auto toggleAppearanceArc = [&](Node n, bool state)
@@ -260,12 +261,12 @@ void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p, std::shared_ptr<Resi
 		{
 			if(baseGraph_.source(ia) == source_)
 			{
-				std::cout << "Setting appearance of " << baseGraph_.id(n) << " to " << (state?"true":"false") << std::endl;
+				DEBUG_MSG("Setting appearance of " << baseGraph_.id(n) << " to " << (state?"true":"false"));
 				arcEnabledMap_[ia] = state;
 				return;
 			}
 		}
-		std::cout << "Didn't find appearance arc of " << baseGraph_.id(n) << std::endl;
+		DEBUG_MSG("Didn't find appearance arc of " << baseGraph_.id(n));
 	};
 
 	auto toggleDisappearanceArc = [&](Node n, bool state)
@@ -274,12 +275,12 @@ void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p, std::shared_ptr<Resi
 		{
 			if(baseGraph_.target(oa) == target_)
 			{
-				std::cout << "Setting disappearance of " << baseGraph_.id(n) << " to " << (state?"true":"false") << std::endl;
+				DEBUG_MSG("Setting disappearance of " << baseGraph_.id(n) << " to " << (state?"true":"false"));
 				arcEnabledMap_[oa] = state;
 				return;
 			}
 		}
-		std::cout << "Didn't find disappearance arc of " << baseGraph_.id(n) << std::endl;
+		DEBUG_MSG("Didn't find disappearance arc of " << baseGraph_.id(n));
 	};
 
 	auto sumOutFlow = [&](Node n)
@@ -304,9 +305,9 @@ void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p, std::shared_ptr<Resi
 		bool forward = residualGraph->forward(a);
 		Node source = forward ? residualGraph->source(a) : residualGraph->target(a);
 		Node target = forward ? residualGraph->target(a) : residualGraph->source(a);
-		std::cout << "Updating stuff for " << (forward? "forward" : "backward") << " edge from " 
+		DEBUG_MSG("Updating stuff for " << (forward? "forward" : "backward") << " edge from " 
 			<< residualGraph->id(source) << "=" << baseGraph_.id(source) << " to "
-			<< residualGraph->id(target) << "=" << baseGraph_.id(target) << std::endl;
+			<< residualGraph->id(target) << "=" << baseGraph_.id(target));
 
 		// division updates
 		if(parentToDuplicateMap_.find(source) != parentToDuplicateMap_.end())
@@ -361,8 +362,8 @@ void FlowGraph::printAllFlows()
 {
 	for(Graph::ArcIt a(baseGraph_); a != lemon::INVALID; ++a)
 	{
-		std::cout << "\t(" << baseGraph_.id(baseGraph_.source(a)) << ", " 
-			<< baseGraph_.id(baseGraph_.target(a)) << "): " << flowMap_[a] << std::endl;
+		DEBUG_MSG("\t(" << baseGraph_.id(baseGraph_.source(a)) << ", " 
+			<< baseGraph_.id(baseGraph_.target(a)) << "): " << flowMap_[a]);
 	}
 }
 
