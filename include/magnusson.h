@@ -63,6 +63,9 @@ public:
     // even though it gets 2 predecessors as input
     void setMotionModelScoreFunction(MotionModelScoreFunction func);
 
+    // only track a certain amount of cells
+    void setMaxNumberOfPaths(size_t maxNumPaths) { maxNumPaths_ = maxNumPaths; }
+
     // Find a set of paths through the graph that maximize the score.
     // Iterates until no path with positive score change can be found any more.
     virtual double track(Solution& paths);
@@ -96,6 +99,7 @@ private:
     bool withSwap_;
     bool usedArcsScoreZero_;
     SelectorFunction selectorFunction_;
+    size_t maxNumPaths_;
 
     // motion model
     MotionModelScoreFunction motionModelScoreFunction_;

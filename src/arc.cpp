@@ -40,6 +40,7 @@ Arc::Arc(Node* source,
         dependsOnCellInNode_->registerObserverArc(this);
     }
 
+    updateEnabledState();
     update();
 }
 
@@ -64,7 +65,7 @@ void Arc::reset()
 void Arc::update()
 {
     currentScore_ = getScoreDelta() + sourceNode_->getCurrentScore();
-    updateEnabledState();
+    // updateEnabledState();
     DEBUG_MSG(typeAsString() << "-Arc update: score is now " << currentScore_ << " (enabled=" 
                << (enabled_?"true":"false") << ")" << " scoreDelta=" << scoreDelta_);
 }
@@ -72,7 +73,7 @@ void Arc::update()
 void Arc::update(double additionalDelta)
 {
 	currentScore_ = getScoreDelta() + sourceNode_->getCurrentScore() + additionalDelta;
-    updateEnabledState();
+    // updateEnabledState();
     DEBUG_MSG(typeAsString() << "-Arc update: score is now " << currentScore_ << " (enabled=" 
                << (enabled_?"true":"false") << ")" << " scoreDelta=" << scoreDelta_);
 }
@@ -111,11 +112,13 @@ void Arc::updateEnabledState()
             }
             else
             {
-                enabled_ = dependsOnCellInNode_->getCellCount() == 1;
+                enabled_ = dependsOnCellInNode_->getCellCount() == 1 
+                			&& (dependsOnCellInNode_->getDisappearanceArc() == nullptr || dependsOnCellInNode_->getDisappearanceArc()->getUseCount() == 0)
+                			&& (targetNode_->getAppearanceArc() == nullptr || targetNode_->getAppearanceArc()->getUseCount() == 0)
+                			&& dependsOnCellInNode_->getNumActiveDivisions() == 0
+                			&& dependsOnCellInNode_->getMoveOutArcUsedSum() == 1;
                 if(enabled_)
                 {
-                    size_t activeOutArcs = 0;
-                    
                     // make sure that there is no active arc between the mother and daughter candidates yet
                     for(Node::ConstArcIt outArcIt = dependsOnCellInNode_->getOutArcsBegin(); 
                         outArcIt != dependsOnCellInNode_->getOutArcsEnd(); 
@@ -127,29 +130,10 @@ void Arc::updateEnabledState()
                             {
                                 // std::cout << "!!!!!!!!!!!!!!!!!!!!!!!! disabling division because the very same link has been used as transition!" << std::endl;
                                 enabled_ = false;
-                                return;
                             }
+                            return;
                         }
-
-                        activeOutArcs += (*outArcIt)->getUseCount();
                     }
-
-                    // make sure that we have only one active out arc
-                    if(activeOutArcs != 1)
-                    {
-                        enabled_ = false;
-                        // std::cout << "!!!!!!!!!!!!!!!!!!!!!!!! disabling division because mother node has " << activeOutArcs << " active outgoing arcs" << std::endl;
-                        return;
-                    }
-
-                    size_t activeDivisions = 0;
-                    auto divisionCounter = [&](Arc* a){
-                        activeDivisions += a->getUseCount();
-                    };
-                    dependsOnCellInNode_->visitObserverArcs(divisionCounter);
-
-                    if(activeDivisions > 0)
-                        enabled_ = false;
                 }
             }
         } break;
@@ -157,7 +141,10 @@ void Arc::updateEnabledState()
         {
             // check that the link that this swap should exchange with is still used:
             Arc* arcToCut = std::static_pointer_cast<MagnussonSwapArcUserData>(this->getUserData())->getCutArc();
-            enabled_ = arcToCut->used_ > 0;
+            enabled_ = arcToCut->used_ > 0 && arcToCut->getSourceNode()->getNumActiveDivisions() == 0;
+    	    // check that replacement arcs are enabled
+    	    enabled_ &= std::static_pointer_cast<MagnussonSwapArcUserData>(this->getUserData())->getReplacementAArc()->isEnabled()
+		                  && std::static_pointer_cast<MagnussonSwapArcUserData>(this->getUserData())->getReplacementBArc()->isEnabled();
         } break;
         case Appearance:
         {
@@ -165,16 +152,13 @@ void Arc::updateEnabledState()
         } break;
         case Disappearance:
         {
-            enabled_ = sourceNode_->getMoveOutArcUsedSum() == 0;
+            enabled_ = sourceNode_->getMoveOutArcUsedSum() == 0 && sourceNode_->getNumActiveDivisions() == 0;
         } break;
         case Move:
         {
-            if(targetNode_->getAppearanceArc() != nullptr && targetNode_->getAppearanceArc()->getUseCount() > 0)
-                enabled_ = false;
-            else if(sourceNode_->getDisappearanceArc() != nullptr && sourceNode_->getDisappearanceArc()->getUseCount() > 0)
-                enabled_ = false;
-            else
-                enabled_ = true;
+            enabled_ = (targetNode_->getAppearanceArc() == nullptr || targetNode_->getAppearanceArc()->getUseCount() == 0)
+                        && (sourceNode_->getDisappearanceArc() == nullptr || sourceNode_->getDisappearanceArc()->getUseCount() == 0)
+                        && sourceNode_->getNumActiveDivisions() == 0;
         } break;
     	default:
     	{
@@ -185,15 +169,59 @@ void Arc::updateEnabledState()
 
 void Arc::markUsed(bool used)
 {
+    static auto arcEnabler = [](Arc* a){
+        a->updateEnabledState();
+    };
+
     if(used)
+    {
         used_++;
+    }
     else
     {
         if(used_ == 0)
             throw std::runtime_error("Cannot reduce use count of arc that is not used!");
         used_--;
     }
+    
+    int count = used ? 1 : -1;
+
+    if(type_ == Division)
+    {
+        if(used_)
+        {
+        	if(dependsOnCellInNode_->getCellCount() != 1)
+        		throw std::runtime_error("Using division arc where mother cell does not contain exactly one cell");
+        	if(dependsOnCellInNode_->getNumActiveDivisions() != 0)
+        		throw std::runtime_error("Using division arc where mother cell already has active divisions");
+        }
+        dependsOnCellInNode_->increaseNumActiveDivisions(count);
+        targetNode_->increaseNumUsedInArcs(count);
+        dependsOnCellInNode_->visitObserverArcs(arcEnabler);
+        dependsOnCellInNode_->visitOutArcs(arcEnabler);
+        targetNode_->visitInArcs(arcEnabler);
+    }
+    else if(type_ == Move)
+    {
+        sourceNode_->increaseNumUsedOutArcs(count);
+        targetNode_->increaseNumUsedInArcs(count);
+        sourceNode_->visitOutArcs(arcEnabler);
+	sourceNode_->visitObserverArcs(arcEnabler);
+        targetNode_->visitInArcs(arcEnabler);
+    }
+    else if(type_ == Appearance)
+    {
+        targetNode_->visitInArcs(arcEnabler);
+    }
+    else if(type_ == Disappearance)
+    {
+        sourceNode_->visitOutArcs(arcEnabler);
+        sourceNode_->visitObserverArcs(arcEnabler);
+    }
     updateEnabledState();
+
+    // update swap arcs if any!
+    visitObserverArcs(arcEnabler);
 }
 
 } // namespace dpct

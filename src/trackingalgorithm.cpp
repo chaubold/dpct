@@ -128,6 +128,8 @@ void TrackingAlgorithm::printPath(TrackingAlgorithm::Path& p)
     for(Path::iterator it = p.begin(); it != p.end(); ++it)
     {
         DEBUG_MSG("\t follows " << (*it)->typeAsString() << " arc to node " <<  nodeName((*it)->getTargetNode())
+                  << " enabled= " << ((*it)->isEnabled()?"yes":"no")
+                  << " used= " << (*it)->getUseCount()
                   << " with cellCount " <<  (*it)->getTargetNode()->getCellCount()
                   << " and score " <<  (*it)->getTargetNode()->getCurrentScore());
     }

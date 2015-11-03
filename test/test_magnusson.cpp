@@ -407,6 +407,32 @@ BOOST_AUTO_TEST_CASE(test_full_magnusson_fast_1st_iter)
     // BOOST_CHECK(tracker.getElapsedSeconds() < tracker2.getElapsedSeconds());
 }
 
+BOOST_AUTO_TEST_CASE(test_magnusson_maxNumPaths)
+{
+    Graph::Configuration config(true, true, true);
+    Graph g(config);
+
+    buildGraph(g);
+    
+    // -----------------------------------------------------
+    // Tracking
+    Magnusson tracker(&g, false, true, true);
+    std::vector<TrackingAlgorithm::Path> paths;
+    tracker.setMaxNumberOfPaths(2);
+    double score = tracker.track(paths);
+
+    BOOST_CHECK(paths.size() == 2);
+    BOOST_CHECK(score <= 44.0);
+    BOOST_CHECK(score >= 0);
+
+    std::cout << "Tracker returned score " << score << std::endl;
+
+    // Magnusson tracker2(&g, false, false, false);
+    // std::vector<TrackingAlgorithm::Path> paths2;
+    // score = tracker2.track(paths2);
+    // BOOST_CHECK(tracker.getElapsedSeconds() < tracker2.getElapsedSeconds());
+}
+
 BOOST_AUTO_TEST_CASE(magnusson_selector_func)
 {
     Graph::Configuration config(false, false, false);

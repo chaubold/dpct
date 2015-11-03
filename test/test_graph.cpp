@@ -127,16 +127,46 @@ BOOST_AUTO_TEST_CASE(build_graph)
 
     g.addMoveArc(n_3_1, n_4_1, 0.0);
     g.addMoveArc(n_3_1, n_4_2, 0.0);
-    g.addMoveArc(n_3_2, n_4_2, 0.0);
-    g.addMoveArc(n_3_2, n_4_3, 0.0);
+    Graph::ArcPtr m1 = g.addMoveArc(n_3_2, n_4_2, 0.0);
+    Graph::ArcPtr m2 = g.addMoveArc(n_3_2, n_4_3, 0.0);
     g.addMoveArc(n_3_3, n_4_3, 0.0);
     g.addMoveArc(n_3_3, n_4_4, 0.0);
     BOOST_CHECK_EQUAL(g.getNumArcs(), 41);
 
-    g.allowMitosis(n_3_2, n_4_3, -1);
-    g.allowMitosis(n_3_3, n_4_3, 2);
+    Graph::ArcPtr d1 = g.allowMitosis(n_3_2, n_4_3, -1);
+    Graph::ArcPtr d2 = g.allowMitosis(n_3_3, n_4_3, 2);
 
     BOOST_CHECK_EQUAL(g.getNumArcs(), 43);
+    BOOST_CHECK_EQUAL(d1->isEnabled(), false);
+    BOOST_CHECK_EQUAL(d2->isEnabled(), false);
+    BOOST_CHECK_EQUAL(m1->isEnabled(), true);
+
+    // add a cell to a division's mother and activate one of its out arc to enable a division
+    BOOST_CHECK_EQUAL(n_3_2->getCellCount(), 0);
+    n_3_2->increaseCellCount();
+    BOOST_CHECK_EQUAL(n_3_2->getCellCount(), 1);
+    BOOST_CHECK_EQUAL(m1->getUseCount(), 0);
+    m1->markUsed();
+    BOOST_CHECK_EQUAL(m1->getUseCount(), 1);
+    // this should enable the division arc
+    BOOST_CHECK_EQUAL(d1->isEnabled(), true);
+    BOOST_CHECK_EQUAL(m2->isEnabled(), true);
+    // now let's use the division arc and see whether the other transitions become invalid
+    d1->markUsed();
+    BOOST_CHECK_EQUAL(m1->isEnabled(), false);
+    BOOST_CHECK_EQUAL(m2->isEnabled(), false);
+    BOOST_CHECK_EQUAL(d1->isEnabled(), false);
+
+    // unuse again
+    d1->markUsed(false);
+    BOOST_CHECK_EQUAL(m1->isEnabled(), true);
+    BOOST_CHECK_EQUAL(m2->isEnabled(), true);
+    BOOST_CHECK_EQUAL(d1->isEnabled(), true);
+
+    // use other out arc and add another cell, then the division should be disabled
+    n_3_2->increaseCellCount();
+    m2->markUsed();
+    BOOST_CHECK_EQUAL(d1->isEnabled(), false);
 }
 
 BOOST_AUTO_TEST_CASE(copy_graph)
@@ -336,4 +366,51 @@ BOOST_AUTO_TEST_CASE(copy_subgraph)
     BOOST_CHECK_EQUAL(g2.getConfig().withDivision, g.getConfig().withDivision);
     BOOST_CHECK_EQUAL(g2.getSinkNode().getNumInArcs(), 1);
     BOOST_CHECK_EQUAL(g2.getSourceNode().getNumOutArcs(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(node_active_arc_counts)
+{
+    Node n1(std::vector<double>(), nullptr);
+    Node n2(std::vector<double>(), nullptr);
+
+    Arc a(&n1, &n2, Arc::Move, 0.0);
+    BOOST_CHECK_EQUAL(n1.getNumActiveDivisions(), 0);
+    BOOST_CHECK_EQUAL(n1.getMoveInArcUsedSum(), 0);
+    BOOST_CHECK_EQUAL(n1.getMoveOutArcUsedSum(), 0);
+
+    a.markUsed();
+    BOOST_CHECK_EQUAL(n1.getNumActiveDivisions(), 0);
+    BOOST_CHECK_EQUAL(n1.getMoveInArcUsedSum(), 0);
+    BOOST_CHECK_EQUAL(n1.getMoveOutArcUsedSum(), 1);
+
+    BOOST_CHECK_EQUAL(n2.getNumActiveDivisions(), 0);
+    BOOST_CHECK_EQUAL(n2.getMoveInArcUsedSum(), 1);
+    BOOST_CHECK_EQUAL(n2.getMoveOutArcUsedSum(), 0);
+
+    a.markUsed();
+    BOOST_CHECK_EQUAL(n1.getNumActiveDivisions(), 0);
+    BOOST_CHECK_EQUAL(n1.getMoveInArcUsedSum(), 0);
+    BOOST_CHECK_EQUAL(n1.getMoveOutArcUsedSum(), 2);
+
+    BOOST_CHECK_EQUAL(n2.getNumActiveDivisions(), 0);
+    BOOST_CHECK_EQUAL(n2.getMoveInArcUsedSum(), 2);
+    BOOST_CHECK_EQUAL(n2.getMoveOutArcUsedSum(), 0);
+
+    a.markUsed(false);
+    BOOST_CHECK_EQUAL(n1.getNumActiveDivisions(), 0);
+    BOOST_CHECK_EQUAL(n1.getMoveInArcUsedSum(), 0);
+    BOOST_CHECK_EQUAL(n1.getMoveOutArcUsedSum(), 1);
+
+    BOOST_CHECK_EQUAL(n2.getNumActiveDivisions(), 0);
+    BOOST_CHECK_EQUAL(n2.getMoveInArcUsedSum(), 1);
+    BOOST_CHECK_EQUAL(n2.getMoveOutArcUsedSum(), 0);
+
+    a.markUsed(false);
+    BOOST_CHECK_EQUAL(n1.getNumActiveDivisions(), 0);
+    BOOST_CHECK_EQUAL(n1.getMoveInArcUsedSum(), 0);
+    BOOST_CHECK_EQUAL(n1.getMoveOutArcUsedSum(), 0);
+
+    BOOST_CHECK_EQUAL(n2.getNumActiveDivisions(), 0);
+    BOOST_CHECK_EQUAL(n2.getMoveInArcUsedSum(), 0);
+    BOOST_CHECK_EQUAL(n2.getMoveOutArcUsedSum(), 0);
 }

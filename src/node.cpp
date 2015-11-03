@@ -19,7 +19,10 @@ Node::Node(const std::vector<double>& cellCountScore,
     appearanceArc_(nullptr),
     disappearanceArc_(nullptr),
     cellCount_(0),
-    currentScore_(0.0)
+    currentScore_(0.0),
+    numActiveDivisions_(0),
+    numUsedMoveOutArcs_(0),
+    numUsedMoveInArcs_(0)
 {
     if(cellCountScore_.size() > 1)
     {
@@ -95,7 +98,10 @@ void Node::increaseCellCount()
 {
     cellCount_++;
     // TODO: remove the following as Graph::visitNodesPerTimestep performs the update anyway?
-    visitObserverArcs([](Arc* a){ a->update(); });
+    visitObserverArcs([](Arc* a){ 
+        a->updateEnabledState();
+        a->update(); 
+    });
 }
 
 void Node::addToCellCountScore(size_t state, double score)
@@ -137,6 +143,19 @@ void Node::updateBestInArcAndScore()
         }
 #endif
     }
+    else
+    {
+        // bestInArc_ = nullptr;
+        currentScore_ = std::numeric_limits<double>::lowest();
+        if(getUserData())
+        {
+            DEBUG_MSG("Node (" << *(std::static_pointer_cast<NameData>(getUserData())) << ") update: no good in-arc!");
+        }
+        else
+        {
+            DEBUG_MSG("Node update: no good in-arc!");
+        }
+    }
 }
 
 void Node::accumulateScoreDelta(Node *other)
@@ -160,31 +179,31 @@ void Node::addArcCost(Arc* other, bool usedArcsScoreZero)
     }
 }
 
-size_t Node::getMoveInArcUsedSum() const
-{
-    size_t sum = 0;
+// size_t Node::getMoveInArcUsedSum() const
+// {
+//     size_t sum = 0;
     
-    for(const auto& arc : inArcs_)
-    {
-        if(arc->getType() == Arc::Move || arc->getType() == Arc::Division)
-            sum += arc->getUseCount();
-    }
+//     for(const auto& arc : inArcs_)
+//     {
+//         if(arc->getType() == Arc::Move || arc->getType() == Arc::Division)
+//             sum += arc->getUseCount();
+//     }
 
-    return sum;
-}
+//     return sum;
+// }
 
-size_t Node::getMoveOutArcUsedSum() const
-{
-    size_t sum = 0;
+// size_t Node::getMoveOutArcUsedSum() const
+// {
+//     size_t sum = 0;
     
-    for(const auto& arc : outArcs_)
-    {
-        if(arc->getType() == Arc::Move)
-            sum += arc->getUseCount();
-    }
+//     for(const auto& arc : outArcs_)
+//     {
+//         if(arc->getType() == Arc::Move)
+//             sum += arc->getUseCount();
+//     }
 
-    return sum;
-}
+//     return sum;
+// }
 
 void Node::visitInArcs(const VisitorFunction& func)
 {

@@ -56,8 +56,6 @@ public:
     void visitOutArcs(const VisitorFunction& func);
     void visitOutArcs (const ConstVisitorFunction& func) const;
 
-    size_t getMoveInArcUsedSum() const;
-    size_t getMoveOutArcUsedSum() const;
     Arc* getAppearanceArc() const    { return appearanceArc_; }
     Arc* getDisappearanceArc() const { return disappearanceArc_; }
 
@@ -71,6 +69,14 @@ public:
 
     void accumulateScoreDelta(Node* other);
     void addArcCost(Arc *other, bool usedArcsScoreZero);
+
+    size_t getNumActiveDivisions() const { return numActiveDivisions_; }
+    void increaseNumActiveDivisions(int count = 1) { numActiveDivisions_ += count; }
+
+    size_t getMoveInArcUsedSum() const  { return numUsedMoveInArcs_; }
+    size_t getMoveOutArcUsedSum() const { return numUsedMoveOutArcs_; }
+    void increaseNumUsedOutArcs(int count = 1) { numUsedMoveOutArcs_ += count; }
+    void increaseNumUsedInArcs (int count = 1) { numUsedMoveInArcs_ += count; }
 
     friend std::ostream& operator<<(std::ostream& lhs, const Node& rhs);
 
@@ -86,6 +92,11 @@ protected:
 	Arc* bestInArc_;
     std::vector<double> cellCountScore_;
 	double currentScore_;
+
+    // cache states
+    size_t numActiveDivisions_;
+    size_t numUsedMoveInArcs_;
+    size_t numUsedMoveOutArcs_;
 };
 
 std::ostream& operator<<(std::ostream& lhs, const Node& rhs);

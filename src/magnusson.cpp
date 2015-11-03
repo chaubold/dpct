@@ -18,6 +18,7 @@ Magnusson::Magnusson(Graph* graph, bool withSwap, bool usedArcsScoreZero, bool u
     withSwap_(withSwap),
     usedArcsScoreZero_(usedArcsScoreZero),
     useFastFirstIter_(useFastFirstIter),
+    maxNumPaths_(std::numeric_limits<size_t>::max()),
     selectorFunction_( selectBestInArc ) // globally defined function
 {
     assert(usedArcsScoreZero == true);
@@ -81,7 +82,7 @@ void Magnusson::updateNodesByTimestep()
     {
         graph_->visitNodesInTimestep(t, std::bind(&Magnusson::updateNode, this, _1));
     }
-
+    updateNode(&graph_->getSourceNode());
     updateNode(&graph_->getSinkNode());
 }
 
@@ -100,7 +101,7 @@ double Magnusson::track(Solution& paths)
         batchFirstIteration(score, paths);
     }
 
-    while(true)
+    while(paths.size() < maxNumPaths_)
     {
         // backtrack best path, increase cell counts -> invalidates scores!
         Path p;
@@ -154,7 +155,10 @@ double Magnusson::track(Solution& paths)
 
 void Magnusson::updateNode(Node* n)
 {
-	n->updateBestInArcAndScore();
+    // do not try to find best in arc of source as there is none (yields -inf score otherwise)
+    if(n != &graph_->getSourceNode())
+	   n->updateBestInArcAndScore();
+
     Node* predecessor = nullptr;
     double motionModelScoreDelta = 0.0;
 
@@ -222,8 +226,9 @@ void Magnusson::backtrack(Node* start, TrackingAlgorithm::Path& p, TrackingAlgor
             bestArc = current->getBestInArc();
 
 		assert(bestArc != nullptr);
+        assert(bestArc->isEnabled());
 
-        if(bestArc->getType() == Arc::Division || (usedArcsScoreZero_ && bestArc->getType() == Arc::Move))
+        if(bestArc->getType() != Arc::Dummy)
             bestArc->markUsed();
 		p.push_back(bestArc);
 		current = bestArc->getSourceNode();
@@ -274,7 +279,10 @@ void Magnusson::insertSwapArcsForNewUsedPath(TrackingAlgorithm::Path &p)
                 insertDisappearanceSwapArcs(*it);
                 break;
             case Arc::Swap:
-                throw new std::runtime_error("There should not be swap arcs left after cleaning up the path");
+            {
+                printPath(p);
+                throw std::runtime_error("There should not be swap arcs left after cleaning up the path");
+            }
         }
     }
 }
@@ -287,13 +295,13 @@ void Magnusson::insertMoveSwapArcs(Arc* a)
     for(Node::ArcIt outIt = source->getOutArcsBegin(); outIt != source->getOutArcsEnd(); ++outIt)
     {
         Node *alternativeTarget = (*outIt)->getTargetNode();
-        if(alternativeTarget == target || graph_->isSpecialNode(alternativeTarget) || (*outIt)->getType() == Arc::Swap)
+        if(alternativeTarget == target || (*outIt)->getType() == Arc::Division || (*outIt)->getType() == Arc::Swap)
             continue;
 
         for(Node::ArcIt inIt = target->getInArcsBegin(); inIt != target->getInArcsEnd(); ++inIt)
         {
             Node *alternativeSource = (*inIt)->getSourceNode();
-            if(alternativeSource == source || graph_->isSpecialNode(alternativeSource) || (*inIt)->getType() == Arc::Swap)
+            if(alternativeSource == source || (*inIt)->getType() == Arc::Division || (*inIt)->getType() == Arc::Swap)
                 continue;
 
             // found a candidate
@@ -381,7 +389,7 @@ void Magnusson::insertAppearanceSwapArcs(Arc* a)
             }
 
             if(alternativeAppearanceArc == nullptr)
-                throw new std::runtime_error("alternative target did not have disappearance arc...");
+                throw std::runtime_error("alternative target did not have disappearance arc...");
 
             // found a candidate
             double score = alternativeAppearanceArc->getScoreDelta() + (*inIt)->getScoreDelta() - a->getScoreDelta();
@@ -472,7 +480,7 @@ void Magnusson::insertDisappearanceSwapArcs(Arc* a)
             }
 
             if(alternativeDisappearanceArc == nullptr)
-                throw new std::runtime_error("alternative target did not have disappearance arc...");
+                throw std::runtime_error("alternative target did not have disappearance arc...");
 
             // found a candidate
             double score = alternativeDisappearanceArc->getScoreDelta() + (*outIt)->getScoreDelta() - a->getScoreDelta();
