@@ -67,8 +67,9 @@ void FlowGraph::maxFlowMinCostTracking()
 	ShortestPathResult result;
 	do
 	{
+		std::chrono::time_point<std::chrono::high_resolution_clock> iterationStartTime = std::chrono::high_resolution_clock::now();
 		LOG_MSG("\t>>> Iteration");
-		LOG_MSG("Current Flow:");
+		DEBUG_MSG("Current Flow:");
 		printAllFlows();
 
 		std::shared_ptr<ResidualGraph> residualGraph = createResidualGraph();
@@ -87,6 +88,9 @@ void FlowGraph::maxFlowMinCostTracking()
 			augmentUnitFlow(std::get<0>(result), residualGraph);
 			updateEnabledArcs(std::get<0>(result), residualGraph);
 		}
+		std::chrono::time_point<std::chrono::high_resolution_clock> iterationEndTime = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double> elapsed_seconds = iterationEndTime - iterationStartTime;
+		LOG_MSG("\t<<<Iteration done in " << elapsed_seconds.count() << " secs");
 	}
 	while(std::get<0>(result).size() > 0 && std::get<2>(result) < 0.0);
 
@@ -201,7 +205,11 @@ void FlowGraph::augmentUnitFlow(const FlowGraph::Path& p, std::shared_ptr<Residu
 	for(auto a : p)
 	{
 		int delta = (residualGraph->forward(a) ? 1 : -1);
-		Arc orig = lemon::findArc(baseGraph_, residualGraph->source(a), residualGraph->target(a));
+		Arc orig; 
+		if(residualGraph->forward(a))
+			orig = lemon::findArc(baseGraph_, residualGraph->source(a), residualGraph->target(a));
+		else
+			orig = lemon::findArc(baseGraph_, residualGraph->target(a), residualGraph->source(a));
 		flowMap_[orig] += delta;
 	}
 }

@@ -449,4 +449,25 @@ BOOST_AUTO_TEST_CASE( flowgraph_simple )
     Arc div2 = g.allowMitosis(n_1_2, {-4.0});
 
     g.maxFlowMinCostTracking();
+
+    BOOST_CHECK_EQUAL(g.getFlowMap()[app1], 1);
+    BOOST_CHECK_EQUAL(g.getFlowMap()[app2], 1);
+    BOOST_CHECK_EQUAL(g.getFlowMap()[app3], 0);
+    BOOST_CHECK_EQUAL(g.getFlowMap()[app4], 0);
+    BOOST_CHECK_EQUAL(g.getFlowMap()[app5], 0);
+
+    BOOST_CHECK_EQUAL(g.getFlowMap()[dis1], 1);
+    BOOST_CHECK_EQUAL(g.getFlowMap()[dis2], 1);
+    BOOST_CHECK_EQUAL(g.getFlowMap()[dis3], 1);
+    BOOST_CHECK_EQUAL(g.getFlowMap()[dis4], 0);
+    BOOST_CHECK_EQUAL(g.getFlowMap()[dis5], 0);
+
+    BOOST_CHECK_EQUAL(g.getFlowMap()[div1], 1);
+    BOOST_CHECK_EQUAL(g.getFlowMap()[div2], 0);
+
+    BOOST_CHECK_EQUAL(g.getFlowMap()[move1], 1);
+    BOOST_CHECK_EQUAL(g.getFlowMap()[move2], 1);
+    BOOST_CHECK_EQUAL(g.getFlowMap()[move3], 0);
+    BOOST_CHECK_EQUAL(g.getFlowMap()[move4], 1);
+
 }
