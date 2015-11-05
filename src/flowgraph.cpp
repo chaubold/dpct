@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <assert.h>
+#include <limits>
 
 namespace dpct
 {
@@ -22,6 +23,7 @@ FlowGraph::Node FlowGraph::addNode(const CostVector& costs)
 	
 	Node n = baseGraph_.addNode();
 	nodeCosts_[n] = costs;
+	nodeCosts_[n].push_back(std::numeric_limits<double>::max());
 
 	return n;
 }
@@ -33,6 +35,7 @@ FlowGraph::Arc FlowGraph::addArc(FlowGraph::Node source,
 	assert(costs.size() > 0);
 	Arc a = baseGraph_.addArc(source, target);
 	arcCosts_[a] = costs;
+	arcCosts_[a].push_back(std::numeric_limits<double>::max());
 	flowMap_[a] = 0;
 	capacityMap_[a] = costs.size();
 	arcEnabledMap_[a] = true;

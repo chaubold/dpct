@@ -421,6 +421,7 @@ BOOST_AUTO_TEST_CASE( flowgraph_simple )
 
     Node n_1_1 = g.addNode({0.0});
     Node n_1_2 = g.addNode({0.0});
+    Node n_1_3 = g.addNode({0.0});
     Node n_2_1 = g.addNode({0.0});
     Node n_2_2 = g.addNode({0.0});
     Node n_2_3 = g.addNode({0.0});
@@ -433,17 +434,20 @@ BOOST_AUTO_TEST_CASE( flowgraph_simple )
     Arc app3 = g.addArc(s, n_2_1, {10.0});
     Arc app4 = g.addArc(s, n_2_2, {10.0});
     Arc app5 = g.addArc(s, n_2_3, {10.0});
+    Arc app6 = g.addArc(s, n_1_3, {0.0});
 
     Arc move1 = g.addArc(n_1_1, n_2_1, {-4.0});
     Arc move2 = g.addArc(n_1_1, n_2_2, {-3.0});
-    Arc move3 = g.addArc(n_1_2, n_2_2, {-1.0});
+    Arc move3 = g.addArc(n_1_2, n_2_2, {-1.0, 5.0});
     Arc move4 = g.addArc(n_1_2, n_2_3, {-4.0});
+    Arc move5 = g.addArc(n_1_3, n_2_3, {2.0});
 
     Arc dis1 = g.addArc(n_2_1, t, {-2.0});
     Arc dis2 = g.addArc(n_2_2, t, {-2.0});
     Arc dis3 = g.addArc(n_2_3, t, {-4.0});
     Arc dis4 = g.addArc(n_1_1, t, {10.0});
     Arc dis5 = g.addArc(n_1_2, t, {10.0});
+    Arc dis6 = g.addArc(n_1_3, t, {-1.0});
 
     Arc div1 = g.allowMitosis(n_1_1, {-4.0});
     Arc div2 = g.allowMitosis(n_1_2, {-4.0});
@@ -455,12 +459,14 @@ BOOST_AUTO_TEST_CASE( flowgraph_simple )
     BOOST_CHECK_EQUAL(g.getFlowMap()[app3], 0);
     BOOST_CHECK_EQUAL(g.getFlowMap()[app4], 0);
     BOOST_CHECK_EQUAL(g.getFlowMap()[app5], 0);
+    BOOST_CHECK_EQUAL(g.getFlowMap()[app6], 1);
 
     BOOST_CHECK_EQUAL(g.getFlowMap()[dis1], 1);
     BOOST_CHECK_EQUAL(g.getFlowMap()[dis2], 1);
     BOOST_CHECK_EQUAL(g.getFlowMap()[dis3], 1);
     BOOST_CHECK_EQUAL(g.getFlowMap()[dis4], 0);
     BOOST_CHECK_EQUAL(g.getFlowMap()[dis5], 0);
+    BOOST_CHECK_EQUAL(g.getFlowMap()[dis6], 1);
 
     BOOST_CHECK_EQUAL(g.getFlowMap()[div1], 1);
     BOOST_CHECK_EQUAL(g.getFlowMap()[div2], 0);
@@ -469,5 +475,6 @@ BOOST_AUTO_TEST_CASE( flowgraph_simple )
     BOOST_CHECK_EQUAL(g.getFlowMap()[move2], 1);
     BOOST_CHECK_EQUAL(g.getFlowMap()[move3], 0);
     BOOST_CHECK_EQUAL(g.getFlowMap()[move4], 1);
+    BOOST_CHECK_EQUAL(g.getFlowMap()[move5], 0);
 
 }
