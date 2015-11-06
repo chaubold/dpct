@@ -88,16 +88,18 @@ void FlowGraph::maxFlowMinCostTracking()
 		{
 #ifdef DEBUG_LOG
 			printPath(result.first); std::cout << std::endl;
+			// std::stringstream outName;
+			// outName << "/Users/chaubold/Desktop/residualGraph_iter" << iter << ".dot";
+			// residualGraph_->toDot(outName.str(), result.first);
 #endif
 			augmentUnitFlow(result.first);
 			updateEnabledArcs(result.first);
 		}
 		TimePoint iterationEndTime = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> elapsed_seconds = iterationEndTime - iterationStartTime;
-		LOG_MSG("\t<<<Iteration done in " << elapsed_seconds.count() << " secs");
+		LOG_MSG("\t<<<Iteration " << iter++ << " done in " << elapsed_seconds.count() << " secs");
 	}
-	// while(result.first.size() > 0 && result.second < 0.0);
-	while(iter++ < 3);
+	while(result.first.size() > 0 && result.second < 0.0);
 
 	cleanUpDuplicatedOutArcs();
 
