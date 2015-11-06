@@ -7,8 +7,9 @@
 #include <map>
 #include <tuple>
 #include <memory>
+#include <chrono>
 
-#include "userdata.h"
+#include "residualgraph.h"
 
 namespace dpct
 {
@@ -25,13 +26,11 @@ public: // typedefs
     typedef Graph::ArcMap<int> FlowMap;
     typedef Graph::ArcMap<int> CapacityMap;
     typedef Graph::ArcMap<bool> ArcEnabledMap;
-    typedef lemon::FilterArcs<Graph> FilteredGraph;
-    typedef lemon::ResidualDigraph< FilteredGraph, CapacityMap, FlowMap > ResidualGraph;
-    typedef ResidualGraph::ArcMap<double> ResidualDistMap;
-    typedef lemon::BellmanFord<ResidualGraph, ResidualDistMap> BellmanFord;
     typedef std::vector<double> CostVector;
-    typedef std::vector<ResidualGraph::Arc> Path;
-    typedef std::tuple<Path, bool, double> ShortestPathResult;
+    typedef std::map<Node, CostVector> NodeCostMap;
+	typedef std::map<Arc, CostVector> ArcCostMap;
+	typedef std::vector< std::pair<Arc, int> > Path;
+	typedef std::chrono::time_point<std::chrono::high_resolution_clock> TimePoint;
 
 public: // API
 	FlowGraph();
@@ -57,24 +56,27 @@ public: // API
 	const FlowMap& getFlowMap() const { return flowMap_; }
 
 private:
-	/// use the current flow and arcEnabled maps to create a residual graph using the appropriate cost deltas
-	std::shared_ptr<ResidualGraph> createResidualGraph();
-
-	std::shared_ptr<ResidualDistMap> createResidualDistanceMap(std::shared_ptr<ResidualGraph> residualGraph);
-
-	/// find a shortest path (bool=true) or a negative cost cycle (bool=false)
-	ShortestPathResult findShortestPath(std::shared_ptr<ResidualGraph> residualGraph, 
-		std::shared_ptr<ResidualDistMap> residualDistMap);
+	/// create residual graph and set up all arc flows etc
+	void initializeResidualGraph();
 
 	/// augment flow along a path or cycle, adding one unit of flow forward, and subtracting one backwards
-	void augmentUnitFlow(const Path& p, std::shared_ptr<ResidualGraph> residualGraph);
+	void augmentUnitFlow(const Path& p);
 
 	/// updates the arcEnabled map by checking which divisions should be enabled/disabled after this track
 	/// ATTENTION: assumes flow has been augmented for this path already!
-	void updateEnabledArcs(const Path& p, std::shared_ptr<ResidualGraph> residualGraph);
+	void updateEnabledArcs(const Path& p);
 
-	/// copy flow from the duplicated to the original arcs so it is seen by the user
+	/// enable an arc according to our division / appearance / disappearance constraints
+	void enableArc(const Arc& a, bool state);
+
+	/// update capacity and cost of residual graph arc
+	void updateArc(const Arc& a);
+
+	/// copy flow from the duplicated (division) to the original arcs so it is seen by the user
 	void cleanUpDuplicatedOutArcs();
+
+	double getNodeCost(const Node& n, int flow);
+	double getArcCost(const Arc& a, int flow);
 
 	void printPath(const Path& p);
 	void printAllFlows();
@@ -84,11 +86,11 @@ private:
 	Node source_;
 	Node target_;
 
-	/// depending on current flow
+	/// map showing which arcs are initially enabled
 	ArcEnabledMap arcEnabledMap_;
 
-	/// current filtered graph
-	FilteredGraph filteredGraph_;
+	/// residual graph
+	std::shared_ptr<ResidualGraph> residualGraph_;
 
 	/// current arc flow
 	FlowMap flowMap_;
@@ -97,8 +99,8 @@ private:
 	CapacityMap capacityMap_;
 
 	/// store cost of arcs and nodes
-	std::map<Node, CostVector> nodeCosts_;
-	std::map<Arc, CostVector> arcCosts_;
+	NodeCostMap nodeCosts_;
+	ArcCostMap arcCosts_;
 
 	/// mapping between parent and duplicated parent nodes
 	std::map<Node, Node> parentToDuplicateMap_;
