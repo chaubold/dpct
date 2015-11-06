@@ -1,6 +1,7 @@
 #include "residualgraph.h"
 #include <limits>
 #include <fstream>
+#include "log.h"
 
 namespace dpct
 {
@@ -31,8 +32,8 @@ void ResidualGraph::updateBackwardArc(const OriginalArc& a, double cost, int cap
 
 void ResidualGraph::updateArc(const ResidualArcCandidate& ac, double cost, int capacity)
 {
-	std::cout << "Updating residual arc (" << id(ac.first) << ", " << id(ac.second) << ") with cost " 
-			<< cost << " and capacity " << capacity << std::endl;
+	DEBUG_MSG("Updating residual arc (" << id(ac.first) << ", " << id(ac.second) << ") with cost " 
+			<< cost << " and capacity " << capacity);
 	if(capacity > 0)
 	{
 		residualArcCost_[ac] = cost;
@@ -48,8 +49,8 @@ void ResidualGraph::updateArc(const ResidualArcCandidate& ac, double cost, int c
 
 void ResidualGraph::enableArc(const ResidualArcCandidate& ac, bool state)
 {
-	std::cout << (state? "enabling" : "disabling") << " residual arc: " 
-		<< id(ac.first) << ", " << id(ac.second) << std::endl;
+	DEBUG_MSG((state? "enabling" : "disabling") << " residual arc: " 
+		<< id(ac.first) << ", " << id(ac.second));
 	if(!state || !residualArcPresent_[ac])
 	{
 		Arc a = pairToResidualArc(ac);
@@ -83,8 +84,8 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 	Node source = residualNodeMap_.at(origSource);
 	Node target = residualNodeMap_.at(origTarget);
 
-	std::cout << "Searching shortest path in graph with " << lemon::countNodes(*this)
-			<< " nodes and " << lemon::countArcs(*this) << " arcs" << std::endl;
+	DEBUG_MSG("Searching shortest path in graph with " << lemon::countNodes(*this)
+			<< " nodes and " << lemon::countArcs(*this) << " arcs");
 
     BellmanFord bf(*this, residualDistMap_);
     bf.init();
@@ -102,7 +103,7 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
         	pathCost = bf.dist(target);
         	for(Arc a = bf.predArc(target); a != lemon::INVALID; a = bf.predArc(this->source(a)))
             {
-            	std::cout << "\t residual arc (" << id(this->source(a)) << ", " << id(this->target(a)) << ")" << std::endl;
+            	DEBUG_MSG("\t residual arc (" << id(this->source(a)) << ", " << id(this->target(a)) << ")");
             	std::pair<Arc, bool> arcForward = pairToOriginalArc(residualArcToPair(a));
             	flow = arcForward.second ? 1 : -1;
                 p.push_back(std::make_pair(arcForward.first, flow));
@@ -118,7 +119,7 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
     	ResidualArcCandidate ac;
     	for(lemon::Path<ResidualGraph>::ArcIt a(path); a != lemon::INVALID; ++a)
         {
-        	std::cout << "\t residual arc (" << id(this->source(a)) << ", " << id(this->target(a)) << ")" << std::endl;
+        	DEBUG_MSG("\t residual arc (" << id(this->source(a)) << ", " << id(this->target(a)) << ")");
         	ac = residualArcToPair(a);
         	pathCost += residualArcCost_.at(ac);
             std::pair<Arc, bool> arcForward = pairToOriginalArc(ac);
