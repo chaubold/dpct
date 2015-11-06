@@ -50,7 +50,7 @@ void ResidualGraph::enableArc(const ResidualArcCandidate& ac, bool state)
 {
 	std::cout << (state? "enabling" : "disabling") << " residual arc: " 
 		<< id(ac.first) << ", " << id(ac.second) << std::endl;
-	if(!state || residualArcPresent_[ac])
+	if(!state || !residualArcPresent_[ac])
 	{
 		Arc a = pairToResidualArc(ac);
 		if(a == lemon::INVALID)
