@@ -21,7 +21,6 @@ FlowGraph::Node FlowGraph::addNode(const CostVector& costs)
 	
 	Node n = baseGraph_.addNode();
 	nodeCosts_[n] = costs;
-	nodeCosts_[n].push_back(std::numeric_limits<double>::infinity());
 
 	return n;
 }
@@ -35,7 +34,6 @@ FlowGraph::Arc FlowGraph::addArc(FlowGraph::Node source,
 	arcCosts_[a] = costs;
 	flowMap_[a] = 0;
 	capacityMap_[a] = costs.size();
-	arcCosts_[a].push_back(std::numeric_limits<double>::infinity());
 	arcEnabledMap_[a] = true;
 	return a;
 }
