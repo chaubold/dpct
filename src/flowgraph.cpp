@@ -300,7 +300,6 @@ void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p)
 		// division updates
 		if(parentToDuplicateMap_.find(source) != parentToDuplicateMap_.end())
 		{
-			std::cout << "Checking arc with out flow " << sumOutFlow(source) << " for division" << std::endl;
 			if(sumOutFlow(source) == 1)
 			{
 				// we have exactly one unit of flow forward through a parent node -> allows division
