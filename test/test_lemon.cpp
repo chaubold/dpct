@@ -438,7 +438,7 @@ BOOST_AUTO_TEST_CASE( flowgraph_simple )
 
     Arc move1 = g.addArc(n_1_1, n_2_1, {-4.0});
     Arc move2 = g.addArc(n_1_1, n_2_2, {-3.0});
-    Arc move3 = g.addArc(n_1_2, n_2_2, {-1.0, 5.0});
+    Arc move3 = g.addArc(n_1_2, n_2_2, {-1.0});
     Arc move4 = g.addArc(n_1_2, n_2_3, {-4.0});
     Arc move5 = g.addArc(n_1_3, n_2_3, {2.0});
 
