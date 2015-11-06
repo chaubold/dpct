@@ -56,9 +56,6 @@ FlowGraph::Arc FlowGraph::allowMitosis(FlowGraph::Node parent,
 	parentToDuplicateMap_[parent] = duplicate;
 	duplicateToParentMap_[duplicate] = parent;
 
-	std::cout << "Found mitosis possibility of " << baseGraph_.id(parent) 
-		<< ", creating duplicate " << baseGraph_.id(duplicate) << std::endl;
-
 	return a;
 }
 
