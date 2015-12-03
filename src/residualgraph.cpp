@@ -64,8 +64,8 @@ void ResidualGraph::enableArc(const ResidualArcCandidate& ac, bool state)
 		if(a == lemon::INVALID)
 		{
 			a = addArc(ac.first, ac.second);
-			residualDistMap_[a] = residualArcCost_[ac];
 		}
+		residualDistMap_[a] = residualArcCost_[ac];
 	}
 }
 
@@ -97,6 +97,7 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 
     if(bf.checkedStart())
     {	
+    	LOG_MSG("Found path");
     	// found path
         if(bf.reached(target))
         {
@@ -114,6 +115,7 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
     }
     else
     {
+    	LOG_MSG("Found cycle");
     	// found cycle
     	lemon::Path<ResidualGraph> path = bf.negativeCycle();
     	ResidualArcCandidate ac;
