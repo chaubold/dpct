@@ -47,13 +47,9 @@ public: // typedefs
 public: // API
 	ResidualGraph(const Graph& original);
 	
-	/// set arc cost for the residual forward arc corresponding to a in the original graph
+	/// set arc cost for the residual forward/backward arc corresponding to a in the original graph
 	/// if capacity = 0, the arc will be disabled and the cost ignored
-	void updateForwardArc(const OriginalArc& a, double cost, int capacity);
-
-	/// set arc cost for the residual backward arc corresponding to a in the original graph
-	/// if capacity = 0, the arc will be disabled and the cost ignored
-	void updateBackwardArc(const OriginalArc& a, double cost, int capacity);
+	void updateArc(const OriginalArc& a, bool forward, double cost, int capacity);
 
 	/// enable / disable both residual arcs of the original arc
 	void enableArc(const OriginalArc& a, bool state);
@@ -71,7 +67,7 @@ private:
 	void enableArc(const ResidualArcCandidate& a, bool state);
 
 	/// set arc cost for the residual arc
-	void updateArc(const ResidualArcCandidate& a, double cost, int capacity);
+	void updateResidualArc(const ResidualArcCandidate& a, double cost, int capacity);
 
 	ResidualArcCandidate arcToPair(const Arc& a) const
 	{

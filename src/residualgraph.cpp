@@ -18,19 +18,13 @@ ResidualGraph::ResidualGraph(const Graph& original):
 	}
 }
 
-void ResidualGraph::updateForwardArc(const OriginalArc& a, double cost, int capacity)
+void ResidualGraph::updateArc(const OriginalArc& a, bool forward, double cost, int capacity)
 {
-	ResidualArcCandidate ac = arcToPair(a);
-	updateArc(ac, cost, capacity);
+	ResidualArcCandidate ac = forward ? arcToPair(a) : arcToInversePair(a);
+	updateResidualArc(ac, cost, capacity);
 }
 
-void ResidualGraph::updateBackwardArc(const OriginalArc& a, double cost, int capacity)
-{
-	ResidualArcCandidate ac = arcToInversePair(a);
-	updateArc(ac, cost, capacity);
-}
-
-void ResidualGraph::updateArc(const ResidualArcCandidate& ac, double cost, int capacity)
+void ResidualGraph::updateResidualArc(const ResidualArcCandidate& ac, double cost, int capacity)
 {
 	DEBUG_MSG("Updating residual arc (" << id(ac.first) << ", " << id(ac.second) << ") with cost " 
 			<< cost << " and capacity " << capacity);
