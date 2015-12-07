@@ -33,16 +33,8 @@ public: // typedefs
     typedef std::pair<Path, double> ShortestPathResult;
     typedef std::pair<Node, Node> ResidualArcCandidate;
 
-    struct ResidualArcPair
-    {
-    	ResidualArcCandidate forward;
-    	ResidualArcCandidate backward;
-
-    	ResidualArcPair(const ResidualArcCandidate& f, const ResidualArcCandidate& b):
-    		forward(f),
-    		backward(b)
-    	{}
-    };
+	static const bool Forward = true;
+	static const bool Backward = false;
 
 public: // API
 	ResidualGraph(const Graph& original);
@@ -69,23 +61,59 @@ private:
 	/// set arc cost for the residual arc
 	void updateResidualArc(const ResidualArcCandidate& a, double cost, int capacity);
 
-	ResidualArcCandidate arcToPair(const Arc& a) const
+	/**
+	 * @brief Transform original graph arc to ordered residual graph node pair, using the specified direction
+	 * @param a original graph arc
+	 * @param forward true if we want the forward residual arc along this edge
+	 * 
+	 * @return residual graph node pair 
+	 */
+	ResidualArcCandidate undirectedArcToPair(const OriginalArc& a, bool forward) const
+	{
+		return forward ? arcToPair(a) : arcToInversePair(a);
+	}
+
+	/**
+	 * @brief Transform an arc of the original graph into an forward oriented node pair (the ResidualArcCandidate) of the residual graph
+	 * @param a original graph arc
+	 * 
+	 * @return forward arc in residual graph encoded as pair of nodes
+	 */
+	ResidualArcCandidate arcToPair(const OriginalArc& a) const
 	{
 		return std::make_pair(residualNodeMap_.at(originalGraph_.source(a)), 
 				residualNodeMap_.at(originalGraph_.target(a)));
 	}
 
-	ResidualArcCandidate arcToInversePair(const Arc& a) const
+	/**
+	 * @brief Transform an arc of the original graph into an backward oriented node pair (the ResidualArcCandidate) of the residual graph
+	 * @param a original graph arc
+	 * 
+	 * @return backward arc in residual graph encoded as pair of nodes
+	 */
+	ResidualArcCandidate arcToInversePair(const OriginalArc& a) const
 	{
 		return std::make_pair(residualNodeMap_.at(originalGraph_.target(a)), 
 				residualNodeMap_.at(originalGraph_.source(a)));
 	}
 
+	/**
+	 * @brief Transform an arc of the residual graph into an ordered node pair (the ResidualArcCandidate) of the residual graph
+	 * @param a residual graph arc
+	 * 
+	 * @return arc in residual graph encoded as pair of nodes
+	 */
 	ResidualArcCandidate residualArcToPair(const Arc& a) const
 	{
 		return std::make_pair(source(a), target(a));
 	}
 
+	/**
+	 * @brief Transform a node pair of the residual graph into an residual arc
+	 * @param a residual graph node pair
+	 * 
+	 * @return arc in residual graph
+	 */
 	Arc pairToResidualArc(const ResidualArcCandidate& ac) const
 	{
 		return lemon::findArc(*this, ac.first, ac.second);
@@ -109,22 +137,20 @@ private:
 	/// Original graph
 	const Graph& originalGraph_;
 
-	/// store cost of arcs
+	/// store cost of arcs, independent of whether they are enabled or not
 	std::map<ResidualArcCandidate, double> residualArcCost_;
 
 	/// last state of the arc depending on the flow values of the original graph.
 	/// if enableArc(graph,arc,false) is called, this map is not touched!
 	std::map<ResidualArcCandidate, bool> residualArcPresent_;
 
-	/// A list of all the arcs that could potentially be present in the graph.
-	/// -> a pair of arc "candidates"
-	std::map<OriginalArc, ResidualArcPair> arcMap_;
-
-	/// the distance(=cost) map of this residual graph
+	/// the distance(=cost) map of this residual graph used for shortest path computation
 	DistMap residualDistMap_;
 
 	/// a mapping from all residual nodes to original nodes
 	OriginMap originMap_;
+
+	/// a mapping from original nodes to residual nodes
 	ResidualNodeMap residualNodeMap_;
 };
 

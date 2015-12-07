@@ -20,7 +20,7 @@ ResidualGraph::ResidualGraph(const Graph& original):
 
 void ResidualGraph::updateArc(const OriginalArc& a, bool forward, double cost, int capacity)
 {
-	ResidualArcCandidate ac = forward ? arcToPair(a) : arcToInversePair(a);
+	ResidualArcCandidate ac = undirectedArcToPair(a, forward);
 	updateResidualArc(ac, cost, capacity);
 }
 
