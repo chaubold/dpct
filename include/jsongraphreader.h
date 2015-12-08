@@ -81,8 +81,8 @@ private:
 	StateFeatureVector extractFeatures(const Json::Value& entry, JsonTypes type);
 	FeatureVector weightedSumOfFeatures(const StateFeatureVector& stateFeatures, const FeatureVector& weights, size_t offset, bool statesShareWeights);
 	FeatureVector readWeightsFromJson(const std::string& filename);
-	FeatureVector costsToDeltas(const FeatureVector& costs);
-	ValueType costsToDelta(const FeatureVector& costs);
+	FeatureVector costsToScoreDeltas(const FeatureVector& costs);
+	ValueType costsToScoreDelta(const FeatureVector& costs);
 
 private:
 	/// filename where the model is stored in json

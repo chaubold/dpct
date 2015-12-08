@@ -131,14 +131,14 @@ void JsonGraphReader::createFlowGraphFromJson(FlowGraph& g, FlowGraph::Node sour
 		if(!jsonHyp.isMember(JsonTypeNames[JsonTypes::Features]))
 			throw std::runtime_error("Cannot read detection hypothesis without features!");
 
-		FlowGraph::Node n = g.addNode(costsToDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::Features), weights, detWeightOffset, statesShareWeights)));
+		FlowGraph::Node n = g.addNode(costsToScoreDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::Features), weights, detWeightOffset, statesShareWeights)));
 		idToFlowGraphNodeMap_[id] = n;
 
 		if(jsonHyp.isMember(JsonTypeNames[JsonTypes::AppearanceFeatures]))
-			g.addArc(g.getSource(), n, costsToDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::AppearanceFeatures), weights, appWeightOffset, statesShareWeights)));
+			g.addArc(g.getSource(), n, costsToScoreDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::AppearanceFeatures), weights, appWeightOffset, statesShareWeights)));
 
 		if(jsonHyp.isMember(JsonTypeNames[JsonTypes::DisappearanceFeatures]))
-			g.addArc(n, g.getTarget(), costsToDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::DisappearanceFeatures), weights, disWeightOffset, statesShareWeights)));
+			g.addArc(n, g.getTarget(), costsToScoreDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::DisappearanceFeatures), weights, disWeightOffset, statesShareWeights)));
 	}
 
 	// read linking hypotheses
@@ -151,7 +151,7 @@ void JsonGraphReader::createFlowGraphFromJson(FlowGraph& g, FlowGraph::Node sour
 		size_t destId = jsonHyp[JsonTypeNames[JsonTypes::DestId]].asInt();
 		FlowGraph::Arc a = g.addArc(idToFlowGraphNodeMap_[srcId], 
 			idToFlowGraphNodeMap_[destId], 
-			costsToDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::Features), weights, linkWeightOffset, statesShareWeights)));
+			costsToScoreDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::Features), weights, linkWeightOffset, statesShareWeights)));
 		idTupleToFlowGraphArcMap_[std::make_pair(srcId, destId)] = a;
 	}
 
@@ -163,7 +163,7 @@ void JsonGraphReader::createFlowGraphFromJson(FlowGraph& g, FlowGraph::Node sour
 
 		if(jsonHyp.isMember(JsonTypeNames[JsonTypes::DivisionFeatures]))
 		{
-			FlowGraph::Arc a = g.allowMitosis(idToFlowGraphNodeMap_[id], costsToDelta(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::DivisionFeatures), weights, divWeightOffset, statesShareWeights)));
+			FlowGraph::Arc a = g.allowMitosis(idToFlowGraphNodeMap_[id], costsToScoreDelta(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::DivisionFeatures), weights, divWeightOffset, statesShareWeights)));
 			idToFlowGraphDivisionArcMap_[id] = a;
 		}
 	}
@@ -225,13 +225,13 @@ void JsonGraphReader::saveFlowMapToResultJson(const std::string& filename, FlowG
 		size_t value = graph.sumInFlow(iter.second);
 		if(idToFlowGraphDivisionArcMap_.find(iter.first) != idToFlowGraphDivisionArcMap_.end())
 			value -= flowMap[idToFlowGraphDivisionArcMap_[iter.first]];
-		
+
 		if(value > 0)
 		{
 			Json::Value val;
 			val[JsonTypeNames[JsonTypes::Id]] = Json::Value((unsigned int)iter.first);
-			val[JsonTypeNames[JsonTypes::Value]] = Json::Value(true);
-			divisionsJson.append(val);
+			val[JsonTypeNames[JsonTypes::Value]] = Json::Value((unsigned int)value);
+			detectionsJson.append(val);
 		}
 	}
 
@@ -293,7 +293,7 @@ JsonGraphReader::FeatureVector JsonGraphReader::weightedSumOfFeatures(
 	{
 		for(auto f : stateFeatures[state])
 		{
-			costPerState[state] += f * weights[(weightIdx++)];
+			costPerState[state] = f * weights[(weightIdx++)];
 		}
 
 		if(statesShareWeights)
@@ -303,18 +303,18 @@ JsonGraphReader::FeatureVector JsonGraphReader::weightedSumOfFeatures(
 	return costPerState;
 }
 
-JsonGraphReader::FeatureVector JsonGraphReader::costsToDeltas(const FeatureVector& costs)
+JsonGraphReader::FeatureVector JsonGraphReader::costsToScoreDeltas(const FeatureVector& costs)
 {
 	FeatureVector result;
 	for(size_t i = 1; i < costs.size(); i++)
-		result.push_back(costs[i-1] - costs[i]);
+		result.push_back(costs[i] - costs[i-1]);
 	return result;
 }
 
-JsonGraphReader::ValueType JsonGraphReader::costsToDelta(const FeatureVector& costs)
+JsonGraphReader::ValueType JsonGraphReader::costsToScoreDelta(const FeatureVector& costs)
 {
 	assert(costs.size() == 2);
-	return costs[1] - costs[0];
+	return costs[0] - costs[1];
 }
 
 
