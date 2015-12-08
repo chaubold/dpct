@@ -15,7 +15,9 @@ namespace dpct
 {
 
 /**
- * A flow graph manages nodes and arcs with attached costs, capacities and flow
+ * A flow graph manages nodes and arcs with attached costs, capacities and flow. 
+ * It can run min cost max flow tracking based on the bellman ford shortest path algorithm,
+ * but alters the residual graph in each iteration such that it obeys all consistency constraints.
  */
 class FlowGraph {
 public: // typedefs
