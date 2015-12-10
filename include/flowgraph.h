@@ -109,6 +109,26 @@ private:
 	std::map<Node, Node> duplicateToParentMap_;
 };
 
+/**
+ * @brief Output std vectors of stuff
+ * 
+ * @param stream output stream
+ * @param feats the vector of stuff
+ */
+template<class T>
+std::ostream& operator<<(std::ostream& stream, const std::vector<T>& feats)
+{
+	stream << "(";
+	for(auto f_it = feats.begin(); f_it != feats.end(); ++f_it)
+	{
+		if(f_it != feats.begin())
+			stream << ", ";
+		stream << *f_it;
+	}
+	stream << ")";
+	return stream;
+}
+
 } // end namespace dpct
 
 #endif
