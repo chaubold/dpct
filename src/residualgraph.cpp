@@ -132,7 +132,7 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
     return std::make_pair(p, pathCost);
 }
 
-void ResidualGraph::toDot(const std::string& filename, const Path& p)
+void ResidualGraph::fullGraphToDot(const std::string& filename, const Path& p) const
 {
 	std::ofstream out_file(filename.c_str());
 
@@ -154,7 +154,64 @@ void ResidualGraph::toDot(const std::string& filename, const Path& p)
 	{
 		ResidualArcCandidate ac = residualArcToPair(a);
 		out_file << "\t" << id(source(a)) << " -> " << id(target(a)) << " [ label=\"" 
-			<< "cost=" << residualArcCost_[ac] << "\" ";
+			<< "cost=" << residualArcCost_.at(ac) << "\" ";
+
+		// highlight arcs on the given path
+		for(const std::pair<OriginalArc, int>& af : p)
+		{
+			if(ac == arcToPair(af.first) || ac == arcToInversePair(af.first))
+				out_file << "color=\"red\" fontcolor=\"red\" ";
+		}
+
+		out_file << "]; \n" << std::flush;
+	}
+
+    out_file << "}";
+}
+
+void ResidualGraph::toDot(const std::string& filename, const Path& p, Node& s, Node& t) const
+{
+	std::ofstream out_file(filename.c_str());
+
+    if(!out_file.good())
+    {
+        throw std::runtime_error("Could not open file " + filename + " to save graph to");
+    }
+
+    out_file << "digraph G {\n";
+
+    // nodes -> will be filled automatically by the edges, drops nodes without connections
+	// for(Graph::NodeIt n(*this); n != lemon::INVALID; ++n)
+	// {
+	// 	out_file << "\t" << id(n) << " [ label=\"" << id(n) << "\" ]; \n" << std::flush;
+	// }
+
+    // find all nodes participating in path p
+    std::set<Node> nodesOnPath;
+    for(const std::pair<OriginalArc, int>& af : p)
+	{
+		ResidualArcCandidate ac = arcToPair(af.first);
+		nodesOnPath.insert(ac.first);
+		nodesOnPath.insert(ac.second);
+	}
+
+	// arcs
+	for(Graph::ArcIt a(*this); a != lemon::INVALID; ++a)
+	{
+		ResidualArcCandidate ac = residualArcToPair(a);
+
+		// only draw arcs that are close to the path
+		if(nodesOnPath.count(ac.first) == 0 && nodesOnPath.count(ac.second) == 0)
+			continue;
+		// only draw arcs that are not connected to source or sink
+		if(ac.first == s || ac.first == t || ac.first == s || ac.second == t)
+			continue;
+
+		out_file << "\t" << id(ac.first) << " -> " << id(ac.second) << " [ label=\"" 
+			<< "cost=" << residualArcCost_.at(ac) 
+			<< " originSource=" << originalGraph_.id(originMap_.at(ac.first))
+			<< " originTarget=" << originalGraph_.id(originMap_.at(ac.second))
+			<< "\" ";
 
 		// highlight arcs on the given path
 		for(const std::pair<OriginalArc, int>& af : p)

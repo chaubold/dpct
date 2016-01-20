@@ -47,7 +47,8 @@ public: // API
 	void enableArc(const OriginalArc& a, bool state);
 
 	/// save graph to dot file
-	void toDot(const std::string& filename, const Path& p);
+	void fullGraphToDot(const std::string& filename, const Path& p) const;
+	void toDot(const std::string& filename, const Path& p, Node& s, Node& t) const;
 
 	/// find the shortest augmenting path/circle (if any)
 	ShortestPathResult findShortestPath(
