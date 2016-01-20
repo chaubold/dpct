@@ -229,6 +229,9 @@ namespace lemon {
     // Indicates if _dist is locally allocated (true) or not.
     bool _local_dist;
 
+    // Store (single = last added) source
+    Node _source;
+
     typedef typename Digraph::template NodeMap<bool> MaskMap;
     MaskMap *_mask;
 
@@ -425,6 +428,7 @@ namespace lemon {
     /// This function adds a new source node. The optional second parameter
     /// is the initial distance of the node.
     void addSource(Node source, Value dst = OperationTraits::zero()) {
+      _source = source;
       _dist->set(source, dst);
       if (!(*_mask)[source]) {
         _process.push_back(source);
@@ -559,12 +563,20 @@ namespace lemon {
       int num = (numIterations <= 0) ? countNodes(*_gr) : numIterations;
 
       for (int i = 0; i < num; ++i) {
-        if(processNextWeakRound())
+        bool result = processNextWeakRound();
+
+        if((*_pred)[_source] != INVALID)
+        {
+          std::cout << "\tCycle returned to source with negative cost " << (*_dist)[_source] << " in iteration " << i << std::endl;
+          return false;
+        }
+
+        if(result)
         {
           std::cout << "\tFinished after " << i << " iterations" << std::endl; 
           return true;
         }
-        
+
         if(i > 0 && i % numIterationsBetweenNegativeCycleChecks == 0)
         {
           lemon::Path<Digraph> cycle = negativeCycle();
