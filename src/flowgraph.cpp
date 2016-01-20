@@ -68,13 +68,13 @@ void FlowGraph::maxFlowMinCostTracking()
 	do
 	{
 		TimePoint iterationStartTime = std::chrono::high_resolution_clock::now();
-		LOG_MSG("\t>>> Iteration");
+		DEBUG_MSG("\t>>> Iteration");
 		DEBUG_MSG("Current Flow:");
 		printAllFlows();
 
 		result = residualGraph_->findShortestPath(source_, target_);
 
-		LOG_MSG("\tFound path or cycle"
+		DEBUG_MSG("\tFound path or cycle"
 				<< " of length " << result.first.size() 
 				<< " of distance " << result.second);
 
@@ -91,7 +91,7 @@ void FlowGraph::maxFlowMinCostTracking()
 		}
 		TimePoint iterationEndTime = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> elapsed_seconds = iterationEndTime - iterationStartTime;
-		LOG_MSG("\t<<<Iteration " << iter++ << " done in " << elapsed_seconds.count() << " secs");
+		DEBUG_MSG("\t<<<Iteration " << iter++ << " done in " << elapsed_seconds.count() << " secs");
 	}
 	while(result.first.size() > 0 && result.second < 0.0);
 
@@ -99,7 +99,7 @@ void FlowGraph::maxFlowMinCostTracking()
 
 	TimePoint endTime_ = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed_seconds = endTime_ - startTime_;
-	LOG_MSG("Tracking took " << elapsed_seconds.count() << " secs");
+	LOG_MSG("Tracking took " << elapsed_seconds.count() << " secs and " << iter << " iterations");
 }
 
 void FlowGraph::cleanUpDuplicatedOutArcs()

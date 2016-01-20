@@ -96,7 +96,7 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 	// BUT: the number of paths found changes, which means we are not finding the same things... (different negative cycles?)
     if(bf.checkedStart(100, 1000))
     {	
-    	LOG_MSG("Found path");
+    	DEBUG_MSG("Found path");
     	// found path
         if(bf.reached(target))
         {
@@ -114,7 +114,7 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
     }
     else
     {
-    	LOG_MSG("Found cycle");
+    	DEBUG_MSG("Found cycle");
     	// found cycle
     	lemon::Path<ResidualGraph> path = bf.negativeCycle();
     	ResidualArcCandidate ac;
