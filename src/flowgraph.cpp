@@ -44,10 +44,10 @@ FlowGraph::Arc FlowGraph::allowMitosis(FlowGraph::Node parent,
 	Node duplicate = addNode(nodeCosts_[parent]);
 	Arc a = addArc(source_, duplicate, {divisionCost});
 
-	// copy all out arcs
+	// copy all out arcs, but with capacity=1 only
 	for(Graph::OutArcIt oa(baseGraph_, parent); oa != lemon::INVALID; ++oa)
 	{
-		addArc(duplicate, baseGraph_.target(oa), arcCosts_[oa]);
+		addArc(duplicate, baseGraph_.target(oa), {arcCosts_[oa][0]});
 	}
 
 	parentToDuplicateMap_[parent] = duplicate;
