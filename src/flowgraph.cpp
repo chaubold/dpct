@@ -7,7 +7,6 @@
 namespace dpct
 {
 FlowGraph::FlowGraph():
-	arcEnabledMap_(baseGraph_),
 	flowMap_(baseGraph_),
 	capacityMap_(baseGraph_)
 {
@@ -34,7 +33,6 @@ FlowGraph::Arc FlowGraph::addArc(FlowGraph::Node source,
 	arcCosts_[a] = costs;
 	flowMap_[a] = 0;
 	capacityMap_[a] = costs.size();
-	arcEnabledMap_[a] = true;
 	return a;
 }
 
@@ -45,7 +43,6 @@ FlowGraph::Arc FlowGraph::allowMitosis(FlowGraph::Node parent,
 	// set up duplicate with disabled in arc
 	Node duplicate = addNode(nodeCosts_[parent]);
 	Arc a = addArc(source_, duplicate, {divisionCost});
-	arcEnabledMap_[a] = false;
 
 	// copy all out arcs
 	for(Graph::OutArcIt oa(baseGraph_, parent); oa != lemon::INVALID; ++oa)
@@ -151,7 +148,6 @@ void FlowGraph::augmentUnitFlow(const FlowGraph::Path& p)
 
 void FlowGraph::enableArc(const Arc& a, bool state)
 {
-	arcEnabledMap_[a] = state;
 	residualGraph_->enableArc(a, state);
 }
 

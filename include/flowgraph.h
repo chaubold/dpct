@@ -27,7 +27,6 @@ public: // typedefs
     typedef Graph::ArcMap<double> DistMap;
     typedef Graph::ArcMap<int> FlowMap;
     typedef Graph::ArcMap<int> CapacityMap;
-    typedef Graph::ArcMap<bool> ArcEnabledMap;
     typedef std::vector<double> CostVector;
     typedef std::map<Node, CostVector> NodeCostMap;
 	typedef std::map<Arc, CostVector> ArcCostMap;
@@ -87,9 +86,6 @@ private:
 	Graph baseGraph_;
 	Node source_;
 	Node target_;
-
-	/// map showing which arcs are initially enabled
-	ArcEnabledMap arcEnabledMap_;
 
 	/// residual graph
 	std::shared_ptr<ResidualGraph> residualGraph_;
