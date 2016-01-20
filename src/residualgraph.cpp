@@ -93,7 +93,8 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 	// * limiting the number of iterations to 1000 reduces the runtime of drosophila 10x (3200sec -> 380sec)!!
 	// * checking for negative cycles each round brings runtime down to 82 secs
 	// * checking for negative cycles every 100 iterations yields runtime of 53secs!
-    if(bf.checkedStart(100))
+	// BUT: the number of paths found changes, which means we are not finding the same things... (different negative cycles?)
+    if(bf.checkedStart(100, 1000))
     {	
     	LOG_MSG("Found path");
     	// found path
