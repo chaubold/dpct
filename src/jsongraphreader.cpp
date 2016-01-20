@@ -307,7 +307,11 @@ JsonGraphReader::FeatureVector JsonGraphReader::costsToScoreDeltas(const Feature
 {
 	FeatureVector result;
 	for(size_t i = 1; i < costs.size(); i++)
+	{
 		result.push_back(costs[i] - costs[i-1]);
+		if(i > 1 && result[i-1] == result[i-2])
+			std::cout << "Warning: found potentially problematic score setup: " << result[i-1] << " == " << result[i-2] << std::endl;
+	}
 	return result;
 }
 
