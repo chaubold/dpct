@@ -178,15 +178,14 @@ void FlowGraph::updateArc(const Arc& a)
 {
 	int flow = flowMap_[a];
 	int capacity = capacityMap_[a];
-	double cost;
 
 	// forward arc:
-	cost = getArcCost(a, flow) + getNodeCost(baseGraph_.target(a), flow);
-    residualGraph_->updateArc(a, ResidualGraph::Forward, cost, capacity - flow);
+	double forwardCost = getArcCost(a, flow) + getNodeCost(baseGraph_.target(a), flow);
+    residualGraph_->updateArc(a, ResidualGraph::Forward, forwardCost, capacity - flow);
 
     // backward arc:
-    cost = -1.0 * (getArcCost(a, flow - 1) + getNodeCost(baseGraph_.target(a), flow - 1));
-    residualGraph_->updateArc(a, ResidualGraph::Backward, cost, flow);
+    double backwardCost = -1.0 * (getArcCost(a, flow - 1) + getNodeCost(baseGraph_.target(a), flow - 1));
+    residualGraph_->updateArc(a, ResidualGraph::Backward, backwardCost, flow);
 }
 
 /// updates the arcEnabled map by checking which divisions should be enabled/disabled after this track
