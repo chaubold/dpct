@@ -1,6 +1,7 @@
 #include "residualgraph.h"
 #include <limits>
 #include <fstream>
+#include <set>
 #include "log.h"
 
 namespace dpct
