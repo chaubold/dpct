@@ -131,14 +131,14 @@ void JsonGraphReader::createFlowGraphFromJson(FlowGraph& g, FlowGraph::Node sour
 		if(!jsonHyp.isMember(JsonTypeNames[JsonTypes::Features]))
 			throw std::runtime_error("Cannot read detection hypothesis without features!");
 
-		FlowGraph::Node n = g.addNode(costsToScoreDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::Features), weights, detWeightOffset, statesShareWeights)));
+		FlowGraph::FullNode n = g.addNode(costsToScoreDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::Features), weights, detWeightOffset, statesShareWeights)));
 		idToFlowGraphNodeMap_[id] = n;
 
 		if(jsonHyp.isMember(JsonTypeNames[JsonTypes::AppearanceFeatures]))
-			g.addArc(g.getSource(), n, costsToScoreDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::AppearanceFeatures), weights, appWeightOffset, statesShareWeights)));
+			g.addArc(g.getSource(), n.u, costsToScoreDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::AppearanceFeatures), weights, appWeightOffset, statesShareWeights)));
 
 		if(jsonHyp.isMember(JsonTypeNames[JsonTypes::DisappearanceFeatures]))
-			g.addArc(n, g.getTarget(), costsToScoreDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::DisappearanceFeatures), weights, disWeightOffset, statesShareWeights)));
+			g.addArc(n.v, g.getTarget(), costsToScoreDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::DisappearanceFeatures), weights, disWeightOffset, statesShareWeights)));
 	}
 
 	// read linking hypotheses
@@ -222,7 +222,7 @@ void JsonGraphReader::saveFlowMapToResultJson(const std::string& filename, FlowG
 	Json::Value& detectionsJson = root[JsonTypeNames[JsonTypes::DetectionResults]];
 	for(auto iter : idToFlowGraphNodeMap_)
 	{
-		size_t value = graph.sumInFlow(iter.second);
+		size_t value = graph.sumInFlow(iter.second.u);
 		if(idToFlowGraphDivisionArcMap_.find(iter.first) != idToFlowGraphDivisionArcMap_.end())
 			value -= flowMap[idToFlowGraphDivisionArcMap_[iter.first]];
 

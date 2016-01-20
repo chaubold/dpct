@@ -416,7 +416,7 @@ BOOST_AUTO_TEST_CASE(pure_lemon)
 BOOST_AUTO_TEST_CASE( flowgraph_simple )
 {
     FlowGraph g;
-    typedef FlowGraph::Node Node;
+    typedef FlowGraph::FullNode Node;
     typedef FlowGraph::Arc Arc;
 
     Node n_1_1 = g.addNode({0.0});
@@ -426,15 +426,15 @@ BOOST_AUTO_TEST_CASE( flowgraph_simple )
     Node n_2_2 = g.addNode({0.0});
     Node n_2_3 = g.addNode({0.0});
 
-    Node s = g.getSource();
-    Node t = g.getTarget();
+    FlowGraph::Node s = g.getSource();
+    FlowGraph::Node t = g.getTarget();
 
-    Arc app1 = g.addArc(s, n_1_1, {0.0});
-    Arc app2 = g.addArc(s, n_1_2, {0.0});
-    Arc app3 = g.addArc(s, n_2_1, {10.0});
-    Arc app4 = g.addArc(s, n_2_2, {10.0});
-    Arc app5 = g.addArc(s, n_2_3, {10.0});
-    Arc app6 = g.addArc(s, n_1_3, {0.0});
+    Arc app1 = g.addArc(s, n_1_1.u, {0.0});
+    Arc app2 = g.addArc(s, n_1_2.u, {0.0});
+    Arc app3 = g.addArc(s, n_2_1.u, {10.0});
+    Arc app4 = g.addArc(s, n_2_2.u, {10.0});
+    Arc app5 = g.addArc(s, n_2_3.u, {10.0});
+    Arc app6 = g.addArc(s, n_1_3.u, {0.0});
 
     Arc move1 = g.addArc(n_1_1, n_2_1, {-4.0});
     Arc move2 = g.addArc(n_1_1, n_2_2, {-3.0});
@@ -442,12 +442,12 @@ BOOST_AUTO_TEST_CASE( flowgraph_simple )
     Arc move4 = g.addArc(n_1_2, n_2_3, {-4.0});
     Arc move5 = g.addArc(n_1_3, n_2_3, {2.0});
 
-    Arc dis1 = g.addArc(n_2_1, t, {-2.0});
-    Arc dis2 = g.addArc(n_2_2, t, {-2.0});
-    Arc dis3 = g.addArc(n_2_3, t, {-4.0});
-    Arc dis4 = g.addArc(n_1_1, t, {10.0});
-    Arc dis5 = g.addArc(n_1_2, t, {10.0});
-    Arc dis6 = g.addArc(n_1_3, t, {-1.0});
+    Arc dis1 = g.addArc(n_2_1.v, t, {-2.0});
+    Arc dis2 = g.addArc(n_2_2.v, t, {-2.0});
+    Arc dis3 = g.addArc(n_2_3.v, t, {-4.0});
+    Arc dis4 = g.addArc(n_1_1.v, t, {10.0});
+    Arc dis5 = g.addArc(n_1_2.v, t, {10.0});
+    Arc dis6 = g.addArc(n_1_3.v, t, {-1.0});
 
     Arc div1 = g.allowMitosis(n_1_1, {-4.0});
     Arc div2 = g.allowMitosis(n_1_2, {-4.0});

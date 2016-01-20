@@ -95,7 +95,7 @@ private:
 	FeatureVector weights_;
 
 	/// mapping from id to flowgraph nodes
-	std::map<size_t, FlowGraph::Node> idToFlowGraphNodeMap_;
+	std::map<size_t, FlowGraph::FullNode> idToFlowGraphNodeMap_;
 
 	/// mapping from id to flowgraph division arc
 	std::map<size_t, FlowGraph::Arc> idToFlowGraphDivisionArcMap_;

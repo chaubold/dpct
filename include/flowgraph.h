@@ -5,6 +5,7 @@
 #include <lemon/bellman_ford.h>
 #include <lemon/list_graph.h>
 #include <map>
+#include <set>
 #include <tuple>
 #include <memory>
 #include <chrono>
@@ -24,6 +25,11 @@ public: // typedefs
 	typedef lemon::ListDigraph Graph;
     typedef Graph::Node Node;
     typedef Graph::Arc Arc;
+    struct FullNode{
+    	Node u;
+    	Node v;
+    	Arc a;
+    };
     typedef Graph::ArcMap<double> DistMap;
     typedef Graph::ArcMap<int> FlowMap;
     typedef Graph::ArcMap<int> CapacityMap;
@@ -36,15 +42,14 @@ public: // typedefs
 public: // API
 	FlowGraph();
 
-	Node addNode(const CostVector& costs);
+	FullNode addNode(const CostVector& costs);
 
-	Arc addArc(Node source,
-		Node target,
-		const CostVector& costs);
+	Arc addArc(Node source, Node target, const CostVector& costs);
+	Arc addArc(FullNode source, FullNode target, const CostVector& costs);
 
 	/// create duplicated parent node for the given node with the given cost
 	/// ATTENTION: needs to be called AFTER adding all other arcs or it will copy too few
-	Arc allowMitosis(Node parent, double divisionCost);
+	Arc allowMitosis(FullNode parent, double divisionCost);
 
 	/// start the tracking
 	void maxFlowMinCostTracking();
@@ -73,10 +78,6 @@ private:
 	/// update capacity and cost of residual graph arc
 	void updateArc(const Arc& a);
 
-	/// copy flow from the duplicated (division) to the original arcs so it is seen by the user
-	void cleanUpDuplicatedOutArcs();
-
-	double getNodeCost(const Node& n, int flow);
 	double getArcCost(const Arc& a, int flow);
 
 	void printPath(const Path& p);
@@ -97,12 +98,14 @@ private:
 	CapacityMap capacityMap_;
 
 	/// store cost of arcs and nodes
-	NodeCostMap nodeCosts_;
 	ArcCostMap arcCosts_;
 
 	/// mapping between parent and duplicated parent nodes
 	std::map<Node, Node> parentToDuplicateMap_;
 	std::map<Node, Node> duplicateToParentMap_;
+
+	/// store a set of the arcs which are actually just used to emplace the node costs
+	std::set<Arc> intermediateArcs_;
 };
 
 /**

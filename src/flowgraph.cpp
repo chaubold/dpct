@@ -14,14 +14,17 @@ FlowGraph::FlowGraph():
 	target_ = baseGraph_.addNode();
 }
 
-FlowGraph::Node FlowGraph::addNode(const CostVector& costs)
+FlowGraph::FullNode FlowGraph::addNode(const CostVector& costs)
 {
 	assert(costs.size() > 0);
 	
-	Node n = baseGraph_.addNode();
-	nodeCosts_[n] = costs;
+	FullNode f;
+	f.u = baseGraph_.addNode();
+	f.v = baseGraph_.addNode();
+	f.a = addArc(f.u, f.v, costs);
+	intermediateArcs_.insert(f.a);
 
-	return n;
+	return f;
 }
 
 FlowGraph::Arc FlowGraph::addArc(FlowGraph::Node source,
@@ -36,22 +39,29 @@ FlowGraph::Arc FlowGraph::addArc(FlowGraph::Node source,
 	return a;
 }
 
+FlowGraph::Arc FlowGraph::addArc(FlowGraph::FullNode source,
+	FlowGraph::FullNode target,
+	const CostVector& costs)
+{
+	return addArc(source.v, target.u, costs);
+}
+
 /// create duplicated parent node for the given node with the given cost
-FlowGraph::Arc FlowGraph::allowMitosis(FlowGraph::Node parent,
+FlowGraph::Arc FlowGraph::allowMitosis(FlowGraph::FullNode parent,
 	double divisionCost)
 {
 	// set up duplicate with disabled in arc
-	Node duplicate = addNode(nodeCosts_[parent]);
+	Node duplicate = baseGraph_.addNode();
 	Arc a = addArc(source_, duplicate, {divisionCost});
 
 	// copy all out arcs, but with capacity=1 only
-	for(Graph::OutArcIt oa(baseGraph_, parent); oa != lemon::INVALID; ++oa)
+	for(Graph::OutArcIt oa(baseGraph_, parent.v); oa != lemon::INVALID; ++oa)
 	{
 		addArc(duplicate, baseGraph_.target(oa), {arcCosts_[oa][0]});
 	}
 
-	parentToDuplicateMap_[parent] = duplicate;
-	duplicateToParentMap_[duplicate] = parent;
+	parentToDuplicateMap_[parent.v] = duplicate;
+	duplicateToParentMap_[duplicate] = parent.v;
 
 	return a;
 }
@@ -95,26 +105,11 @@ void FlowGraph::maxFlowMinCostTracking()
 	}
 	while(result.first.size() > 0 && result.second < 0.0);
 
-	cleanUpDuplicatedOutArcs();
-
 	TimePoint endTime_ = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed_seconds = endTime_ - startTime_;
 	LOG_MSG("Tracking took " << elapsed_seconds.count() << " secs and " << iter << " iterations");
 }
 
-void FlowGraph::cleanUpDuplicatedOutArcs()
-{
-	for(std::map<Node, Node>::iterator it = duplicateToParentMap_.begin(); it != duplicateToParentMap_.end(); ++it)
-	{
-		for(Graph::OutArcIt oa(baseGraph_, it->first); oa != lemon::INVALID; ++oa)
-		{
-			if(flowMap_[oa] != 0)
-				flowMap_[lemon::findArc(baseGraph_, it->second, baseGraph_.target(oa))] = flowMap_[oa];
-		}
-	}
-}
-
-/// use the current flow and arcEnabled maps to create a residual graph using the appropriate cost deltas
 void FlowGraph::initializeResidualGraph()
 {
 	residualGraph_ = std::make_shared<ResidualGraph>(baseGraph_);
@@ -166,7 +161,8 @@ void FlowGraph::augmentUnitFlow(const FlowGraph::Path& p)
 			{
 				if(baseGraph_.target(oa) == baseGraph_.target(af.first))
 				{
-					flowMap_[oa] += af.second;
+					// set the duplicated arcs, but don't exceed their capacity!
+					flowMap_[oa] = std::min(flowMap_[af.first], 1);
 					updateArc(oa);
 					break;
 				}
@@ -190,34 +186,25 @@ double FlowGraph::getArcCost(const Arc& a, int flow)
 		return std::numeric_limits<double>::infinity();
 }
 
-double FlowGraph::getNodeCost(const Node& n, int flow)
-{
-	if(n == source_ || n == target_)
-		return 0.0;
-	else
-	{
-		if(flow >= 0 && flow < nodeCosts_[n].size())
-			return nodeCosts_[n][flow];
-		else
-			return std::numeric_limits<double>::infinity();
-	}
-}
-
 void FlowGraph::updateArc(const Arc& a)
 {
 	int flow = flowMap_[a];
 	int capacity = capacityMap_[a];
+	if(flow < 0)
+		throw std::runtime_error("Found Arc with negative flow!");
+	if(flow > capacity)
+		throw std::runtime_error("Found Arc with more flow than capacity!");
 
 	// forward arc:
-	double forwardCost = getArcCost(a, flow) + getNodeCost(baseGraph_.target(a), flow);
+	double forwardCost = getArcCost(a, flow);
     residualGraph_->updateArc(a, ResidualGraph::Forward, forwardCost, capacity - flow);
 
     // backward arc:
-    double backwardCost = -1.0 * (getArcCost(a, flow - 1) + getNodeCost(baseGraph_.target(a), flow - 1));
+    double backwardCost = -1.0 * getArcCost(a, flow-1);
     residualGraph_->updateArc(a, ResidualGraph::Backward, backwardCost, flow);
 }
 
-/// updates the arcEnabled map by checking which divisions should be enabled/disabled after this track
+/// updates the enabled arcs in the residual graph by checking which divisions should be enabled/disabled after this track
 void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p)
 {
 	// define functions for enabling / disabling
@@ -318,7 +305,7 @@ void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p)
 		DEBUG_MSG("Updating stuff for " << (forward? "forward" : "backward") << " edge from " 
 			<< baseGraph_.id(source) << " to " << baseGraph_.id(target));
 
-		// division updates
+		// division updates: enable if mother cell is used exactly once
 		if(parentToDuplicateMap_.find(source) != parentToDuplicateMap_.end())
 		{
 			if(sumOutFlow(source) == 1)
@@ -332,21 +319,22 @@ void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p)
 				toggleDivision(parentToDuplicateMap_[source], target, false);
 			}
 		}
-		else if(duplicateToParentMap_.find(source) != duplicateToParentMap_.end())
+		// division used/unused -> toggle mother cell's in and out arcs
+		else if(duplicateToParentMap_.find(target) != duplicateToParentMap_.end())
 		{
 			if(forward)
 			{
 				// adding flow through division -> parent cannot be undone
-				toggleOutArcs(duplicateToParentMap_[source], false);
+				toggleOutArcs(duplicateToParentMap_[target], false);
 			}
 			else
 			{
 				// removing flow from division -> parent can be undone again
-				toggleOutArcs(duplicateToParentMap_[source], true);
+				toggleOutArcs(duplicateToParentMap_[target], true);
 			}
 		}
 
-		// partial appearance/disappearance
+		// forbid partial appearance/disappearance
 		if(source == source_)
 		{
 			// changing usage of appearance arc, enable/disable all other incomings to target
@@ -357,7 +345,7 @@ void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p)
 			// changing usage of disappearance arc, enable/disable all other outgoings of source
 			toggleOutArcsBut(source, target, sumOutFlow(source) == 0);
 		}
-		else
+		else if(intermediateArcs_.count(af.first) == 0)
 		{
 			// we did not use an appearance or disappearance arc! 
 			// enable those if no other in-/out- flow at that arc yet
