@@ -81,6 +81,7 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 	DEBUG_MSG("Searching shortest path in graph with " << lemon::countNodes(*this)
 			<< " nodes and " << lemon::countArcs(*this) << " arcs");
 
+	// TODO: reuse distMap and predMap of bf to avoid new and delete in each iteration?
     BellmanFord bf(*this, residualDistMap_);
     bf.init();
     bf.addSource(source);
@@ -89,7 +90,10 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 	double pathCost = 0.0;
 	int flow = 0;
 
-    if(bf.checkedStart())
+	// * limiting the number of iterations to 1000 reduces the runtime of drosophila 10x (3200sec -> 380sec)!!
+	// * checking for negative cycles each round brings runtime down to 82 secs
+	// * checking for negative cycles every 100 iterations yields runtime of 53secs!
+    if(bf.checkedStart(100))
     {	
     	LOG_MSG("Found path");
     	// found path

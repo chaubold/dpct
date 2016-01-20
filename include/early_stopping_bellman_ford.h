@@ -556,10 +556,7 @@ namespace lemon {
     /// \pre init() must be called and at least one root node should be
     /// added with addSource() before using this function.
     bool checkedStart(int numIterationsBetweenNegativeCycleChecks) {
-      // int num = countNodes(*_gr);
-      int num = 1000;
-
-      bool firstCycle = true;
+      int num = countNodes(*_gr);
 
       for (int i = 0; i < num; ++i) {
         bool result = processNextWeakRound();
@@ -567,25 +564,17 @@ namespace lemon {
         if(result)
         {
           std::cout << "\tFinished after " << i << " iterations" << std::endl; 
-          if(!firstCycle)
-            throw std::runtime_error("Did find a cycle before but it lead to a path?!");
           return true;
         }
-        // if(i > 0)
-        // {
-        //   lemon::Path<Digraph> cycle = negativeCycle();
-        //   if(cycle.length() > 0)
-        //   {
-        //     if(firstCycle)
-        //     {
-        //       std::cout << "\t!!! Found negative cycle in iteration " << i << std::endl;
-        //       firstCycle = false;
-        //     }
-
-        //     if(i % numIterationsBetweenNegativeCycleChecks == 0)
-        //       return false;
-        //   }
-        // }
+        if(i > 0 && i % numIterationsBetweenNegativeCycleChecks == 0)
+        {
+          lemon::Path<Digraph> cycle = negativeCycle();
+          if(cycle.length() > 0)
+          {
+              std::cout << "\t!!! Found negative cycle in iteration " << i << std::endl;
+              return false;
+          }
+        }
       }
       std::cout << "\tFinished after " << num << " iterations" << std::endl; 
       return _process.empty();
