@@ -2,7 +2,7 @@
 #define DPCT_RESIDUALGRAPH_H
 
 #include <lemon/list_graph.h>
-#include <lemon/bellman_ford.h>
+#include "early_stopping_bellman_ford.h"
 #include <map>
 #include <memory>
 #include <assert.h>
