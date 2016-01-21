@@ -223,9 +223,6 @@ void JsonGraphReader::saveFlowMapToResultJson(const std::string& filename, FlowG
 	for(auto iter : idToFlowGraphNodeMap_)
 	{
 		size_t value = graph.sumInFlow(iter.second.u);
-		if(idToFlowGraphDivisionArcMap_.find(iter.first) != idToFlowGraphDivisionArcMap_.end())
-			value -= flowMap[idToFlowGraphDivisionArcMap_[iter.first]];
-
 		if(value > 0)
 		{
 			Json::Value val;
