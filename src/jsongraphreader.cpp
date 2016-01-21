@@ -300,6 +300,8 @@ JsonGraphReader::FeatureVector JsonGraphReader::weightedSumOfFeatures(
 			weightIdx = offset;
 	}
 
+	initialStateEnergy_ += costPerState[0];
+
 	return costPerState;
 }
 

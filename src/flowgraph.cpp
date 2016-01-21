@@ -67,7 +67,7 @@ FlowGraph::Arc FlowGraph::allowMitosis(FlowGraph::FullNode parent,
 }
 
 /// start the tracking
-void FlowGraph::maxFlowMinCostTracking()
+void FlowGraph::maxFlowMinCostTracking(double initialStateEnergy)
 {
 	TimePoint startTime_ = std::chrono::high_resolution_clock::now();
 
@@ -75,6 +75,7 @@ void FlowGraph::maxFlowMinCostTracking()
 
 	ResidualGraph::ShortestPathResult result;
 	size_t iter=0;
+	double currentEnergy = initialStateEnergy;
 	do
 	{
 		TimePoint iterationStartTime = std::chrono::high_resolution_clock::now();
@@ -98,16 +99,19 @@ void FlowGraph::maxFlowMinCostTracking()
 #endif
 			augmentUnitFlow(result.first);
 			updateEnabledArcs(result.first);
+			currentEnergy += result.second; // decrease energy
 		}
 		TimePoint iterationEndTime = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> elapsed_seconds = iterationEndTime - iterationStartTime;
-		DEBUG_MSG("\t<<<Iteration " << iter++ << " done in " << elapsed_seconds.count() << " secs");
+		LOG_MSG("\t<<<Iteration " << iter << " done in " << elapsed_seconds.count() << " secs, system Energy=" << currentEnergy);
+		iter++;
 	}
 	while(result.first.size() > 0 && result.second < 0.0);
 
 	TimePoint endTime_ = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed_seconds = endTime_ - startTime_;
 	LOG_MSG("Tracking took " << elapsed_seconds.count() << " secs and " << iter << " iterations");
+	LOG_MSG("Final energy: " << currentEnergy);
 }
 
 void FlowGraph::initializeResidualGraph()

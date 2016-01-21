@@ -77,6 +77,11 @@ public:
 	 */
 	void saveFlowMapToResultJson(const std::string& filename, FlowGraph& graph, const FlowGraph::FlowMap& flowMap);
 
+	/**
+	 * @return the energy of the initial state of flow based solving: no objects tracked at all
+	 */
+	const double getInitialStateEnergy() const { return initialStateEnergy_; }
+
 private:
 	StateFeatureVector extractFeatures(const Json::Value& entry, JsonTypes type);
 	FeatureVector weightedSumOfFeatures(const StateFeatureVector& stateFeatures, const FeatureVector& weights, size_t offset, bool statesShareWeights);
@@ -102,6 +107,9 @@ private:
 
 	/// mapping from tuple (id,id) to flowgraph arc
 	std::map<std::pair<size_t, size_t>, FlowGraph::Arc> idTupleToFlowGraphArcMap_;
+
+	/// store the model's energy of the initial solution = all zeros
+	double initialStateEnergy_;
 };
 
 } // end namespace dpct

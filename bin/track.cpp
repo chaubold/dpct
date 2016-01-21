@@ -43,7 +43,8 @@ int main(int argc, char** argv) {
 	    FlowGraph graph;
 	    JsonGraphReader jsonReader(modelFilename, weightsFilename);
 	    jsonReader.createFlowGraphFromJson(graph, graph.getSource(), graph.getTarget());
-	    graph.maxFlowMinCostTracking();
+	    std::cout << "Model has state zero energy: " << jsonReader.getInitialStateEnergy() << std::endl;
+	    graph.maxFlowMinCostTracking(jsonReader.getInitialStateEnergy());
 	    jsonReader.saveFlowMapToResultJson(outputFilename, graph, graph.getFlowMap());
 	}
 }

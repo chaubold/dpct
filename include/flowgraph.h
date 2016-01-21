@@ -52,7 +52,7 @@ public: // API
 	Arc allowMitosis(FullNode parent, double divisionCost);
 
 	/// start the tracking
-	void maxFlowMinCostTracking();
+	void maxFlowMinCostTracking(double initialStateEnergy=0.0);
 
 	Node getSource() const { return source_; }
 	Node getTarget() const { return target_; }
