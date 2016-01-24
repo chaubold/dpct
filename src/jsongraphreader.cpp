@@ -209,6 +209,7 @@ void JsonGraphReader::saveFlowMapToResultJson(const std::string& filename, FlowG
 	for(auto iter : idToFlowGraphDivisionArcMap_)
 	{
 		size_t value = flowMap[iter.second];
+		
 		if(value > 0)
 		{
 			Json::Value val;
@@ -222,7 +223,8 @@ void JsonGraphReader::saveFlowMapToResultJson(const std::string& filename, FlowG
 	Json::Value& detectionsJson = root[JsonTypeNames[JsonTypes::DetectionResults]];
 	for(auto iter : idToFlowGraphNodeMap_)
 	{
-		size_t value = graph.sumInFlow(iter.second.u);
+		size_t value = flowMap[iter.second.a];
+		
 		if(value > 0)
 		{
 			Json::Value val;
@@ -308,8 +310,8 @@ JsonGraphReader::FeatureVector JsonGraphReader::costsToScoreDeltas(const Feature
 	for(size_t i = 1; i < costs.size(); i++)
 	{
 		result.push_back(costs[i] - costs[i-1]);
-		if(i > 1 && result[i-1] == result[i-2])
-			std::cout << "Warning: found potentially problematic score setup: " << result[i-1] << " == " << result[i-2] << std::endl;
+		if(i > 1 && result[i-1] <= result[i-2])
+			std::cout << "Warning: found potentially problematic score setup: " << result[i-1] << " <= " << result[i-2] << std::endl;
 	}
 	return result;
 }
