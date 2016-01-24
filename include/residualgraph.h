@@ -166,7 +166,11 @@ private:
 	/// a mapping from original nodes to residual nodes
 	ResidualNodeMap residualNodeMap_;
 
-	/// the forbidden and provided token per arc
+		/// the required and provided tokens per residual arc - persistent even if arcs are disabled (and hence removed)
+	std::map<ResidualArcCandidate, TokenSet> residualArcProvidesTokens_;
+	std::map<ResidualArcCandidate, TokenSet> residualArcForbidsTokens_;
+
+	/// the actual arc maps used by BellmanFord
 	TokenSetArcMap forbiddenTokenMap_;
 	TokenSetArcMap providedTokenMap_;
 };

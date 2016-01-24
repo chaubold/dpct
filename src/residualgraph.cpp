@@ -63,6 +63,8 @@ void ResidualGraph::enableArc(const ResidualArcCandidate& ac, bool state)
 			a = addArc(ac.first, ac.second);
 		}
 		residualDistMap_[a] = residualArcCost_[ac];
+		providedTokenMap_[a] = residualArcProvidesTokens_[ac];
+		forbiddenTokenMap_[a] = residualArcForbidsTokens_[ac];
 	}
 }
 
@@ -138,14 +140,16 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 /// configure required tokens of arcs
 void ResidualGraph::addForbiddenToken(const OriginalArc& a, bool forward, Token token)
 {
-	ResidualArcCandidate ac = forward ? arcToPair(a) : arcToInversePair(a);
+	ResidualArcCandidate ac = undirectedArcToPair(a, forward);
+	residualArcForbidsTokens_[ac].insert(token);
 	Arc resArc = pairToResidualArc(ac);
 	forbiddenTokenMap_[resArc].insert(token);
 }
 
 void ResidualGraph::removeForbiddenToken(const OriginalArc& a, bool forward, Token token)
 {
-	ResidualArcCandidate ac = forward ? arcToPair(a) : arcToInversePair(a);
+	ResidualArcCandidate ac = undirectedArcToPair(a, forward);
+	residualArcForbidsTokens_[ac].erase(token);
 	Arc resArc = pairToResidualArc(ac);
 	forbiddenTokenMap_[resArc].erase(token);
 }
@@ -154,14 +158,16 @@ void ResidualGraph::removeForbiddenToken(const OriginalArc& a, bool forward, Tok
 /// configure provided tokens of arcs
 void ResidualGraph::addProvidedToken(const OriginalArc& a, bool forward, Token token)
 {
-	ResidualArcCandidate ac = forward ? arcToPair(a) : arcToInversePair(a);
+	ResidualArcCandidate ac = undirectedArcToPair(a, forward);
+	residualArcProvidesTokens_[ac].insert(token);
 	Arc resArc = pairToResidualArc(ac);
 	providedTokenMap_[resArc].insert(token);
 }
 
 void ResidualGraph::removeProvidedToken(const OriginalArc& a, bool forward, Token token)
 {
-	ResidualArcCandidate ac = forward ? arcToPair(a) : arcToInversePair(a);
+	ResidualArcCandidate ac = undirectedArcToPair(a, forward);
+	residualArcProvidesTokens_[ac].erase(token);
 	Arc resArc = pairToResidualArc(ac);
 	providedTokenMap_[resArc].erase(token);
 }
