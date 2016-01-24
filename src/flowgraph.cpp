@@ -121,8 +121,19 @@ void FlowGraph::initializeResidualGraph()
 	for(Graph::ArcIt a(baseGraph_); a != lemon::INVALID; ++a)
     {
     	updateArc(a);
+
+    	// division arcs are disabled at the beginning.
+    	// Tokens are provided on division forward arcs, and forbidden on the corresponding mother backward arc
     	if(duplicateToParentMap_.find(baseGraph_.target(a)) != duplicateToParentMap_.end())
+    	{
     		enableArc(a, false);
+    		residualGraph_->addProvidedToken(a, ResidualGraph::Forward, 
+    										 baseGraph_.id(duplicateToParentMap_[baseGraph_.target(a)]));
+    	}
+    	else if(parentToDuplicateMap_.find(baseGraph_.target(a)) != parentToDuplicateMap_.end())
+    	{
+    		residualGraph_->addForbiddenToken(a, ResidualGraph::Backward, baseGraph_.id(baseGraph_.target(a)));
+    	}
     }
 }
 
