@@ -313,7 +313,7 @@ void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p)
 		// division updates: enable if mother cell is used exactly once
 		if(parentToDuplicateMap_.find(source) != parentToDuplicateMap_.end())
 		{
-			if(sumOutFlow(source) == 1)
+			if(sumInFlow(source) == 1)
 			{
 				// we have exactly one unit of flow forward through a parent node -> allows division
 				toggleDivision(parentToDuplicateMap_[source], target, true);
@@ -327,7 +327,7 @@ void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p)
 		// division used/unused -> toggle mother cell's in and out arcs
 		else if(duplicateToParentMap_.find(target) != duplicateToParentMap_.end())
 		{
-			if(forward)
+			if(flowMap_[af.first] == 1)
 			{
 				// adding flow through division -> parent cannot be undone
 				toggleOutArcs(duplicateToParentMap_[target], false);
