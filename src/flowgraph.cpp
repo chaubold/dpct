@@ -156,6 +156,7 @@ void FlowGraph::augmentUnitFlow(const FlowGraph::Path& p)
 					break;
 				}
 			}
+			continue;
 		}
 
 		coupledNodeIt = parentToDuplicateMap_.find(baseGraph_.source(af.first));
