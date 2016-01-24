@@ -214,12 +214,6 @@ void ResidualGraph::toDot(const std::string& filename, const Path& p, Node& s, N
 
     out_file << "digraph G {\n";
 
-    // nodes -> will be filled automatically by the edges, drops nodes without connections
-	// for(Graph::NodeIt n(*this); n != lemon::INVALID; ++n)
-	// {
-	// 	out_file << "\t" << id(n) << " [ label=\"" << id(n) << "\" ]; \n" << std::flush;
-	// }
-
     // find all nodes participating in path p
     std::set<Node> nodesOnPath;
     for(const std::pair<OriginalArc, int>& af : p)
