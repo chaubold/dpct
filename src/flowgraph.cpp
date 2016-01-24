@@ -326,8 +326,8 @@ void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p)
 		DEBUG_MSG("Updating stuff for " << (forward? "forward" : "backward") << " edge from " 
 			<< baseGraph_.id(source) << " to " << baseGraph_.id(target));
 
-		// division updates: enable if mother cell is used exactly once
-		if(parentToDuplicateMap_.find(source) != parentToDuplicateMap_.end())
+		// division updates: enable if mother cell is used exactly once, but flow is not disappearing
+		if(parentToDuplicateMap_.find(source) != parentToDuplicateMap_.end() && target != target_)
 		{
 			if(sumInFlow(source) == 1)
 			{
