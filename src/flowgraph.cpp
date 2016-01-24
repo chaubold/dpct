@@ -90,6 +90,12 @@ void FlowGraph::maxFlowMinCostTracking(double initialStateEnergy)
 				<< " of length " << result.first.size() 
 				<< " of distance " << result.second);
 
+		if(result.second > -0.00000001)
+		{
+			printPath(result.first); std::cout << std::endl;
+			break;
+		}
+
 		if(result.first.size() > 0 && result.second < 0.0)
 		{
 #ifdef DEBUG_LOG

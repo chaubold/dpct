@@ -99,7 +99,8 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 	// * checking for negative cycles each round brings runtime down to 82 secs
 	// * checking for negative cycles every 100 iterations yields runtime of 53secs!
 	// BUT: the number of paths found changes, which means we are not finding the same things... (different negative cycles?)
-    if(bf.checkedStart(100, 1000))
+	bool foundPath = bf.checkedStart(300, 1000);
+	if(foundPath)
     {	
     	DEBUG_MSG("Found path");
     	// found path
@@ -117,7 +118,7 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
         else
         	pathCost = std::numeric_limits<double>::infinity();
     }
-    else
+    if(!foundPath)
     {
     	DEBUG_MSG("Found cycle");
     	// found cycle
