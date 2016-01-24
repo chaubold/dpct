@@ -103,7 +103,8 @@ void FlowGraph::maxFlowMinCostTracking(double initialStateEnergy)
 		}
 		TimePoint iterationEndTime = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> elapsed_seconds = iterationEndTime - iterationStartTime;
-		LOG_MSG("\t<<<Iteration " << iter << " done in " << elapsed_seconds.count() << " secs, system Energy=" << currentEnergy);
+		LOG_MSG("\t<<<Iteration " << iter << " done in " << elapsed_seconds.count() 
+				<< " secs, system Energy=" << currentEnergy);
 		iter++;
 	}
 	while(result.first.size() > 0 && result.second < 0.0);
@@ -220,7 +221,8 @@ void FlowGraph::updateArc(const Arc& a)
     residualGraph_->updateArc(a, ResidualGraph::Backward, backwardCost, flow);
 }
 
-/// updates the enabled arcs in the residual graph by checking which divisions should be enabled/disabled after this track
+/// updates the enabled arcs in the residual graph by checking 
+/// which divisions should be enabled/disabled after this track
 void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p)
 {
 	// define functions for enabling / disabling
@@ -267,7 +269,8 @@ void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p)
 		DEBUG_MSG("Setting division " << baseGraph_.id(div) << " to " << (divState?"true":"false"));
 		for(Graph::InArcIt ia(baseGraph_, div); ia != lemon::INVALID; ++ia)
 		{
-			DEBUG_MSG("\ttoggling division arc " << baseGraph_.id(baseGraph_.source(ia)) << ", " << baseGraph_.id(baseGraph_.target(ia)));
+			DEBUG_MSG("\ttoggling division arc " << baseGraph_.id(baseGraph_.source(ia)) 
+					  << ", " << baseGraph_.id(baseGraph_.target(ia)));
 			enableArc(ia, divState);
 		}
 
@@ -275,7 +278,8 @@ void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p)
 		{
 			if(baseGraph_.target(oa) == target)
 			{
-				DEBUG_MSG("\ttoggling move arc " << baseGraph_.id(baseGraph_.source(oa)) << ", " << baseGraph_.id(baseGraph_.target(oa)));
+				DEBUG_MSG("\ttoggling move arc " << baseGraph_.id(baseGraph_.source(oa)) 
+						  << ", " << baseGraph_.id(baseGraph_.target(oa)));
 				enableArc(oa, !divState);
 				return;
 			}
@@ -368,6 +372,8 @@ void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p)
 			toggleDisappearanceArc(source, sumOutFlow(source) == 0);
 			toggleAppearanceArc(target, sumInFlow(target) == 0);
 		}
+
+		// TODO: exclusion constraints
 	}
 }
 
