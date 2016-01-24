@@ -6,6 +6,7 @@
 #include <map>
 #include <memory>
 #include <assert.h>
+#include <unordered_set>
 
 namespace dpct
 {
@@ -28,7 +29,10 @@ public: // typedefs
     typedef Graph::ArcMap<bool> ArcEnabledMap;
     typedef std::map<Node, Node> OriginMap;
     typedef std::map<Node, Node> ResidualNodeMap;
-    typedef lemon::BellmanFord<ResidualGraph, DistMap> BellmanFord;
+    typedef size_t Token;
+    typedef std::unordered_set<Token> TokenSet;
+    typedef Graph::ArcMap<TokenSet> TokenSetArcMap;
+    typedef lemon::EarlyStoppingBellmanFord<ResidualGraph, DistMap, Token> BellmanFord;
     typedef std::vector< std::pair<OriginalArc, int> > Path; // combines arc with flow delta (direction)
     typedef std::pair<Path, double> ShortestPathResult;
     typedef std::pair<Node, Node> ResidualArcCandidate;
@@ -54,6 +58,14 @@ public: // API
 	ShortestPathResult findShortestPath(
 		const OriginalNode& origSource, 
 		const OriginalNode& origTarget) const;
+
+	/// configure forbidden tokens of arcs
+	void addForbiddenToken(const OriginalArc& a, bool forward, Token token);
+	void removeForbiddenToken(const OriginalArc& a, bool forward, Token token);
+
+	/// configure provided tokens of arcs
+	void addProvidedToken(const OriginalArc& a, bool forward, Token token);
+	void removeProvidedToken(const OriginalArc& a, bool forward, Token token);
 
 private:
 	/// enable / disable residual arc
@@ -153,6 +165,10 @@ private:
 
 	/// a mapping from original nodes to residual nodes
 	ResidualNodeMap residualNodeMap_;
+
+	/// the forbidden and provided token per arc
+	TokenSetArcMap forbiddenTokenMap_;
+	TokenSetArcMap providedTokenMap_;
 };
 
 } // end namespace dpct

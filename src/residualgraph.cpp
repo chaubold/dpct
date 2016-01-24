@@ -9,6 +9,8 @@ namespace dpct
 
 ResidualGraph::ResidualGraph(const Graph& original):
 	residualDistMap_(*this),
+	forbiddenTokenMap_(*this),
+	providedTokenMap_(*this),
 	originalGraph_(original)
 {
 	for(Graph::NodeIt origNode(original); origNode != lemon::INVALID; ++origNode)
@@ -83,7 +85,7 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 			<< " nodes and " << lemon::countArcs(*this) << " arcs");
 
 	// TODO: reuse distMap and predMap of bf to avoid new and delete in each iteration?
-    BellmanFord bf(*this, residualDistMap_);
+    BellmanFord bf(*this, residualDistMap_, providedTokenMap_, forbiddenTokenMap_);
     bf.init();
     bf.addSource(source);
 
@@ -131,6 +133,37 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
     }
 
     return std::make_pair(p, pathCost);
+}
+
+/// configure required tokens of arcs
+void ResidualGraph::addForbiddenToken(const OriginalArc& a, bool forward, Token token)
+{
+	ResidualArcCandidate ac = forward ? arcToPair(a) : arcToInversePair(a);
+	Arc resArc = pairToResidualArc(ac);
+	forbiddenTokenMap_[resArc].insert(token);
+}
+
+void ResidualGraph::removeForbiddenToken(const OriginalArc& a, bool forward, Token token)
+{
+	ResidualArcCandidate ac = forward ? arcToPair(a) : arcToInversePair(a);
+	Arc resArc = pairToResidualArc(ac);
+	forbiddenTokenMap_[resArc].erase(token);
+}
+
+
+/// configure provided tokens of arcs
+void ResidualGraph::addProvidedToken(const OriginalArc& a, bool forward, Token token)
+{
+	ResidualArcCandidate ac = forward ? arcToPair(a) : arcToInversePair(a);
+	Arc resArc = pairToResidualArc(ac);
+	providedTokenMap_[resArc].insert(token);
+}
+
+void ResidualGraph::removeProvidedToken(const OriginalArc& a, bool forward, Token token)
+{
+	ResidualArcCandidate ac = forward ? arcToPair(a) : arcToInversePair(a);
+	Arc resArc = pairToResidualArc(ac);
+	providedTokenMap_[resArc].erase(token);
 }
 
 void ResidualGraph::fullGraphToDot(const std::string& filename, const Path& p) const

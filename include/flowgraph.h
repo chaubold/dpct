@@ -80,6 +80,9 @@ private:
 
 	double getArcCost(const Arc& a, int flow);
 
+	/// get the graph (used in test)
+	Graph& getGraph() { return baseGraph_; }
+	
 	void printPath(const Path& p);
 	void printAllFlows();
 private:

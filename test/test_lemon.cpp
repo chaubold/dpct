@@ -2,11 +2,15 @@
 
 #include <iostream>
 #include <boost/test/unit_test.hpp>
-#include "graph.h"
-#include "flowgraph.h"
 
 #include <lemon/adaptors.h>
 #include <lemon/bellman_ford.h>
+
+#define private public
+#include "graph.h"
+#include "flowgraph.h"
+#include "residualgraph.h"
+
 
 using namespace dpct;
 
@@ -476,5 +480,61 @@ BOOST_AUTO_TEST_CASE( flowgraph_simple )
     BOOST_CHECK_EQUAL(g.getFlowMap()[move3], 0);
     BOOST_CHECK_EQUAL(g.getFlowMap()[move4], 1);
     BOOST_CHECK_EQUAL(g.getFlowMap()[move5], 0);
+}
 
+BOOST_AUTO_TEST_CASE( tokenizedbellmanford_have_tokens )
+{
+    FlowGraph g;
+    typedef FlowGraph::FullNode Node;
+    typedef FlowGraph::Arc Arc;
+
+    Node n_1_1 = g.addNode({0.0});
+    Node n_2_1 = g.addNode({0.0});
+    Node n_2_2 = g.addNode({0.0});
+
+    FlowGraph::Node s = g.getSource();
+    FlowGraph::Node t = g.getTarget();
+
+    Arc app1 = g.addArc(s, n_1_1.u, {0.0});
+    
+    Arc move1 = g.addArc(n_1_1, n_2_1, {-4.0});
+    Arc move2 = g.addArc(n_1_1, n_2_2, {-3.0});
+    
+    Arc dis1 = g.addArc(n_2_1.v, t, {-2.0});
+    Arc dis2 = g.addArc(n_2_2.v, t, {-2.0});
+    
+    const FlowGraph::Graph& baseGraph = g.getGraph();
+    ResidualGraph rg(baseGraph);
+
+    // only enable forward arcs, we just want a simple scenario to check whether token collection works
+    for(FlowGraph::Graph::ArcIt a(baseGraph); a != lemon::INVALID; ++a)
+    {
+        rg.updateArc(a, ResidualGraph::Forward, g.getArcCost(a, 0), 1);
+    }
+
+    size_t tokenId = 12;
+    rg.addProvidedToken(app1, ResidualGraph::Forward, tokenId);
+    rg.addForbiddenToken(move1, ResidualGraph::Forward, tokenId);
+
+    ResidualGraph::ShortestPathResult sp = rg.findShortestPath(s, t);
+    BOOST_CHECK(sp.second < 0); // check that we found an augmenting path
+    g.printPath(sp.first);
+    
+    // make sure we did not go along forbidden move1 arc
+    for(auto arcFlowPair : sp.first)
+    {
+        BOOST_CHECK(arcFlowPair.first != move1);
+    }
+
+    // try again, this time without forbidding the provided token
+    rg.removeForbiddenToken(move1, ResidualGraph::Forward, tokenId);
+    sp = rg.findShortestPath(s, t);
+    BOOST_CHECK(sp.second < 0); // check that we found an augmenting path
+    g.printPath(sp.first);
+    
+    // make sure we did not go along move2 arc, because move1 is cheaper now
+    for(auto arcFlowPair : sp.first)
+    {
+        BOOST_CHECK(arcFlowPair.first != move2);
+    }
 }
