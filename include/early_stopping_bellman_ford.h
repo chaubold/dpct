@@ -32,6 +32,7 @@
 
 #include <limits>
 #include <unordered_set>
+#include <set>
 
 namespace lemon {
 
@@ -111,7 +112,7 @@ namespace lemon {
     typedef TOK Token;
     
     /// \brief A set of tokens
-    typedef std::unordered_set<Token> TokenSet;
+    typedef std::set<Token> TokenSet;
 
     /// \brief Store the set of tokens collected on the path to each node from the source
     typedef typename GR::template NodeMap<TokenSet> TokenSetNodeMap;
@@ -173,7 +174,7 @@ namespace lemon {
   };
 
   template<class TOK>
-  std::ostream& operator<<(std::ostream& lhs, const std::unordered_set<TOK>& rhs)
+  std::ostream& operator<<(std::ostream& lhs, const std::set<TOK>& rhs)
   {
     lhs << "{";
     for(auto a : rhs)

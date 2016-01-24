@@ -7,6 +7,7 @@
 #include <memory>
 #include <assert.h>
 #include <unordered_set>
+#include <set>
 
 namespace dpct
 {
@@ -30,7 +31,7 @@ public: // typedefs
     typedef std::map<Node, Node> OriginMap;
     typedef std::map<Node, Node> ResidualNodeMap;
     typedef size_t Token;
-    typedef std::unordered_set<Token> TokenSet;
+    typedef std::set<Token> TokenSet;
     typedef Graph::ArcMap<TokenSet> TokenSetArcMap;
     typedef lemon::EarlyStoppingBellmanFord<ResidualGraph, DistMap, Token> BellmanFord;
     typedef std::vector< std::pair<OriginalArc, int> > Path; // combines arc with flow delta (direction)
