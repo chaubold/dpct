@@ -78,7 +78,7 @@ void ResidualGraph::enableArc(const OriginalArc& a, bool state)
 /// find a shortest path or a negative cost cycle, and return it with flow direction and cost
 ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 	const OriginalNode& origSource, 
-	const OriginalNode& origTarget) const
+	const OriginalNode& origTarget)
 {
 	Node source = residualNodeMap_.at(origSource);
 	Node target = residualNodeMap_.at(origTarget);
@@ -87,53 +87,116 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 			<< " nodes and " << lemon::countArcs(*this) << " arcs");
 
 	// TODO: reuse distMap and predMap of bf to avoid new and delete in each iteration?
-    BellmanFord bf(*this, residualDistMap_, providedTokenMap_, forbiddenTokenMap_);
-    bf.init();
-    bf.addSource(source);
 
 	Path p;
 	double pathCost = 0.0;
 	int flow = 0;
+	std::pair<bool, Token> ret = std::make_pair(true, 0);
 
-	// * limiting the number of iterations to 1000 reduces the runtime of drosophila 10x (3200sec -> 380sec)!!
-	// * checking for negative cycles each round brings runtime down to 82 secs
-	// * checking for negative cycles every 100 iterations yields runtime of 53secs!
-	// BUT: the number of paths found changes, which means we are not finding the same things... (different negative cycles?)
-	bool foundPath = bf.checkedStart(300, 1000);
-	if(foundPath)
-    {	
-    	DEBUG_MSG("Found path");
-    	// found path
-        if(bf.reached(target))
-        {
-        	pathCost = bf.dist(target);
-        	for(Arc a = bf.predArc(target); a != lemon::INVALID; a = bf.predArc(this->source(a)))
-            {
-            	DEBUG_MSG("\t residual arc (" << id(this->source(a)) << ", " << id(this->target(a)) << ")");
-            	std::pair<Arc, bool> arcForward = pairToOriginalArc(residualArcToPair(a));
-            	flow = arcForward.second ? 1 : -1;
-                p.push_back(std::make_pair(arcForward.first, flow));
-            }
-        }
-        else
-        	pathCost = std::numeric_limits<double>::infinity();
-    }
-    if(!foundPath)
-    {
-    	DEBUG_MSG("Found cycle");
-    	// found cycle
-    	lemon::Path<ResidualGraph> path = bf.negativeCycle();
-    	ResidualArcCandidate ac;
-    	for(lemon::Path<ResidualGraph>::ArcIt a(path); a != lemon::INVALID; ++a)
-        {
-        	DEBUG_MSG("\t residual arc (" << id(this->source(a)) << ", " << id(this->target(a)) << ")");
-        	ac = residualArcToPair(a);
-        	pathCost += residualArcCost_.at(ac);
-            std::pair<Arc, bool> arcForward = pairToOriginalArc(ac);
-        	flow = arcForward.second ? 1 : -1;
-            p.push_back(std::make_pair(arcForward.first, flow));
-        }
-    }
+	do{
+		// if the last path found a token violation, we'll remove the back arc of the mother for this iteration
+		if(!ret.first)
+		{
+			std::cout << "Retrying to find shortest path..." << ret.second << std::endl;
+			OriginalNode n = originalGraph_.nodeFromId(ret.second);
+			if(n == lemon::INVALID)
+				throw std::runtime_error("Could not find original arc that violated the token specs!");
+
+			// this should only be exactly one
+			for(Graph::InArcIt a(originalGraph_, n); a != lemon::INVALID; ++a)
+			{
+				std::cout << "Disabling in-arc " << originalGraph_.id(originalGraph_.source(a)) << " -> " << ret.second << std::endl;
+				// enableArc(arcToInversePair(a), false);
+				ResidualArcCandidate ac = arcToInversePair(a);
+				Arc resArc = pairToResidualArc(ac);
+				if(resArc == lemon::INVALID)
+					std::cout << "Could not delete arc as it is not present in residual graph" << std::endl;
+				erase(resArc);
+				if(pairToResidualArc(ac) != lemon::INVALID)
+					throw std::runtime_error("Deleting arc failed");
+			}
+
+			LOG_MSG("Searching shortest path in graph with " << lemon::countNodes(*this)
+			<< " nodes and " << lemon::countArcs(*this) << " arcs");
+		}
+
+	    BellmanFord bf(*this, residualDistMap_, providedTokenMap_, forbiddenTokenMap_);
+	    bf.init();
+	    bf.addSource(source);
+
+		// * limiting the number of iterations to 1000 reduces the runtime of drosophila 10x (3200sec -> 380sec)!!
+		// * checking for negative cycles each round brings runtime down to 82 secs
+		// * checking for negative cycles every 100 iterations yields runtime of 53secs!
+		// BUT: the number of paths found changes, which means we are not finding the same things... (different negative cycles?)
+		bool foundPath = bf.checkedStart(300, 1000);
+		if(foundPath)
+	    {	
+	    	DEBUG_MSG("Found path");
+	    	// found path
+	        if(bf.reached(target))
+	        {
+	        	pathCost = bf.dist(target);
+	        	for(Arc a = bf.predArc(target); a != lemon::INVALID; a = bf.predArc(this->source(a)))
+	            {
+	            	DEBUG_MSG("\t residual arc (" << id(this->source(a)) << ", " << id(this->target(a)) << ")");
+	            	std::pair<Arc, bool> arcForward = pairToOriginalArc(residualArcToPair(a));
+	            	flow = arcForward.second ? 1 : -1;
+	            	if(std::find(p.begin(), p.end(), std::make_pair(arcForward.first, flow)) != p.end())
+	            	{
+	            		// throw std::runtime_error("Found loop in path!");
+	            		LOG_MSG("Found loop in path!");
+	            		p.push_back(std::make_pair(arcForward.first, flow));
+	            		return std::make_pair(p, std::numeric_limits<double>::infinity());
+	            		// p.clear();
+	            		// foundPath = false;
+	            		// break;
+	            	}
+	                p.push_back(std::make_pair(arcForward.first, flow));
+	            }
+	        }
+	        else
+	        	pathCost = std::numeric_limits<double>::infinity();
+	    }
+	    if(!foundPath)
+	    {
+	    	DEBUG_MSG("Found cycle");
+	    	// found cycle
+	    	lemon::Path<ResidualGraph> path = bf.negativeCycle();
+	    	ResidualArcCandidate ac;
+	    	for(lemon::Path<ResidualGraph>::ArcIt a(path); a != lemon::INVALID; ++a)
+	        {
+	        	DEBUG_MSG("\t residual arc (" << id(this->source(a)) << ", " << id(this->target(a)) << ")");
+	        	ac = residualArcToPair(a);
+	        	pathCost += residualArcCost_.at(ac);
+	            std::pair<Arc, bool> arcForward = pairToOriginalArc(ac);
+	        	flow = arcForward.second ? 1 : -1;
+	            p.push_back(std::make_pair(arcForward.first, flow));
+	        }
+	    }
+
+	 //    // if we disabled an arc due to a token violation, reverse this decision now 
+		// if(!ret.first)
+		// {
+		// 	std::cout << "Re-enabling in-arc of " << ret.second << std::endl;
+		// 	OriginalNode n = originalGraph_.nodeFromId(ret.second);
+		// 	// this should only be exactly one
+		// 	for(Graph::InArcIt a(originalGraph_, n); a != lemon::INVALID; ++a)
+		// 	{
+		// 		if(!residualArcPresent_[arcToInversePair(a)])
+		// 			std::cout << "!!!WARNING!!! Cannot re-enable arc because it is set to not present" << std::endl;
+		// 		enableArc(arcToInversePair(a), true);
+		// 	}
+		// }
+
+		// analyze the new path
+	    ret = pathSatisfiesTokenSpecs(p);
+	    if(!ret.first)
+	    {
+	    	std::cout << "############## Found path that violates the token specs! " << ret.second << std::endl;
+	    	p.clear();
+	    	pathCost = 0.0;
+	    }
+	} while(!ret.first);
 
     return std::make_pair(p, pathCost);
 }
