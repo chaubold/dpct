@@ -76,6 +76,14 @@ private:
 	void updateResidualArc(const ResidualArcCandidate& a, double cost, int capacity);
 
 	/**
+	 * @brief Check whether the path collected tokens which were forbidden on one of the later arcs
+	 * 
+	 * @param p path
+	 * @return true if no violations were found, otherwise (false, forbiddenToken)
+	 */
+	std::pair<bool, Token> pathSatisfiesTokenSpecs(const Path& p) const;
+
+	/**
 	 * @brief Transform original graph arc to ordered residual graph node pair, using the specified direction
 	 * @param a original graph arc
 	 * @param forward true if we want the forward residual arc along this edge

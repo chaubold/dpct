@@ -177,6 +177,34 @@ void ResidualGraph::removeProvidedToken(const OriginalArc& a, bool forward, Toke
 		providedTokenMap_[resArc].erase(token);
 }
 
+std::pair<bool, ResidualGraph::Token> ResidualGraph::pathSatisfiesTokenSpecs(const Path& p) const
+{
+	TokenSet collectedTokens;
+	TokenSet forbiddenTokens;
+	// walk in reverse order as we build the path back to front in findShortestPath()
+	for(auto af = p.rbegin(); af != p.rend(); ++af)
+	{
+		Arc a = af->first;
+		bool forward = af->second > 0;
+		ResidualArcCandidate ac = undirectedArcToPair(a, forward);
+		const TokenSet& arcForbiddenTokens = residualArcForbidsTokens_.at(ac);
+		const TokenSet& providedTokens = residualArcProvidesTokens_.at(ac);
+
+		// update collected tokens
+		collectedTokens.insert(providedTokens.begin(), providedTokens.end());
+		forbiddenTokens.insert(arcForbiddenTokens.begin(), arcForbiddenTokens.end());
+	}
+
+	// no forbidden token is allowed in collected
+	for(Token t : collectedTokens)
+	{
+		if(forbiddenTokens.count(t) > 0)
+			return std::make_pair(false, t);
+	}
+
+	return std::make_pair(true, 0);
+}
+
 void ResidualGraph::fullGraphToDot(const std::string& filename, const Path& p) const
 {
 	std::ofstream out_file(filename.c_str());
