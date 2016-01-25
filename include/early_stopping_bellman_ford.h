@@ -575,7 +575,7 @@ namespace lemon {
     /// paths.
     ///
     /// \see ActiveIt
-    bool processNextRound() {
+    bool processNextRound(bool useTokens = false) {
       for (int i = 0; i < int(_process.size()); ++i) {
         _mask->set(_process[i], false);
       }
@@ -588,11 +588,13 @@ namespace lemon {
         for (OutArcIt it(*_gr, _process[i]); it != INVALID; ++it) {
           Node target = _gr->target(it);
           Value relaxed = OperationTraits::plus(values[i], (*_length)[it]);
-          if (OperationTraits::less(relaxed, (*_dist)[target]) && checkTokenDemands(it)) {
+          if (OperationTraits::less(relaxed, (*_dist)[target]) && 
+              (!useTokens || checkTokenDemands(it))) {
             _pred->set(target, it);
             _dist->set(target, relaxed);
 
-            updateTokenListAtTarget(it);
+            if(useTokens)
+              updateTokenListAtTarget(it);
 
             if (!(*_mask)[target]) {
               _mask->set(target, true);
@@ -621,7 +623,7 @@ namespace lemon {
     /// paths.
     ///
     /// \see ActiveIt
-    bool processNextWeakRound() {
+    bool processNextWeakRound(bool useTokens = false) {
       for (int i = 0; i < int(_process.size()); ++i) {
         _mask->set(_process[i], false);
       }
@@ -631,11 +633,13 @@ namespace lemon {
           Node target = _gr->target(it);
           Value relaxed =
             OperationTraits::plus((*_dist)[_process[i]], (*_length)[it]);
-          if (OperationTraits::less(relaxed, (*_dist)[target]) && checkTokenDemands(it)) {
+          if (OperationTraits::less(relaxed, (*_dist)[target]) && 
+              (!useTokens || checkTokenDemands(it))) {
             _pred->set(target, it);
             _dist->set(target, relaxed);
             
-            updateTokenListAtTarget(it);
+            if(useTokens)
+              updateTokenListAtTarget(it);
             
             if (!(*_mask)[target]) {
               _mask->set(target, true);
@@ -685,11 +689,11 @@ namespace lemon {
     ///
     /// \pre init() must be called and at least one root node should be
     /// added with addSource() before using this function.
-    bool checkedStart(int numIterationsBetweenNegativeCycleChecks, int numIterations) {
+    bool checkedStart(int numIterationsBetweenNegativeCycleChecks, int numIterations, bool useTokens=false) {
       int num = (numIterations <= 0) ? countNodes(*_gr) : numIterations;
 
       for (int i = 0; i < num; ++i) {
-        bool result = processNextWeakRound();
+        bool result = processNextWeakRound(useTokens);
 
         if((*_pred)[_source] != INVALID)
         {
