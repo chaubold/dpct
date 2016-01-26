@@ -29,13 +29,30 @@ std::map<JsonGraphReader::JsonTypes, std::string> JsonGraphReader::JsonTypeNames
 	{JsonTypes::AllowPartialMergerAppearance, "allowPartialMergerAppearance"},
 	{JsonTypes::RequireSeparateChildrenOfDivision, "requireSeparateChildrenOfDivision"}};
 
-JsonGraphReader::JsonGraphReader(const std::string& modelFilename, const std::string& weightsFilename):
+JsonGraphReader::JsonGraphReader(const std::string& modelFilename, const std::string& weightsFilename, GraphBuilder* graphBuilder):
 	modelFilename_(modelFilename),
-	weightsFilename_(weightsFilename)
+	weightsFilename_(weightsFilename),
+	graphBuilder_(graphBuilder)
 {
 }
 
-void JsonGraphReader::createFlowGraphFromJson(FlowGraph& g, FlowGraph::Node source, FlowGraph::Node target)
+size_t JsonGraphReader::getNumWeights(const Json::Value& jsonHyp, JsonTypes type, bool statesShareWeights)
+{
+	size_t numWeights;
+	StateFeatureVector stateFeatVec = extractFeatures(jsonHyp, type);
+	
+	if(statesShareWeights)
+		numWeights = stateFeatVec[0].size();
+	else
+	{
+		numWeights = 0;
+		for(auto stateFeats : stateFeatVec)
+			numWeights += stateFeats.size();
+	}
+	return numWeights;
+}
+
+void JsonGraphReader::createGraphFromJson()
 {
 	std::ifstream input(modelFilename_.c_str());
 	if(!input.good())
@@ -62,36 +79,20 @@ void JsonGraphReader::createFlowGraphFromJson(FlowGraph& g, FlowGraph::Node sour
 	size_t numDisWeights = 0;
 	size_t numLinkWeights = 0;
 
-	auto getNumWeights = [&](const Json::Value& jsonHyp, JsonTypes type)
-	{
-		size_t numWeights;
-		StateFeatureVector stateFeatVec = extractFeatures(jsonHyp, type);
-		
-		if(statesShareWeights)
-			numWeights = stateFeatVec[0].size();
-		else
-		{
-			numWeights = 0;
-			for(auto stateFeats : stateFeatVec)
-				numWeights += stateFeats.size();
-		}
-		return numWeights;
-	};
-
 	const Json::Value segmentationHypotheses = root[JsonTypeNames[JsonTypes::Segmentations]];
 	for(int i = 0; i < (int)segmentationHypotheses.size(); i++)
 	{
 		const Json::Value jsonHyp = segmentationHypotheses[i];
-		numDetWeights = getNumWeights(jsonHyp, JsonTypes::Features);
+		numDetWeights = getNumWeights(jsonHyp, JsonTypes::Features, statesShareWeights);
 
 		if(jsonHyp.isMember(JsonTypeNames[JsonTypes::DivisionFeatures]))
-			numDivWeights = getNumWeights(jsonHyp, JsonTypes::DivisionFeatures);
+			numDivWeights = getNumWeights(jsonHyp, JsonTypes::DivisionFeatures, statesShareWeights);
 
 		if(jsonHyp.isMember(JsonTypeNames[JsonTypes::AppearanceFeatures]))
-			numAppWeights = getNumWeights(jsonHyp, JsonTypes::AppearanceFeatures);
+			numAppWeights = getNumWeights(jsonHyp, JsonTypes::AppearanceFeatures, statesShareWeights);
 
 		if(jsonHyp.isMember(JsonTypeNames[JsonTypes::DisappearanceFeatures]))
-			numDisWeights = getNumWeights(jsonHyp, JsonTypes::DisappearanceFeatures);
+			numDisWeights = getNumWeights(jsonHyp, JsonTypes::DisappearanceFeatures, statesShareWeights);
 	}
 
 	const Json::Value linkingHypotheses = root[JsonTypeNames[JsonTypes::Links]];
@@ -99,7 +100,7 @@ void JsonGraphReader::createFlowGraphFromJson(FlowGraph& g, FlowGraph::Node sour
 	{
 		const Json::Value jsonHyp = linkingHypotheses[i];
 		if(jsonHyp.isMember(JsonTypeNames[JsonTypes::Features]))
-				numLinkWeights = getNumWeights(jsonHyp, JsonTypes::Features);
+				numLinkWeights = getNumWeights(jsonHyp, JsonTypes::Features, statesShareWeights);
 	}
 
 	if(weights.size() != numDetWeights + numDivWeights + numAppWeights + numDisWeights + numLinkWeights)
@@ -131,14 +132,16 @@ void JsonGraphReader::createFlowGraphFromJson(FlowGraph& g, FlowGraph::Node sour
 		if(!jsonHyp.isMember(JsonTypeNames[JsonTypes::Features]))
 			throw std::runtime_error("Cannot read detection hypothesis without features!");
 
-		FlowGraph::FullNode n = g.addNode(costsToScoreDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::Features), weights, detWeightOffset, statesShareWeights)));
-		idToFlowGraphNodeMap_[id] = n;
-
+		FeatureVector detCostDeltas = costsToScoreDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::Features), weights, detWeightOffset, statesShareWeights));
+		FeatureVector appearanceCostDeltas;
+		FeatureVector disappearanceCostDeltas;
 		if(jsonHyp.isMember(JsonTypeNames[JsonTypes::AppearanceFeatures]))
-			g.addArc(g.getSource(), n.u, costsToScoreDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::AppearanceFeatures), weights, appWeightOffset, statesShareWeights)));
+			appearanceCostDeltas = costsToScoreDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::AppearanceFeatures), weights, appWeightOffset, statesShareWeights));
 
 		if(jsonHyp.isMember(JsonTypeNames[JsonTypes::DisappearanceFeatures]))
-			g.addArc(n.v, g.getTarget(), costsToScoreDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::DisappearanceFeatures), weights, disWeightOffset, statesShareWeights)));
+			disappearanceCostDeltas = costsToScoreDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::DisappearanceFeatures), weights, disWeightOffset, statesShareWeights));
+
+		graphBuilder_->addNode(id, detCostDeltas, appearanceCostDeltas, disappearanceCostDeltas);
 	}
 
 	// read linking hypotheses
@@ -149,10 +152,7 @@ void JsonGraphReader::createFlowGraphFromJson(FlowGraph& g, FlowGraph::Node sour
 
 		size_t srcId = jsonHyp[JsonTypeNames[JsonTypes::SrcId]].asInt();
 		size_t destId = jsonHyp[JsonTypeNames[JsonTypes::DestId]].asInt();
-		FlowGraph::Arc a = g.addArc(idToFlowGraphNodeMap_[srcId], 
-			idToFlowGraphNodeMap_[destId], 
-			costsToScoreDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::Features), weights, linkWeightOffset, statesShareWeights)));
-		idTupleToFlowGraphArcMap_[std::make_pair(srcId, destId)] = a;
+		graphBuilder_->addArc(srcId, destId, costsToScoreDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::Features), weights, linkWeightOffset, statesShareWeights)));
 	}
 
 	// read divisions
@@ -163,8 +163,7 @@ void JsonGraphReader::createFlowGraphFromJson(FlowGraph& g, FlowGraph::Node sour
 
 		if(jsonHyp.isMember(JsonTypeNames[JsonTypes::DivisionFeatures]))
 		{
-			FlowGraph::Arc a = g.allowMitosis(idToFlowGraphNodeMap_[id], costsToScoreDelta(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::DivisionFeatures), weights, divWeightOffset, statesShareWeights)));
-			idToFlowGraphDivisionArcMap_[id] = a;
+			graphBuilder_->allowMitosis(id, costsToScoreDelta(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::DivisionFeatures), weights, divWeightOffset, statesShareWeights)));
 		}
 	}
 
@@ -180,7 +179,7 @@ void JsonGraphReader::createFlowGraphFromJson(FlowGraph& g, FlowGraph::Node sour
 		throw std::runtime_error("FlowSolver cannot deal with exclusion constraints yet!");
 }
 
-void JsonGraphReader::saveFlowMapToResultJson(const std::string& filename, FlowGraph& graph, const FlowGraph::FlowMap& flowMap)
+void JsonGraphReader::saveResultJson(const std::string& filename)
 {
 	std::ofstream output(filename.c_str());
 	if(!output.good())
@@ -190,10 +189,11 @@ void JsonGraphReader::saveFlowMapToResultJson(const std::string& filename, FlowG
 
 	// save links
 	Json::Value& linksJson = root[JsonTypeNames[JsonTypes::LinkResults]];
-	for(auto iter : idTupleToFlowGraphArcMap_)
+	GraphBuilder::ArcValueMap arcValues = graphBuilder_->getArcValues();
+	for(auto iter : arcValues)
 	{
-		int value = flowMap[iter.second];
-		assert(value >= 0);
+		int value = iter.second;
+
 		if(value > 0)
 		{
 			Json::Value val;
@@ -206,9 +206,10 @@ void JsonGraphReader::saveFlowMapToResultJson(const std::string& filename, FlowG
 
 	// save divisions
 	Json::Value& divisionsJson = root[JsonTypeNames[JsonTypes::DivisionResults]];
-	for(auto iter : idToFlowGraphDivisionArcMap_)
+	GraphBuilder::DivisionValueMap divisionValues = graphBuilder_->getDivisionValues();
+	for(auto iter : divisionValues)
 	{
-		size_t value = flowMap[iter.second];
+		bool value = iter.second;
 		
 		if(value > 0)
 		{
@@ -221,9 +222,10 @@ void JsonGraphReader::saveFlowMapToResultJson(const std::string& filename, FlowG
 
 	// save detections
 	Json::Value& detectionsJson = root[JsonTypeNames[JsonTypes::DetectionResults]];
-	for(auto iter : idToFlowGraphNodeMap_)
+	GraphBuilder::NodeValueMap nodeValues = graphBuilder_->getNodeValues();
+	for(auto iter : nodeValues)
 	{
-		size_t value = flowMap[iter.second.a];
+		size_t value = iter.second;
 		
 		if(value > 0)
 		{
