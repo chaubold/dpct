@@ -5,10 +5,12 @@
 
 #include "flowgraph.h"
 #include "graph.h"
+#include "trackingalgorithm.h"
 
 namespace dpct
 {
 
+// ----------------------------------------------------------------------------------------
 /**
  * @brief Base class for graph building factories used by the JsonGraphReader
  */
@@ -20,6 +22,7 @@ public:
 	typedef std::map<size_t, bool> DivisionValueMap;
 	typedef std::map<std::pair<size_t, size_t>, size_t> ArcValueMap;
 
+
 	/**
 	 * @brief add a node which can be indexed by its id. Costs 
 	 */
@@ -28,6 +31,11 @@ public:
 		const CostDeltaVector& detectionCostDeltas, 
 		const CostDeltaVector& appearanceCostDeltas, 
 		const CostDeltaVector& disappearanceCostDeltas) = 0;
+
+	/**
+	 * @brief Specify in which timestep a node lies. Must be called before adding the respective node
+	 */
+	virtual void setNodeTimesteps(size_t id, std::pair<size_t, size_t> timesteps){}
 
 	/**
 	 * @brief add a move arc between the given nodes with the specified cost deltas
@@ -61,6 +69,7 @@ public:
 	virtual DivisionValueMap getDivisionValues() = 0;
 };
 
+// ----------------------------------------------------------------------------------------
 /**
  * @brief Implementation of building methods for the flow graph
  * @details [long description]
@@ -153,6 +162,117 @@ private:
 	std::map<std::pair<size_t, size_t>, FlowGraph::Arc> idTupleToFlowGraphArcMap_;
 };
 
+// ----------------------------------------------------------------------------------------
+/**
+ * @brief Implementation of building methods for magnusson's graph
+ */
+class MagnussonGraphBuilder : public GraphBuilder {
+public:
+	MagnussonGraphBuilder(Graph* graph):
+		graph_(graph)
+	{}
+
+	void setNodeTimesteps(size_t id, std::pair<size_t, size_t> timesteps)
+	{
+		idToTimestepsMap_[id] = timesteps;
+	}
+
+	void addNode(
+		size_t id,
+		const CostDeltaVector& detectionCostDeltas, 
+		const CostDeltaVector& appearanceCostDeltas, 
+		const CostDeltaVector& disappearanceCostDeltas)
+	{
+		if(idToTimestepsMap_.find(id) == idToTimestepsMap_.end())
+			throw std::runtime_error("Node timesteps must be set for Magnusson to work");
+		
+		size_t timestep = idToTimestepsMap_[id].second;
+		// TODO: invert sign of cost deltas (scores increase, costs decrease!)
+		Graph::NodePtr n = graph_->addNode(timestep, detectionCostDeltas, appearanceCostDeltas[0], disappearanceCostDeltas[0], false, false);
+		idToGraphNodeMap_[id] = n;
+	}
+
+	void addArc(size_t srcId, size_t destId, const CostDeltaVector& costDeltas)
+	{
+		Graph::ArcPtr a = graph_->addMoveArc(idToGraphNodeMap_[srcId], idToGraphNodeMap_[destId], costDeltas[0]);
+		idTupleToGraphArcMap_[std::make_pair(srcId, destId)] = a;
+	}
+
+	void allowMitosis(size_t id, ValueType divisionCostDelta)
+	{
+		Graph::NodePtr n = idToGraphNodeMap_[id];
+		n->visitOutArcs([&](Arc* a){
+			if(a != n->getDisappearanceArc())
+			{
+				Graph::ArcPtr ap = graph_->allowMitosis(idToGraphNodeMap_[id], ap->getTargetNode()->getSharedPtr(), divisionCostDelta);
+				idToGraphDivisionArcMap_[id] = ap;
+			}
+		});
+	}
+
+	NodeValueMap getNodeValues()
+	{
+		NodeValueMap nodeValueMap;
+		// const Graph::FlowMap& flowMap = graph_->getFlowMap();
+
+		for(auto iter : idToGraphNodeMap_)
+		{
+			// nodeValueMap[iter.first] = flowMap[iter.second.a];
+		}
+
+		return nodeValueMap;
+	}
+
+	ArcValueMap getArcValues()
+	{
+		ArcValueMap arcValueMap;
+		// const Graph::FlowMap& flowMap = graph_->getFlowMap();
+
+		for(auto iter : idTupleToGraphArcMap_)
+		{
+			// arcValueMap[iter.first] = flowMap[iter.second];
+		}
+
+		return arcValueMap;
+	}
+
+	DivisionValueMap getDivisionValues()
+	{
+		DivisionValueMap divisionValueMap;
+		// const Graph::FlowMap& flowMap = graph_->getFlowMap();
+
+		for(auto iter : idToGraphDivisionArcMap_)
+		{
+			// divisionValueMap[iter.first] = flowMap[iter.second] == 1;
+		}
+
+		return divisionValueMap;
+	}
+
+	void getSolutionFromPaths(const std::vector<TrackingAlgorithm::Path>& paths)
+	{
+		// somehow fill solution vectors from this
+	}
+
+private:
+	/// pointer to magnusson's graph
+	Graph* graph_;
+
+	/// mapping from id to timesteps
+	std::map<size_t, std::pair<size_t, size_t>> idToTimestepsMap_;
+
+	/// mapping from id to nodes
+	std::map<size_t, Graph::NodePtr> idToGraphNodeMap_;
+
+	/// mapping from id to division arc
+	std::map<size_t, Graph::ArcPtr> idToGraphDivisionArcMap_;
+
+	/// mapping from tuple (id,id) to arc
+	std::map<std::pair<size_t, size_t>, Graph::ArcPtr> idTupleToGraphArcMap_;
+};
+
+
+// ----------------------------------------------------------------------------------------
 /**
  * @brief A json graph reader provides functions to read a flow graph from json, 
  * and stores a mapping from JSON ids to graph nodes
@@ -177,6 +297,7 @@ private:
 		DestId, 
 		Value, 
 		Id, 
+		Timestep,
 		Features, 
 		DivisionFeatures,
 		AppearanceFeatures,

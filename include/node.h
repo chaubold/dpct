@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstddef>
 #include <limits>
+#include <memory>
 
 #include "userdata.h"
 #include "iarcnotifier.h"
@@ -14,7 +15,7 @@ namespace dpct
 class Arc;
 
 // Nodes notify observers when the cellcount increases
-class Node : public IUserDataHolder, public IArcNotifier
+class Node : public IUserDataHolder, public IArcNotifier, public std::enable_shared_from_this<Node>
 {
 public:
 	typedef std::vector<Arc*>::iterator ArcIt;
@@ -81,6 +82,7 @@ public:
     friend std::ostream& operator<<(std::ostream& lhs, const Node& rhs);
 
     double getScoreDeltaForCurrentCellCount();
+    std::shared_ptr<Node> getSharedPtr(){ return shared_from_this(); }
 
 protected:
 	// things every node needs

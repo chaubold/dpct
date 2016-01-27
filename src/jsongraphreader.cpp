@@ -16,6 +16,7 @@ std::map<JsonGraphReader::JsonTypes, std::string> JsonGraphReader::JsonTypeNames
 	{JsonTypes::DestId, "dest"}, 
 	{JsonTypes::Value, "value"},
 	{JsonTypes::Id, "id"}, 
+	{JsonTypes::Timestep, "timestep"}, 
 	{JsonTypes::Features, "features"},
 	{JsonTypes::DivisionFeatures, "divisionFeatures"},
 	{JsonTypes::AppearanceFeatures, "appearanceFeatures"},
@@ -124,13 +125,22 @@ void JsonGraphReader::createGraphFromJson()
 	for(int i = 0; i < (int)segmentationHypotheses.size(); i++)
 	{
 		const Json::Value jsonHyp = segmentationHypotheses[i];
-
+		
 		if(!jsonHyp.isMember(JsonTypeNames[JsonTypes::Id]))
 			throw std::runtime_error("Cannot read detection hypothesis without Id!");
 		size_t id = jsonHyp[JsonTypeNames[JsonTypes::Id]].asInt();
 
 		if(!jsonHyp.isMember(JsonTypeNames[JsonTypes::Features]))
 			throw std::runtime_error("Cannot read detection hypothesis without features!");
+
+		if(jsonHyp.isMember(JsonTypeNames[JsonTypes::Timestep]))
+		{
+			const Json::Value& timeJson = jsonHyp[JsonTypeNames[JsonTypes::Timestep]];
+			if(!timeJson.isArray() || timeJson.size() != 2)
+				throw std::runtime_error("Node's Timestep is supposed to be a 2-element array");
+			auto timeRange = std::make_pair(timeJson[0].asInt(), timeJson[1].asInt());
+			graphBuilder_->setNodeTimesteps(id, timeRange);
+		}
 
 		FeatureVector detCostDeltas = costsToScoreDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::Features), weights, detWeightOffset, statesShareWeights));
 		FeatureVector appearanceCostDeltas;
