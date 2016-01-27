@@ -2,6 +2,8 @@
 
 #include <boost/program_options.hpp>
 
+#include "graph.h"
+#include "magnusson.h"
 #include "flowgraph.h"
 #include "jsongraphreader.h"
 
@@ -13,6 +15,7 @@ int main(int argc, char** argv) {
 	std::string modelFilename;
 	std::string weightsFilename;
 	std::string outputFilename;
+	std::string method("flow");
 
 	// Declare the supported options.
 	po::options_description description("Allowed options");
@@ -21,6 +24,7 @@ int main(int argc, char** argv) {
 	    ("model,m", po::value<std::string>(&modelFilename), "filename of model stored as Json file")
 	    ("weights,w", po::value<std::string>(&weightsFilename), "filename of the weights stored as Json file")
 	    ("output,o", po::value<std::string>(&outputFilename), "filename where the resulting tracking (as links) will be stored as Json file")
+	    ("method,e", po::value<std::string>(&method), "method to use for tracking: 'flow' (default) or 'magnusson'")
 	;
 
 	po::variables_map variableMap;
@@ -40,12 +44,32 @@ int main(int argc, char** argv) {
 	} 
 	else 
 	{
-	    FlowGraph graph;
-	    FlowGraphBuilder graphBuilder(&graph);
-	    JsonGraphReader jsonReader(modelFilename, weightsFilename, &graphBuilder);
-	    jsonReader.createGraphFromJson();
-	    std::cout << "Model has state zero energy: " << jsonReader.getInitialStateEnergy() << std::endl;
-	    graph.maxFlowMinCostTracking(jsonReader.getInitialStateEnergy());
-	    jsonReader.saveResultJson(outputFilename);
+		if(method == "flow")
+		{
+		    FlowGraph graph;
+		    FlowGraphBuilder graphBuilder(&graph);
+		    JsonGraphReader jsonReader(modelFilename, weightsFilename, &graphBuilder);
+		    jsonReader.createGraphFromJson();
+		    std::cout << "Model has state zero energy: " << jsonReader.getInitialStateEnergy() << std::endl;
+		    graph.maxFlowMinCostTracking(jsonReader.getInitialStateEnergy());
+		    jsonReader.saveResultJson(outputFilename);
+		}
+		else if(method == "magnusson")
+		{
+			Graph::Configuration config(false, false, false);
+    		Graph graph(config);
+		    MagnussonGraphBuilder graphBuilder(&graph);
+		    JsonGraphReader jsonReader(modelFilename, weightsFilename, &graphBuilder);
+		    jsonReader.createGraphFromJson();
+		    std::cout << "Model has state zero energy: " << jsonReader.getInitialStateEnergy() << std::endl;
+
+		    Magnusson tracker(&graph, false, true, true);
+		    std::vector<TrackingAlgorithm::Path> paths;
+		    double score = tracker.track(paths);
+		    graphBuilder.getSolutionFromPaths(paths);
+		    jsonReader.saveResultJson(outputFilename);
+		}
+		else
+			throw std::runtime_error("Unknown tracking method selected");
 	}
 }
