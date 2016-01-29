@@ -218,17 +218,25 @@ public:
 
 	void allowMitosis(size_t id, ValueType divisionCostDelta)
 	{
+		if(idToGraphNodeMap_.find(id) == idToGraphNodeMap_.end())
+			throw std::runtime_error("Trying to add division but parent node is not present in map");
 		Graph::NodePtr n = idToGraphNodeMap_[id];
+		bool foundAny = false;
 		n->visitOutArcs([&](Arc* a){
 			if(a->getTargetNode() == nullptr)
 				throw std::runtime_error("Found out arc pointing to nullptr!!!");
 			if(a != n->getDisappearanceArc() && !graph_->isSpecialNode(a->getTargetNode()))
 			{
-				Graph::ArcPtr ap = graph_->allowMitosis(idToGraphNodeMap_[id].get(), ap->getTargetNode(), -1.0 * divisionCostDelta);
+				Graph::ArcPtr ap = graph_->allowMitosis(n.get(), a->getTargetNode(), -1.0 * divisionCostDelta);
 				divisionArcs_.push_back(ap);
+				foundAny = true;
 			}
 		});
-		idToGraphDivisionMap_[id] = n;
+
+		if(foundAny)
+			idToGraphDivisionMap_[id] = n;
+		else
+			DEBUG_MSG("Could not add division arcs for node " << id);
 	}
 
 	NodeValueMap getNodeValues()
