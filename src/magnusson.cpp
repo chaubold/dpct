@@ -159,11 +159,10 @@ void Magnusson::updateNode(Node* n)
     if(n != &graph_->getSourceNode())
 	   n->updateBestInArcAndScore();
 
-    Node* predecessor = nullptr;
-    double motionModelScoreDelta = 0.0;
-
     if(motionModelScoreFunction_)
     {
+        Node* predecessor = nullptr;
+        double motionModelScoreDelta = 0.0;
         Arc* a = n->getBestInArc();
         if(a)
         {
