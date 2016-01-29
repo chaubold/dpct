@@ -368,6 +368,8 @@ public:
 	                            magnussonArcValueMap_[*ai] = 1;
 	                        }
 	                    }
+	                    
+	                    increase_object_count(a->getTargetNode());
 	                    first_arc_on_path = false;
 	                }
 	                break;
