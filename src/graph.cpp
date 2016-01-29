@@ -206,6 +206,21 @@ Graph::ArcPtr Graph::addMoveArc(NodePtr source,
 	return arc;
 }
 
+Graph::ArcPtr Graph::allowMitosis(Node* parent,
+                        Node* child,
+                        double divisionScoreDelta)
+{
+    ArcPtr arc(new Arc(&sourceNode_, 
+        child,
+        Arc::Division,
+        divisionScoreDelta,
+        parent));
+
+    arcs_.push_back(arc);
+    return arc;
+}
+
+
 Graph::ArcPtr Graph::allowMitosis(NodePtr parent,
 						NodePtr child,
 						double divisionScoreDelta)

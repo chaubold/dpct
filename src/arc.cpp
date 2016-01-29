@@ -66,7 +66,7 @@ void Arc::update()
 {
     currentScore_ = getScoreDelta() + sourceNode_->getCurrentScore();
     // updateEnabledState();
-    DEBUG_MSG(typeAsString() << "-Arc update: score is now " << currentScore_ << " (enabled=" 
+    DEBUG_MSG(typeAsString() << "-Arc update: score is now " << currentScore_ << " (enabled="
                << (enabled_?"true":"false") << ")" << " scoreDelta=" << scoreDelta_);
 }
 
@@ -74,7 +74,7 @@ void Arc::update(double additionalDelta)
 {
 	currentScore_ = getScoreDelta() + sourceNode_->getCurrentScore() + additionalDelta;
     // updateEnabledState();
-    DEBUG_MSG(typeAsString() << "-Arc update: score is now " << currentScore_ << " (enabled=" 
+    DEBUG_MSG(typeAsString() << "-Arc update: score is now " << currentScore_ << " (enabled="
                << (enabled_?"true":"false") << ")" << " scoreDelta=" << scoreDelta_);
 }
 
@@ -112,7 +112,7 @@ void Arc::updateEnabledState()
             }
             else
             {
-                enabled_ = dependsOnCellInNode_->getCellCount() == 1 
+                enabled_ = dependsOnCellInNode_->getCellCount() == 1
                 			&& (dependsOnCellInNode_->getDisappearanceArc() == nullptr || dependsOnCellInNode_->getDisappearanceArc()->getUseCount() == 0)
                 			&& (targetNode_->getAppearanceArc() == nullptr || targetNode_->getAppearanceArc()->getUseCount() == 0)
                 			&& dependsOnCellInNode_->getNumActiveDivisions() == 0
@@ -120,8 +120,8 @@ void Arc::updateEnabledState()
                 if(enabled_)
                 {
                     // make sure that there is no active arc between the mother and daughter candidates yet
-                    for(Node::ConstArcIt outArcIt = dependsOnCellInNode_->getOutArcsBegin(); 
-                        outArcIt != dependsOnCellInNode_->getOutArcsEnd(); 
+                    for(Node::ConstArcIt outArcIt = dependsOnCellInNode_->getOutArcsBegin();
+                        outArcIt != dependsOnCellInNode_->getOutArcsEnd();
                         ++outArcIt)
                     {
                         if((*outArcIt)->getTargetNode() == targetNode_)
@@ -183,7 +183,7 @@ void Arc::markUsed(bool used)
             throw std::runtime_error("Cannot reduce use count of arc that is not used!");
         used_--;
     }
-    
+
     int count = used ? 1 : -1;
 
     if(type_ == Division)

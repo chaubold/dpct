@@ -6,6 +6,7 @@
 #include "flowgraph.h"
 #include "graph.h"
 #include "trackingalgorithm.h"
+#include "log.h"
 
 namespace dpct
 {
@@ -177,6 +178,17 @@ public:
 		idToTimestepsMap_[id] = timesteps;
 	}
 
+	/**
+	 * @brief Magnusson performs score maximization, so we have to multiply our cost deltas by -1
+	 */
+	CostDeltaVector flipSign(const CostDeltaVector& vec)
+	{
+		CostDeltaVector newVec;
+		for(auto a : vec)
+			newVec.push_back(-1.0 * a);
+		return newVec;
+	}
+
 	void addNode(
 		size_t id,
 		const CostDeltaVector& detectionCostDeltas, 
@@ -187,14 +199,17 @@ public:
 			throw std::runtime_error("Node timesteps must be set for Magnusson to work");
 		
 		size_t timestep = idToTimestepsMap_[id].second;
-		// TODO: invert sign of cost deltas (scores increase, costs decrease!)
-		Graph::NodePtr n = graph_->addNode(timestep, detectionCostDeltas, appearanceCostDeltas[0], disappearanceCostDeltas[0], false, false);
+		Graph::NodePtr n = graph_->addNode(timestep, flipSign(detectionCostDeltas), flipSign(appearanceCostDeltas)[0], flipSign(disappearanceCostDeltas)[0], false, false);
 		idToGraphNodeMap_[id] = n;
 	}
 
 	void addArc(size_t srcId, size_t destId, const CostDeltaVector& costDeltas)
 	{
-		Graph::ArcPtr a = graph_->addMoveArc(idToGraphNodeMap_[srcId], idToGraphNodeMap_[destId], costDeltas[0]);
+		if(idToGraphNodeMap_.find(srcId) == idToGraphNodeMap_.end())
+			throw std::runtime_error("Trying to add link but source node is not present in map");
+		if(idToGraphNodeMap_.find(destId) == idToGraphNodeMap_.end())
+			throw std::runtime_error("Trying to add link but destination node is not present in map");
+		Graph::ArcPtr a = graph_->addMoveArc(idToGraphNodeMap_[srcId], idToGraphNodeMap_[destId], flipSign(costDeltas)[0]);
 		idTupleToGraphArcMap_[std::make_pair(srcId, destId)] = a;
 	}
 
@@ -202,22 +217,28 @@ public:
 	{
 		Graph::NodePtr n = idToGraphNodeMap_[id];
 		n->visitOutArcs([&](Arc* a){
-			if(a != n->getDisappearanceArc())
+			if(a->getTargetNode() == nullptr)
+				throw std::runtime_error("Found out arc pointing to nullptr!!!");
+			if(a != n->getDisappearanceArc() && !graph_->isSpecialNode(a->getTargetNode()))
 			{
-				Graph::ArcPtr ap = graph_->allowMitosis(idToGraphNodeMap_[id], ap->getTargetNode()->getSharedPtr(), divisionCostDelta);
-				idToGraphDivisionArcMap_[id] = ap;
+				Graph::ArcPtr ap = graph_->allowMitosis(idToGraphNodeMap_[id].get(), ap->getTargetNode(), -1.0 * divisionCostDelta);
+				divisionArcs_.push_back(ap);
 			}
 		});
+		idToGraphDivisionMap_[id] = n;
 	}
 
 	NodeValueMap getNodeValues()
 	{
-		NodeValueMap nodeValueMap;
-		// const Graph::FlowMap& flowMap = graph_->getFlowMap();
+		if(magnussonNodeValueMap_.size() == 0)
+			throw std::runtime_error("No active nodes were found when exporting results!");
 
+		NodeValueMap nodeValueMap;
+		
 		for(auto iter : idToGraphNodeMap_)
 		{
-			// nodeValueMap[iter.first] = flowMap[iter.second.a];
+			if(magnussonNodeValueMap_.find(iter.second.get()) != magnussonNodeValueMap_.end())
+				nodeValueMap[iter.first] = magnussonNodeValueMap_[iter.second.get()];
 		}
 
 		return nodeValueMap;
@@ -226,11 +247,11 @@ public:
 	ArcValueMap getArcValues()
 	{
 		ArcValueMap arcValueMap;
-		// const Graph::FlowMap& flowMap = graph_->getFlowMap();
-
+		
 		for(auto iter : idTupleToGraphArcMap_)
 		{
-			// arcValueMap[iter.first] = flowMap[iter.second];
+			if(magnussonArcValueMap_.find(iter.second.get()) != magnussonArcValueMap_.end())
+				arcValueMap[iter.first] = magnussonArcValueMap_[iter.second.get()];
 		}
 
 		return arcValueMap;
@@ -239,11 +260,11 @@ public:
 	DivisionValueMap getDivisionValues()
 	{
 		DivisionValueMap divisionValueMap;
-		// const Graph::FlowMap& flowMap = graph_->getFlowMap();
-
-		for(auto iter : idToGraphDivisionArcMap_)
+		
+		for(auto iter : idToGraphDivisionMap_)
 		{
-			// divisionValueMap[iter.first] = flowMap[iter.second] == 1;
+			if(magnussonDivisionValueMap_.find(iter.second.get()) != magnussonDivisionValueMap_.end())
+				divisionValueMap[iter.first] = magnussonDivisionValueMap_[iter.second.get()];
 		}
 
 		return divisionValueMap;
@@ -251,7 +272,111 @@ public:
 
 	void getSolutionFromPaths(const std::vector<TrackingAlgorithm::Path>& paths)
 	{
-		// somehow fill solution vectors from this
+		if(paths.size() == 0)
+		{
+			LOG_MSG("Got empty paths list, not extracting solution....");
+			return;
+		}
+
+		magnussonNodeValueMap_.clear();
+		magnussonArcValueMap_.clear();
+		magnussonDivisionValueMap_.clear();
+
+		auto increase_object_count = [&](const Node* n){
+			if(magnussonNodeValueMap_.find(n) == magnussonNodeValueMap_.end())
+				magnussonNodeValueMap_[n] = 1;
+			else
+				magnussonNodeValueMap_[n] += 1;
+		};
+
+		auto activate_arc = [&](const Arc* a)
+		{
+			if(magnussonArcValueMap_.find(a) == magnussonArcValueMap_.end())
+				magnussonArcValueMap_[a] = 1;
+			else
+				magnussonArcValueMap_[a] += 1;
+		};
+
+		// fill solution vectors from the given paths
+		// for each path, increment the number of cells the nodes and arcs along the path
+	    for(const TrackingAlgorithm::Path& p : paths)
+	    {
+	        // a path starts at the dummy-source and goes to the dummy-sink. these arcs are of type dummy, and thus skipped
+	        bool first_arc_on_path = true;
+	        for(const Arc* a : p)
+	        {
+	            assert(a != nullptr);
+	            assert(a->getSourceNode() != nullptr);
+	            assert(a->getTargetNode() != nullptr);
+
+	            switch(a->getType())
+	            {
+	                case Arc::Move:
+	                {
+	                    // send one cell through the nodes
+	                    if(first_arc_on_path)
+	                    {
+	                        increase_object_count(a->getSourceNode());
+	                        first_arc_on_path = false;
+	                    }
+	                    increase_object_count(a->getTargetNode());
+
+	                    // set arc to active
+	                    activate_arc(a);
+	                }
+	                break;
+	                case Arc::Appearance:
+	                {
+	                    // the node that appeared is set active here, so detections without further path are active as well
+	                    increase_object_count(a->getTargetNode());
+	                    first_arc_on_path = false;
+	                }
+	                break;
+	                case Arc::Disappearance:
+	                {
+	                    if(first_arc_on_path)
+	                    {
+	                        increase_object_count(a->getSourceNode());
+	                    }
+	                    first_arc_on_path = false;
+	                    // nothing to do, last node on path was already set active by previous move or appearance
+	                }
+	                break;
+	                case Arc::Division:
+	                {
+	                	assert(a->getObservedNode() != nullptr);
+	                	magnussonDivisionValueMap_[a->getObservedNode()] = true;
+
+	                	// activate corresponding arc, which is not active in dpct!
+	                    for(Node::ConstArcIt ai = a->getObservedNode()->getOutArcsBegin();
+	                    	ai != a->getObservedNode()->getOutArcsEnd();
+	                    	++ai)
+	                    {
+	                        if((*ai)->getTargetNode() == a->getTargetNode())
+	                        {
+	                            magnussonArcValueMap_[*ai] = 1;
+	                        }
+	                    }
+	                    first_arc_on_path = false;
+	                }
+	                break;
+	                case Arc::Swap:
+	                {
+	                    throw std::runtime_error("Got a swap arc even though it should have been cleaned up!");
+	                }
+	                break;
+	                case Arc::Dummy:
+	                {
+	                    // do nothing
+	                } break;
+	                default:
+	                {
+	                    throw std::runtime_error("Unkown arc type");
+	                }
+	                break;
+	            } // switch
+	        } // for all arcs
+	    } // for all paths
 	}
 
 private:
@@ -265,10 +390,18 @@ private:
 	std::map<size_t, Graph::NodePtr> idToGraphNodeMap_;
 
 	/// mapping from id to division arc
-	std::map<size_t, Graph::ArcPtr> idToGraphDivisionArcMap_;
+	std::map<size_t, Graph::NodePtr> idToGraphDivisionMap_;
 
 	/// mapping from tuple (id,id) to arc
 	std::map<std::pair<size_t, size_t>, Graph::ArcPtr> idTupleToGraphArcMap_;
+
+	/// list of all division arcs - shared ptr references so that the arc doesn't get deleted
+	std::vector<Graph::ArcPtr> divisionArcs_;
+
+	/// result maps that are filled when a set of paths is passed in
+	std::map<const Node*, size_t> magnussonNodeValueMap_;
+	std::map<const Arc*, size_t> magnussonArcValueMap_;
+	std::map<const Node*, size_t> magnussonDivisionValueMap_;
 };
 
 

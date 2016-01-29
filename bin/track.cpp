@@ -56,16 +56,18 @@ int main(int argc, char** argv) {
 		}
 		else if(method == "magnusson")
 		{
-			Graph::Configuration config(false, false, false);
+			Graph::Configuration config(true, true, true);
     		Graph graph(config);
 		    MagnussonGraphBuilder graphBuilder(&graph);
 		    JsonGraphReader jsonReader(modelFilename, weightsFilename, &graphBuilder);
 		    jsonReader.createGraphFromJson();
 		    std::cout << "Model has state zero energy: " << jsonReader.getInitialStateEnergy() << std::endl;
 
-		    Magnusson tracker(&graph, false, true, true);
+		    Magnusson tracker(&graph, true, true, false);
 		    std::vector<TrackingAlgorithm::Path> paths;
 		    double score = tracker.track(paths);
+		    std::cout << "\nTracking finished in " << tracker.getElapsedSeconds() << " secs with score " 
+		    		  << jsonReader.getInitialStateEnergy() - score << std::endl;
 		    graphBuilder.getSolutionFromPaths(paths);
 		    jsonReader.saveResultJson(outputFilename);
 		}

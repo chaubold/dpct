@@ -101,6 +101,9 @@ public:
 	ArcPtr allowMitosis(NodePtr parent,
 						NodePtr child,
 						double divisionScoreDelta);
+    ArcPtr allowMitosis(Node* parent,
+                        Node* child,
+                        double divisionScoreDelta);
 
 	// get number of arcs and user defined nodes
 	size_t getNumArcs() const { return arcs_.size(); }
