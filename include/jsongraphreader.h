@@ -29,6 +29,7 @@ public:
 	 */
 	virtual void addNode(
 		size_t id,
+		const CostDeltaVector& detectionCosts,
 		const CostDeltaVector& detectionCostDeltas, 
 		const CostDeltaVector& appearanceCostDeltas, 
 		const CostDeltaVector& disappearanceCostDeltas) = 0;
@@ -84,6 +85,7 @@ public:
 
 	void addNode(
 		size_t id,
+		const CostDeltaVector& detectionCosts,
 		const CostDeltaVector& detectionCostDeltas, 
 		const CostDeltaVector& appearanceCostDeltas, 
 		const CostDeltaVector& disappearanceCostDeltas)
@@ -191,6 +193,7 @@ public:
 
 	void addNode(
 		size_t id,
+		const CostDeltaVector& detectionCosts,
 		const CostDeltaVector& detectionCostDeltas, 
 		const CostDeltaVector& appearanceCostDeltas, 
 		const CostDeltaVector& disappearanceCostDeltas)
@@ -199,7 +202,7 @@ public:
 			throw std::runtime_error("Node timesteps must be set for Magnusson to work");
 		
 		size_t timestep = idToTimestepsMap_[id].second;
-		Graph::NodePtr n = graph_->addNode(timestep, flipSign(detectionCostDeltas), flipSign(appearanceCostDeltas)[0], flipSign(disappearanceCostDeltas)[0], false, false);
+		Graph::NodePtr n = graph_->addNode(timestep, flipSign(detectionCosts), flipSign(appearanceCostDeltas)[0], flipSign(disappearanceCostDeltas)[0], false, false);
 		idToGraphNodeMap_[id] = n;
 	}
 

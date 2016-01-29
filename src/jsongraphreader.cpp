@@ -142,7 +142,8 @@ void JsonGraphReader::createGraphFromJson()
 			graphBuilder_->setNodeTimesteps(id, timeRange);
 		}
 
-		FeatureVector detCostDeltas = costsToScoreDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::Features), weights, detWeightOffset, statesShareWeights));
+		FeatureVector detCosts = weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::Features), weights, detWeightOffset, statesShareWeights);
+		FeatureVector detCostDeltas = costsToScoreDeltas(detCosts);
 		FeatureVector appearanceCostDeltas;
 		FeatureVector disappearanceCostDeltas;
 		if(jsonHyp.isMember(JsonTypeNames[JsonTypes::AppearanceFeatures]))
@@ -151,7 +152,7 @@ void JsonGraphReader::createGraphFromJson()
 		if(jsonHyp.isMember(JsonTypeNames[JsonTypes::DisappearanceFeatures]))
 			disappearanceCostDeltas = costsToScoreDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::DisappearanceFeatures), weights, disWeightOffset, statesShareWeights));
 
-		graphBuilder_->addNode(id, detCostDeltas, appearanceCostDeltas, disappearanceCostDeltas);
+		graphBuilder_->addNode(id, detCosts, detCostDeltas, appearanceCostDeltas, disappearanceCostDeltas);
 	}
 
 	// read linking hypotheses
