@@ -2,6 +2,7 @@
 #include "node.h"
 #include "log.h"
 
+#include "flowgraph.h"
 #include "magnusson.h"
 #include <assert.h>
 
@@ -11,15 +12,15 @@ namespace dpct
 Arc::Arc(Node* source,
          Node* target,
          Type type,
-         double scoreDelta,
+         const std::vector<double>& scoreDeltas,
          Node* dependsOnCellInNode,
          UserDataPtr data):
     IUserDataHolder(data),
 	sourceNode_(source),
 	targetNode_(target),
 	type_(type),
-	scoreDelta_(scoreDelta),
-	currentScore_(scoreDelta),
+	scoreDeltas_(scoreDeltas),
+	currentScore_(scoreDeltas[0]),
     dependsOnCellInNode_(dependsOnCellInNode),
     used_(0),
     enabled_(true)
@@ -29,7 +30,8 @@ Arc::Arc(Node* source,
 
 	if(type_ == Dummy)
 	{
-		assert(scoreDelta_ == 0.0);
+        for(size_t d : scoreDeltas_)
+		  assert(d == 0.0);
 	}
 
 	sourceNode_->registerOutArc(this);
@@ -50,7 +52,7 @@ Arc::Arc(const Arc& a,
     Arc(map_node(a.sourceNode_),
         map_node(a.targetNode_),
         a.type_,
-        a.scoreDelta_,
+        a.scoreDeltas_,
         map_node(a.dependsOnCellInNode_),
         data)
 {}
@@ -58,7 +60,7 @@ Arc::Arc(const Arc& a,
 void Arc::reset()
 {
     used_ = 0;
-	currentScore_ = scoreDelta_;
+	currentScore_ = scoreDeltas_[0];
 	updateEnabledState();
 }
 
@@ -67,7 +69,7 @@ void Arc::update()
     currentScore_ = getScoreDelta() + sourceNode_->getCurrentScore();
     // updateEnabledState();
     DEBUG_MSG(typeAsString() << "-Arc update: score is now " << currentScore_ << " (enabled="
-               << (enabled_?"true":"false") << ")" << " scoreDelta=" << scoreDelta_);
+               << (enabled_?"true":"false") << ")" << " scoreDelta=" << scoreDeltas_);
 }
 
 void Arc::update(double additionalDelta)
@@ -75,7 +77,7 @@ void Arc::update(double additionalDelta)
 	currentScore_ = getScoreDelta() + sourceNode_->getCurrentScore() + additionalDelta;
     // updateEnabledState();
     DEBUG_MSG(typeAsString() << "-Arc update: score is now " << currentScore_ << " (enabled="
-               << (enabled_?"true":"false") << ")" << " scoreDelta=" << scoreDelta_);
+               << (enabled_?"true":"false") << ")" << " scoreDelta=" << scoreDeltas_);
 }
 
 void Arc::changeTargetTo(Node *other)
@@ -206,7 +208,7 @@ void Arc::markUsed(bool used)
         sourceNode_->increaseNumUsedOutArcs(count);
         targetNode_->increaseNumUsedInArcs(count);
         sourceNode_->visitOutArcs(arcEnabler);
-	sourceNode_->visitObserverArcs(arcEnabler);
+        sourceNode_->visitObserverArcs(arcEnabler);
         targetNode_->visitInArcs(arcEnabler);
     }
     else if(type_ == Appearance)

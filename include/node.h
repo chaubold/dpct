@@ -27,7 +27,7 @@ public:
     Node() = delete;
     Node(const Node&) = delete;
 
-    Node(const std::vector<double>& cellCountScore = {},
+    explicit Node(const std::vector<double>& cellCountScore = {},
          UserDataPtr data = UserDataPtr());
     // this dedicated copy constructor does NOT copy connected arcs, but only node internals
     Node(const Node& n,

@@ -202,7 +202,7 @@ public:
 			throw std::runtime_error("Node timesteps must be set for Magnusson to work");
 		
 		size_t timestep = idToTimestepsMap_[id].second;
-		Graph::NodePtr n = graph_->addNode(timestep, flipSign(detectionCosts), flipSign(appearanceCostDeltas)[0], flipSign(disappearanceCostDeltas)[0], false, false);
+		Graph::NodePtr n = graph_->addNode(timestep, flipSign(detectionCosts), flipSign(appearanceCostDeltas), flipSign(disappearanceCostDeltas), false, false);
 		idToGraphNodeMap_[id] = n;
 	}
 
@@ -212,7 +212,7 @@ public:
 			throw std::runtime_error("Trying to add link but source node is not present in map");
 		if(idToGraphNodeMap_.find(destId) == idToGraphNodeMap_.end())
 			throw std::runtime_error("Trying to add link but destination node is not present in map");
-		Graph::ArcPtr a = graph_->addMoveArc(idToGraphNodeMap_[srcId], idToGraphNodeMap_[destId], flipSign(costDeltas)[0]);
+		Graph::ArcPtr a = graph_->addMoveArc(idToGraphNodeMap_[srcId], idToGraphNodeMap_[destId], flipSign(costDeltas));
 		idTupleToGraphArcMap_[std::make_pair(srcId, destId)] = a;
 	}
 

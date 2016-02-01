@@ -142,7 +142,7 @@ double Magnusson::track(Solution& paths)
         paths.push_back(p);
         score += scoreDelta;
         std::chrono::time_point<std::chrono::high_resolution_clock> td = std::chrono::high_resolution_clock::now();
-        std::cout << "\rFound " << paths.size() << " paths...";
+        std::cout << "\rFound " << paths.size() << " paths... overall score=" << score;
         std::cout.flush();
     }
 
@@ -304,7 +304,7 @@ void Magnusson::insertMoveSwapArcs(Arc* a)
                 continue;
 
             // found a candidate
-            double score = (*outIt)->getScoreDelta() + (*inIt)->getScoreDelta() - a->getScoreDelta();
+            double score = (*outIt)->getScoreDelta() + (*inIt)->getScoreDelta() - a->getPreviousScoreDelta();
 
             // the swap arc does not depend on other nodes being part of a path,
             // as this algorithm never removes cells and thus the previously populated nodes can be used in swaps.
@@ -312,7 +312,7 @@ void Magnusson::insertMoveSwapArcs(Arc* a)
             Arc* arc = new Arc(alternativeSource,
                                       alternativeTarget,
                                       Arc::Swap,
-                                      score,
+                                      {score},
                                       nullptr,
                                       std::make_shared<MagnussonSwapArcUserData>(a, *inIt, *outIt)
                                       );
@@ -381,7 +381,7 @@ void Magnusson::insertAppearanceSwapArcs(Arc* a)
                 throw std::runtime_error("alternative target did not have disappearance arc...");
 
             // found a candidate
-            double score = alternativeAppearanceArc->getScoreDelta() + (*inIt)->getScoreDelta() - a->getScoreDelta();
+            double score = alternativeAppearanceArc->getScoreDelta() + (*inIt)->getScoreDelta() - a->getPreviousScoreDelta();
 
             // save it for adding later (otherwise the iterator inIt is invalidated!)
             swapArcCandidates.push_back(std::make_tuple(alternativeTarget, *inIt, alternativeAppearanceArc, score));
@@ -418,7 +418,7 @@ void Magnusson::insertAppearanceSwapArcs(Arc* a)
             Arc* arc = new Arc(alternativeSource,
                                       alternativeTarget,
                                       Arc::Swap,
-                                      score,
+                                      {score},
                                       nullptr,
                                       std::make_shared<MagnussonSwapArcUserData>(a, originalInArc, alternativeAppearanceArc)
                                       );
@@ -472,7 +472,7 @@ void Magnusson::insertDisappearanceSwapArcs(Arc* a)
                 throw std::runtime_error("alternative target did not have disappearance arc...");
 
             // found a candidate
-            double score = alternativeDisappearanceArc->getScoreDelta() + (*outIt)->getScoreDelta() - a->getScoreDelta();
+            double score = alternativeDisappearanceArc->getScoreDelta() + (*outIt)->getScoreDelta() - a->getPreviousScoreDelta();
 
             // save it for adding later (otherwise the iterator inIt is invalidated!)
             swapArcCandidates.push_back(std::make_tuple(alternativeSource, *outIt, alternativeDisappearanceArc, score));
@@ -509,7 +509,7 @@ void Magnusson::insertDisappearanceSwapArcs(Arc* a)
             Arc* arc = new Arc(alternativeSource,
                                       alternativeTarget,
                                       Arc::Swap,
-                                      score,
+                                      {score},
                                       nullptr,
                                       std::make_shared<MagnussonSwapArcUserData>(a, originalInArc, alternativeDisappearanceArc)
                                       );

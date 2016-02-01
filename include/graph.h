@@ -48,8 +48,8 @@ public:
 	// Appearance, disappearance and division arcs are inserted automatically.
     NodePtr addNode(size_t timestep,
                     const std::vector<double>& cellCountScoreDelta,
-                    double appearanceScoreDelta = 0.0,
-                    double disappearanceScoreDelta = 0.0,
+                    const std::vector<double>& appearanceScoreDelta = {0.0},
+                    const std::vector<double>& disappearanceScoreDelta = {0.0},
                     bool connectToSource = false,
                     bool connectToSink = false,
                     UserDataPtr data = UserDataPtr());
@@ -57,7 +57,7 @@ public:
 	// add an arc between used defined nodes. Nodes have to be created first! 
 	ArcPtr addMoveArc(NodePtr source, 
                     NodePtr target,
-                    double scoreDelta,
+                    const std::vector<double>& scoreDeltas,
                     UserDataPtr data = UserDataPtr());
 
 	// mitosis happens along a move arc - or better two move arcs from a common

@@ -1,6 +1,7 @@
 #ifndef DPCT_ARC_H
 #define DPCT_ARC_H
 
+#include <limits>
 #include <iostream>
 #include "userdata.h"
 #include "iarcnotifier.h"
@@ -33,7 +34,7 @@ public:
 	Arc(Node* source,
 		Node* target,
 		Type type,
-		double scoreDelta,
+		const std::vector<double>& scoreDeltas,
 		Node* dependsOnCellInNode = nullptr,
         UserDataPtr data = UserDataPtr()
 		);
@@ -59,8 +60,20 @@ public:
 	Node* getSourceNode() const { return sourceNode_; }
 	Node* getTargetNode() const { return targetNode_; }
     Type getType() const { return type_; }
-    double getScoreDelta() const { return ((used_>0)?0.0:scoreDelta_); }
-    double getPlainScoreDelta() const { return scoreDelta_; }
+    
+    double getScoreDelta() const { 
+    	if(used_ < scoreDeltas_.size())
+    		return scoreDeltas_[used_]; 
+    	else
+    		return -1.0 * std::numeric_limits<double>::infinity();
+    }
+
+    double getPreviousScoreDelta() const { 
+    	if(used_ == 0)
+    		throw std::runtime_error("Cannot get previous score delta of unused arc!");
+    	return scoreDeltas_[used_ - 1];
+    }
+
     Node* getObservedNode() const { return dependsOnCellInNode_; }
 
     std::string typeAsString() const;
@@ -75,7 +88,7 @@ protected:
 	Node* sourceNode_;
 	Node* targetNode_;
 	Type type_;
-	double scoreDelta_;
+	std::vector<double> scoreDeltas_;
 	double currentScore_;
 	bool enabled_;
 	size_t used_;

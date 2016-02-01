@@ -28,8 +28,8 @@ Graph::Graph(const Graph::Configuration& config):
 
 Graph::NodePtr Graph::addNode(size_t timestep,
 					const std::vector<double>& cellCountScoreDelta,
-					double appearanceScoreDelta,
-					double disappearanceScoreDelta,
+					const std::vector<double>& appearanceScoreDelta,
+					const std::vector<double>& disappearanceScoreDelta,
 		 			bool connectToSource,
 		 			bool connectToSink,
                     UserDataPtr data)
@@ -41,6 +41,8 @@ Graph::NodePtr Graph::addNode(size_t timestep,
 	}
 	nodesPerTimestep_[timestep].push_back(node);
 	numNodes_++;
+
+    std::vector<double> zeroCost(cellCountScoreDelta.size(), 0);
 
 	// create appearance and division arcs if enabled and not in first time frame
 	if(config_.withAppearance && !connectToSource)
@@ -72,7 +74,7 @@ Graph::NodePtr Graph::addNode(size_t timestep,
         ArcPtr arc(new Arc(&sourceNode_,
             node.get(),
             Arc::Dummy,
-            0.0,
+            {0.0},
             nullptr,
             nullptr));
         arcs_.push_back(arc);
@@ -84,7 +86,7 @@ Graph::NodePtr Graph::addNode(size_t timestep,
         ArcPtr arc(new Arc(node.get(),
             &sinkNode_,
             Arc::Dummy,
-            0.0,
+            {0.0},
             nullptr,
             nullptr));
         arcs_.push_back(arc);
@@ -95,7 +97,7 @@ Graph::NodePtr Graph::addNode(size_t timestep,
 
 Graph::ArcPtr Graph::addMoveArc(NodePtr source,
                     NodePtr target,
-                    double scoreDelta,
+                    const std::vector<double>& scoreDeltas,
                     UserDataPtr data)
 {
 	// assert(source in nodes_)
@@ -104,7 +106,7 @@ Graph::ArcPtr Graph::addMoveArc(NodePtr source,
 	ArcPtr arc(new Arc(source.get(), 
 		target.get(),
 		Arc::Move,
-		scoreDelta,
+		scoreDeltas,
 		nullptr,
 		data));
 
@@ -119,7 +121,7 @@ Graph::ArcPtr Graph::allowMitosis(Node* parent,
     ArcPtr arc(new Arc(&sourceNode_, 
         child,
         Arc::Division,
-        divisionScoreDelta,
+        {divisionScoreDelta},
         parent));
 
     arcs_.push_back(arc);
@@ -134,7 +136,7 @@ Graph::ArcPtr Graph::allowMitosis(NodePtr parent,
 	ArcPtr arc(new Arc(&sourceNode_, 
 		child.get(),
 		Arc::Division,
-		divisionScoreDelta,
+		{divisionScoreDelta},
 		parent.get()));
 
 	arcs_.push_back(arc);
