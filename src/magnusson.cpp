@@ -306,16 +306,6 @@ void Magnusson::insertMoveSwapArcs(Arc* a)
             // found a candidate
             double score = (*outIt)->getScoreDelta() + (*inIt)->getScoreDelta() - a->getScoreDelta();
 
-            // if there is an arc connecting the two alternative nodes, subtract its score delta as well -> WHY???
-            // for(Node::ArcIt alternativeOutIt = alternativeSource->getOutArcsBegin(); alternativeOutIt != alternativeSource->getOutArcsEnd(); ++alternativeOutIt)
-            // {
-            //     if( (*alternativeOutIt)->getTargetNode() == alternativeTarget
-            //             && (*alternativeOutIt)->getType() != Arc::Dummy // do not swap with dummy arcs (is that possible at all?)
-            //             && (*alternativeOutIt)->getType() != Arc::Division
-            //             && (*alternativeOutIt)->getType() != Arc::Swap)
-            //         score -= (*alternativeOutIt)->getScoreDelta();
-            // }
-
             // the swap arc does not depend on other nodes being part of a path,
             // as this algorithm never removes cells and thus the previously populated nodes can be used in swaps.
             // BUT: it needs to store a reference to the arc that it would cut, and the cleanup action is performed in cleanUpUsedSwapArcs()
