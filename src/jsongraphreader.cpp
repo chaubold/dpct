@@ -332,7 +332,7 @@ JsonGraphReader::FeatureVector JsonGraphReader::costsToScoreDeltas(const Feature
 JsonGraphReader::ValueType JsonGraphReader::costsToScoreDelta(const FeatureVector& costs)
 {
 	assert(costs.size() == 2);
-	return costs[0] - costs[1];
+	return costs[1] - costs[0];
 }
 
 
