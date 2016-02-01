@@ -154,32 +154,4 @@ double TrackingAlgorithm::getElapsedSeconds()
     return elapsed_seconds.count();
 }
 
-TrackingAlgorithm::Solution TrackingAlgorithm::translateToOriginGraph(TrackingAlgorithm::Solution &sol)
-{
-    Solution originSol;
-    for(Path& p : sol)
-    {
-        Path originPath;
-        originPath.reserve(p.size());
-
-        for(Arc* a : p)
-        {
-            std::shared_ptr<ArcOriginData> arcOriginData = std::static_pointer_cast<ArcOriginData>(a->getUserData());
-            std::shared_ptr<NodeOriginData> targetNodeOriginData = std::static_pointer_cast<NodeOriginData>(a->getTargetNode()->getUserData());
-
-            assert(arcOriginData->getOriginsReverseOrder().size() == 1);
-            originPath.push_back(arcOriginData->getOriginsReverseOrder().back());
-
-            for(auto it = targetNodeOriginData->getConnectorsReverseOrder().rbegin();
-                it != targetNodeOriginData->getConnectorsReverseOrder().rend();
-                ++it)
-            {
-                originPath.push_back(*it);
-            }
-        }
-        originSol.push_back(originPath);
-    }
-    return originSol;
-}
-
 } // namespace dpct

@@ -158,27 +158,6 @@ void Node::updateBestInArcAndScore()
     }
 }
 
-void Node::accumulateScoreDelta(Node *other)
-{
-    assert(other->cellCountScore_.size() == cellCountScore_.size());
-    for(size_t i = 0; i < cellCountScore_.size(); i++)
-    {
-        cellCountScore_[i] += other->cellCountScore_[i];
-    }
-}
-
-void Node::addArcCost(Arc* other, bool usedArcsScoreZero)
-{
-    size_t numStatesToChange = std::min<size_t>(1, cellCountScore_.size());
-    if(!usedArcsScoreZero)
-        numStatesToChange = cellCountScore_.size();
-
-    for(size_t i = 1; i < numStatesToChange; i++)
-    {
-        cellCountScore_[i] += other->getPlainScoreDelta();
-    }
-}
-
 // size_t Node::getMoveInArcUsedSum() const
 // {
 //     size_t sum = 0;

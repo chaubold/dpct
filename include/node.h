@@ -68,9 +68,6 @@ public:
     size_t getNumInArcs() const  { return inArcs_.size(); }
     size_t getNumOutArcs() const { return outArcs_.size(); }
 
-    void accumulateScoreDelta(Node* other);
-    void addArcCost(Arc *other, bool usedArcsScoreZero);
-
     size_t getNumActiveDivisions() const { return numActiveDivisions_; }
     void increaseNumActiveDivisions(int count = 1) { numActiveDivisions_ += count; }
 
