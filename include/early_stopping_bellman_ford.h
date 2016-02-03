@@ -703,7 +703,7 @@ namespace lemon {
 
         if(result)
         {
-          std::cout << "\tFinished after " << i << " iterations" << std::endl; 
+          // std::cout << "\tFinished after " << i << " iterations" << std::endl; 
           return true;
         }
 
@@ -717,7 +717,7 @@ namespace lemon {
           }
         }
       }
-      std::cout << "\tFinished after " << num << " iterations" << std::endl; 
+      // std::cout << "\tFinished after " << num << " iterations" << std::endl; 
       return _process.empty();
     }
 
