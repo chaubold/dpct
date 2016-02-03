@@ -118,6 +118,22 @@ Graph::ArcPtr Graph::allowMitosis(Node* parent,
                         Node* child,
                         double divisionScoreDelta)
 {
+	// find corresponding move to add costs
+	bool found = false;
+	for(Node::ArcIt outIt = parent->getOutArcsBegin(); outIt != parent->getOutArcsEnd(); ++outIt)
+    {
+    	if((*outIt)->getTargetNode() == child)
+    	{
+    		divisionScoreDelta += (*outIt)->getScoreDelta();
+    		found = true;
+    		break;
+    	}
+    }
+    
+    if(!found)
+    	throw std::runtime_error("Adding mitosis where no move could have appeared.");
+
+	// add division arc
     ArcPtr arc(new Arc(&sourceNode_, 
         child,
         Arc::Division,
@@ -133,14 +149,7 @@ Graph::ArcPtr Graph::allowMitosis(NodePtr parent,
 						NodePtr child,
 						double divisionScoreDelta)
 {
-	ArcPtr arc(new Arc(&sourceNode_, 
-		child.get(),
-		Arc::Division,
-		{divisionScoreDelta},
-		parent.get()));
-
-	arcs_.push_back(arc);
-    return arc;
+	return allowMitosis(parent.get(), child.get(), divisionScoreDelta);
 }
 
 void Graph::reset()
