@@ -42,7 +42,7 @@ public: // typedefs
 	static const bool Backward = false;
 
 public: // API
-	ResidualGraph(const Graph& original);
+	ResidualGraph(const Graph& original, bool useBackArcs=true);
 	
 	/// set arc cost for the residual forward/backward arc corresponding to a in the original graph
 	/// if capacity = 0, the arc will be disabled and the cost ignored
@@ -158,6 +158,9 @@ private:
 private:
 	/// Original graph
 	const Graph& originalGraph_;
+
+	/// whether backwards arcs should be used at all or not (only needed for Magnusson comparison)
+	bool useBackArcs_;
 
 	/// store cost of arcs, independent of whether they are enabled or not
 	std::map<ResidualArcCandidate, double> residualArcCost_;

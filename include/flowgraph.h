@@ -52,7 +52,7 @@ public: // API
 	Arc allowMitosis(FullNode parent, double divisionCost);
 
 	/// start the tracking
-	void maxFlowMinCostTracking(double initialStateEnergy=0.0);
+	void maxFlowMinCostTracking(double initialStateEnergy=0.0, bool useBackArcs=true);
 
 	Node getSource() const { return source_; }
 	Node getTarget() const { return target_; }
@@ -63,7 +63,7 @@ public: // API
 
 private:
 	/// create residual graph and set up all arc flows etc
-	void initializeResidualGraph();
+	void initializeResidualGraph(bool useBackArcs);
 
 	/// augment flow along a path or cycle, adding one unit of flow forward, and subtracting one backwards
 	void augmentUnitFlow(const Path& p);

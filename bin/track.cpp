@@ -16,6 +16,7 @@ int main(int argc, char** argv) {
 	std::string weightsFilename;
 	std::string outputFilename;
 	std::string method("flow");
+	bool swap = true;
 
 	// Declare the supported options.
 	po::options_description description("Allowed options");
@@ -25,6 +26,7 @@ int main(int argc, char** argv) {
 	    ("weights,w", po::value<std::string>(&weightsFilename), "filename of the weights stored as Json file")
 	    ("output,o", po::value<std::string>(&outputFilename), "filename where the resulting tracking (as links) will be stored as Json file")
 	    ("method,e", po::value<std::string>(&method), "method to use for tracking: 'flow' (default) or 'magnusson'")
+	    ("swap,s", po::value<bool>(&swap), "whether swap arcs are enabled (default=true)")
 	;
 
 	po::variables_map variableMap;
@@ -51,7 +53,7 @@ int main(int argc, char** argv) {
 		    JsonGraphReader jsonReader(modelFilename, weightsFilename, &graphBuilder);
 		    jsonReader.createGraphFromJson();
 		    std::cout << "Model has state zero energy: " << jsonReader.getInitialStateEnergy() << std::endl;
-		    graph.maxFlowMinCostTracking(jsonReader.getInitialStateEnergy());
+		    graph.maxFlowMinCostTracking(jsonReader.getInitialStateEnergy(), swap);
 		    jsonReader.saveResultJson(outputFilename);
 		}
 		else if(method == "magnusson")
@@ -63,7 +65,7 @@ int main(int argc, char** argv) {
 		    jsonReader.createGraphFromJson();
 		    std::cout << "Model has state zero energy: " << jsonReader.getInitialStateEnergy() << std::endl;
 
-		    Magnusson tracker(&graph, true, true, false);
+		    Magnusson tracker(&graph, swap, true, false);
 		    std::vector<TrackingAlgorithm::Path> paths;
 		    double score = tracker.track(paths);
 		    std::cout << "\nTracking finished in " << tracker.getElapsedSeconds() << " secs with score " 

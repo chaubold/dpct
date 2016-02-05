@@ -68,11 +68,11 @@ FlowGraph::Arc FlowGraph::allowMitosis(FlowGraph::FullNode parent,
 }
 
 /// start the tracking
-void FlowGraph::maxFlowMinCostTracking(double initialStateEnergy)
+void FlowGraph::maxFlowMinCostTracking(double initialStateEnergy, bool useBackArcs)
 {
 	TimePoint startTime_ = std::chrono::high_resolution_clock::now();
 
-	initializeResidualGraph();
+	initializeResidualGraph(useBackArcs);
 
 	ResidualGraph::ShortestPathResult result;
 	size_t iter=0;
@@ -122,9 +122,9 @@ void FlowGraph::maxFlowMinCostTracking(double initialStateEnergy)
 	LOG_MSG("Final energy: " << currentEnergy);
 }
 
-void FlowGraph::initializeResidualGraph()
+void FlowGraph::initializeResidualGraph(bool useBackArcs)
 {
-	residualGraph_ = std::make_shared<ResidualGraph>(baseGraph_);
+	residualGraph_ = std::make_shared<ResidualGraph>(baseGraph_, useBackArcs);
 	
 	for(Graph::ArcIt a(baseGraph_); a != lemon::INVALID; ++a)
     {

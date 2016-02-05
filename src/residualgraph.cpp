@@ -7,11 +7,12 @@
 namespace dpct
 {
 
-ResidualGraph::ResidualGraph(const Graph& original):
+ResidualGraph::ResidualGraph(const Graph& original, bool useBackArcs):
 	residualDistMap_(*this),
 	forbiddenTokenMap_(*this),
 	providedTokenMap_(*this),
-	originalGraph_(original)
+	originalGraph_(original),
+	useBackArcs_(useBackArcs)
 {
 	for(Graph::NodeIt origNode(original); origNode != lemon::INVALID; ++origNode)
 	{
@@ -23,6 +24,8 @@ ResidualGraph::ResidualGraph(const Graph& original):
 
 void ResidualGraph::updateArc(const OriginalArc& a, bool forward, double cost, int capacity)
 {
+	if(!useBackArcs_ && !forward)
+		return;
 	ResidualArcCandidate ac = undirectedArcToPair(a, forward);
 	updateResidualArc(ac, cost, capacity);
 }
@@ -72,7 +75,9 @@ void ResidualGraph::enableArc(const OriginalArc& a, bool state)
 {
 	// use the latest cost and flow states
 	enableArc(arcToPair(a), state);
-	enableArc(arcToInversePair(a), state);
+	
+	if(useBackArcs_)
+		enableArc(arcToInversePair(a), state);
 }
 
 /// find a shortest path or a negative cost cycle, and return it with flow direction and cost
