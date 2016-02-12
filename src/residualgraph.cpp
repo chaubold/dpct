@@ -38,21 +38,19 @@ void ResidualGraph::updateResidualArc(const ResidualArcCandidate& ac, double cos
 	{
 		residualArcCost_[ac] = cost;
 		residualArcPresent_[ac] = true;
-		enableArc(ac, true);
 	}
 	else
 	{
 		residualArcPresent_[ac] = false;
-		enableArc(ac, false);
 	}
+	includeArc(ac);
 }
 
-void ResidualGraph::enableArc(const ResidualArcCandidate& ac, bool state)
+void ResidualGraph::includeArc(const ResidualArcCandidate& ac)
 {
-	DEBUG_MSG((state? "enabling" : "disabling") << " residual arc: " 
-		<< id(ac.first) << ", " << id(ac.second));
-	if(!state || !residualArcPresent_[ac])
+	if(!residualArcPresent_[ac] || !residualArcEnabled_[ac])
 	{
+		DEBUG_MSG("disabling residual arc: " << id(ac.first) << ", " << id(ac.second));
 		Arc a = pairToResidualArc(ac);
 		if(a == lemon::INVALID)
 			return;
@@ -60,6 +58,7 @@ void ResidualGraph::enableArc(const ResidualArcCandidate& ac, bool state)
 	}
 	else
 	{
+		DEBUG_MSG("enabling residual arc: " << id(ac.first) << ", " << id(ac.second));
 		Arc a = pairToResidualArc(ac);
 		if(a == lemon::INVALID)
 		{
@@ -74,10 +73,16 @@ void ResidualGraph::enableArc(const ResidualArcCandidate& ac, bool state)
 void ResidualGraph::enableArc(const OriginalArc& a, bool state)
 {
 	// use the latest cost and flow states
-	enableArc(arcToPair(a), state);
+	ResidualArcCandidate ac = arcToPair(a);
+	residualArcEnabled_[ac] = state;
+	includeArc(ac);
 	
 	if(useBackArcs_)
-		enableArc(arcToInversePair(a), state);
+	{
+		ac = arcToInversePair(a);
+		residualArcEnabled_[ac] = state;
+		includeArc(ac);
+	}
 }
 
 /// find a shortest path or a negative cost cycle, and return it with flow direction and cost
@@ -111,14 +116,9 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 			for(Graph::InArcIt a(originalGraph_, n); a != lemon::INVALID; ++a)
 			{
 				std::cout << "Disabling in-arc " << originalGraph_.id(originalGraph_.source(a)) << " -> " << ret.second << std::endl;
-				// enableArc(arcToInversePair(a), false);
 				ResidualArcCandidate ac = arcToInversePair(a);
-				Arc resArc = pairToResidualArc(ac);
-				if(resArc == lemon::INVALID)
-					std::cout << "Could not delete arc as it is not present in residual graph" << std::endl;
-				erase(resArc);
-				if(pairToResidualArc(ac) != lemon::INVALID)
-					throw std::runtime_error("Deleting arc failed");
+				residualArcEnabled_[ac] = false;
+				includeArc(ac);
 			}
 
 			LOG_MSG("Searching shortest path in graph with " << lemon::countNodes(*this)
@@ -133,7 +133,7 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 		// * checking for negative cycles each round brings runtime down to 82 secs
 		// * checking for negative cycles every 100 iterations yields runtime of 53secs!
 		// BUT: the number of paths found changes, which means we are not finding the same things... (different negative cycles?)
-		bool foundPath = bf.checkedStart(300, 1000);
+		bool foundPath = bf.checkedStart(300, 2000);
 		if(foundPath)
 	    {	
 	    	DEBUG_MSG("Found path");
@@ -178,20 +178,6 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 	            p.push_back(std::make_pair(arcForward.first, flow));
 	        }
 	    }
-
-	 //    // if we disabled an arc due to a token violation, reverse this decision now 
-		// if(!ret.first)
-		// {
-		// 	std::cout << "Re-enabling in-arc of " << ret.second << std::endl;
-		// 	OriginalNode n = originalGraph_.nodeFromId(ret.second);
-		// 	// this should only be exactly one
-		// 	for(Graph::InArcIt a(originalGraph_, n); a != lemon::INVALID; ++a)
-		// 	{
-		// 		if(!residualArcPresent_[arcToInversePair(a)])
-		// 			std::cout << "!!!WARNING!!! Cannot re-enable arc because it is set to not present" << std::endl;
-		// 		enableArc(arcToInversePair(a), true);
-		// 	}
-		// }
 
 		// analyze the new path
 	    ret = pathSatisfiesTokenSpecs(p);

@@ -128,6 +128,7 @@ void FlowGraph::initializeResidualGraph(bool useBackArcs)
 	
 	for(Graph::ArcIt a(baseGraph_); a != lemon::INVALID; ++a)
     {
+    	enableArc(a, true);
     	updateArc(a);
 
     	// division arcs are disabled at the beginning.

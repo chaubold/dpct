@@ -69,8 +69,8 @@ public: // API
 	void removeProvidedToken(const OriginalArc& a, bool forward, Token token);
 
 private:
-	/// enable / disable residual arc
-	void enableArc(const ResidualArcCandidate& a, bool state);
+	/// include/exclude an arc in this residual graph
+	void includeArc(const ResidualArcCandidate& a);
 
 	/// set arc cost for the residual arc
 	void updateResidualArc(const ResidualArcCandidate& a, double cost, int capacity);
@@ -168,6 +168,9 @@ private:
 	/// last state of the arc depending on the flow values of the original graph.
 	/// if enableArc(graph,arc,false) is called, this map is not touched!
 	std::map<ResidualArcCandidate, bool> residualArcPresent_;
+
+	/// whether this arc is enabled according to constraints etc
+	std::map<ResidualArcCandidate, bool> residualArcEnabled_;
 
 	/// the distance(=cost) map of this residual graph used for shortest path computation
 	DistMap residualDistMap_;
