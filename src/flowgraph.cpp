@@ -68,7 +68,7 @@ FlowGraph::Arc FlowGraph::allowMitosis(FlowGraph::FullNode parent,
 }
 
 /// start the tracking
-void FlowGraph::maxFlowMinCostTracking(double initialStateEnergy, bool useBackArcs)
+void FlowGraph::maxFlowMinCostTracking(double initialStateEnergy, bool useBackArcs, size_t maxNumPaths)
 {
 	TimePoint startTime_ = std::chrono::high_resolution_clock::now();
 
@@ -114,7 +114,7 @@ void FlowGraph::maxFlowMinCostTracking(double initialStateEnergy, bool useBackAr
 				<< " secs, system Energy=" << currentEnergy);
 		iter++;
 	}
-	while(result.first.size() > 0 && result.second < 0.0);
+	while(result.first.size() > 0 && result.second < 0.0 && (maxNumPaths < 1 || iter < maxNumPaths));
 
 	TimePoint endTime_ = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed_seconds = endTime_ - startTime_;

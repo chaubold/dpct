@@ -51,8 +51,16 @@ public: // API
 	/// ATTENTION: needs to be called AFTER adding all other arcs or it will copy too few
 	Arc allowMitosis(FullNode parent, double divisionCost);
 
-	/// start the tracking
-	void maxFlowMinCostTracking(double initialStateEnergy=0.0, bool useBackArcs=true);
+	/**
+	 * @brief run tracking by finding sugmenting shortest paths in the residual graph
+	 * @param initialStateEnergy the energy of the system if no objects are sent through (state 0)
+	 * @param useBackArcs whether the residual graph should contain the edges that allow backward flow
+	 * @param maxNumPaths if >0 this  limits the number of augmenting shortest paths that should be found
+	 */
+	void maxFlowMinCostTracking(
+		double initialStateEnergy=0.0, 
+		bool useBackArcs=true, 
+		size_t maxNumPaths=0);
 
 	Node getSource() const { return source_; }
 	Node getTarget() const { return target_; }
