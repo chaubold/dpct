@@ -500,6 +500,7 @@ namespace lemon {
         _dist->set(it, value);
       }
       _process.clear();
+      _process.reserve(lemon::countNodes(*_gr));
       if (OperationTraits::less(value, OperationTraits::infinity())) {
         for (NodeIt it(*_gr); it != INVALID; ++it) {
           _process.push_back(it);
@@ -524,7 +525,9 @@ namespace lemon {
       _source = source;
       _dist->set(source, dst);
 
-      for(auto v_it = nodeUpdateOrderMap.beginValue(); v_it != nodeUpdateOrderMap.endValue(); ++ v_it)
+      for(auto v_it = nodeUpdateOrderMap.beginValue(); 
+          v_it != nodeUpdateOrderMap.endValue(); 
+          ++ v_it)
       {
         // std::cout << "Inserting value " << *v_it << std::endl; 
         typename IterableValueMap<Digraph, typename Digraph::Node, size_t>::ItemIt i_it(nodeUpdateOrderMap, *v_it);
