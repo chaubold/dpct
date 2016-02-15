@@ -19,6 +19,8 @@ ResidualGraph::ResidualGraph(
 	nodeUpdateOrderMap_(*this),
 	originalGraph_(original),
 	useBackArcs_(useBackArcs),
+	bfPredMap_(*this),
+	bfDistMap_(*this),
 	useOrderedNodeListInBF_(useOrderedNodeListInBF)
 {
 	for(Graph::NodeIt origNode(original); origNode != lemon::INVALID; ++origNode)
@@ -104,8 +106,6 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 	DEBUG_MSG("Searching shortest path in graph with " << lemon::countNodes(*this)
 			<< " nodes and " << lemon::countArcs(*this) << " arcs");
 
-	// TODO: reuse distMap and predMap of bf to avoid new and delete in each iteration?
-
 	Path p;
 	double pathCost = 0.0;
 	int flow = 0;
@@ -134,6 +134,8 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 		}
 
 	    BellmanFord bf(*this, residualDistMap_, providedTokenMap_, forbiddenTokenMap_);
+	    bf.distMap(bfDistMap_);
+	    bf.predMap(bfPredMap_);
 	    bf.init();
 	    if(useOrderedNodeListInBF_)
 	    	bf.addSource(source, nodeUpdateOrderMap_);

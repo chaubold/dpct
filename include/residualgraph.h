@@ -27,6 +27,8 @@ public: // typedefs
     typedef Graph::Arc Arc;
     typedef Graph::Arc OriginalArc;
     typedef Graph::ArcMap<double> DistMap;
+    typedef Graph::NodeMap<Arc> BfPredMap;
+    typedef Graph::NodeMap<double> BfDistMap;
     typedef Graph::ArcMap<int> FlowMap;
     typedef Graph::ArcMap<bool> ArcEnabledMap;
     typedef lemon::IterableValueMap<Graph, Node, size_t> NodeUpdateOrderMap;
@@ -201,6 +203,10 @@ private:
 
 	/// store an index for each node depending on when it should be updated
 	NodeUpdateOrderMap nodeUpdateOrderMap_;
+
+	/// create the node distance and predecessor maps only once and pass them to BF in each iteration
+	BfDistMap bfDistMap_;
+	BfPredMap bfPredMap_;
 };
 
 } // end namespace dpct
