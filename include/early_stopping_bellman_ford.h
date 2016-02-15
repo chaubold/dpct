@@ -516,9 +516,42 @@ namespace lemon {
     ///
     /// This function adds a new source node. The optional second parameter
     /// is the initial distance of the node.
-    void addSource(Node source, Value dst = OperationTraits::zero()) {
+    void addSource(
+      Node source, 
+      IterableValueMap<Digraph, typename Digraph::Node, size_t>& nodeUpdateOrderMap, 
+      Value dst = OperationTraits::zero()) 
+    {
       _source = source;
       _dist->set(source, dst);
+
+      for(auto v_it = nodeUpdateOrderMap.beginValue(); v_it != nodeUpdateOrderMap.endValue(); ++ v_it)
+      {
+        // std::cout << "Inserting value " << *v_it << std::endl; 
+        typename IterableValueMap<Digraph, typename Digraph::Node, size_t>::ItemIt i_it(nodeUpdateOrderMap, *v_it);
+        for (; i_it != lemon::INVALID; ++i_it)
+        {
+          _process.push_back(i_it);
+          _mask->set(i_it, true);
+        }
+      }
+
+      // if (!(*_mask)[source]) {
+      //   _process.push_back(source);
+      //   _mask->set(source, true);
+      // }
+    }
+
+    /// \brief Adds a new source node.
+    ///
+    /// This function adds a new source node. The optional second parameter
+    /// is the initial distance of the node.
+    void addSource(
+      Node source, 
+      Value dst = OperationTraits::zero()) 
+    {
+      _source = source;
+      _dist->set(source, dst);
+
       if (!(*_mask)[source]) {
         _process.push_back(source);
         _mask->set(source, true);

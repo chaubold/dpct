@@ -2,6 +2,7 @@
 #define DPCT_RESIDUALGRAPH_H
 
 #include <lemon/list_graph.h>
+#include <lemon/maps.h>
 #include "early_stopping_bellman_ford.h"
 #include <map>
 #include <memory>
@@ -28,12 +29,13 @@ public: // typedefs
     typedef Graph::ArcMap<double> DistMap;
     typedef Graph::ArcMap<int> FlowMap;
     typedef Graph::ArcMap<bool> ArcEnabledMap;
+    typedef lemon::IterableValueMap<Graph, Node, size_t> NodeUpdateOrderMap;
     typedef std::map<Node, Node> OriginMap;
     typedef std::map<Node, Node> ResidualNodeMap;
     typedef size_t Token;
     typedef std::set<Token> TokenSet;
     typedef Graph::ArcMap<TokenSet> TokenSetArcMap;
-    typedef lemon::EarlyStoppingBellmanFord<ResidualGraph, DistMap, Token> BellmanFord;
+    typedef lemon::EarlyStoppingBellmanFord<Graph, DistMap, Token> BellmanFord;
     typedef std::vector< std::pair<OriginalArc, int> > Path; // combines arc with flow delta (direction)
     typedef std::pair<Path, double> ShortestPathResult;
     typedef std::pair<Node, Node> ResidualArcCandidate;
@@ -42,7 +44,11 @@ public: // typedefs
 	static const bool Backward = false;
 
 public: // API
-	ResidualGraph(const Graph& original, bool useBackArcs=true);
+	ResidualGraph(
+		const Graph& original,
+		const std::map<OriginalNode, size_t>& nodeTimestepMap, 
+		bool useBackArcs=true,
+		bool useOrderedNodeListInBF=false);
 	
 	/// set arc cost for the residual forward/backward arc corresponding to a in the original graph
 	/// if capacity = 0, the arc will be disabled and the cost ignored
@@ -162,6 +168,10 @@ private:
 	/// whether backwards arcs should be used at all or not (only needed for Magnusson comparison)
 	bool useBackArcs_;
 
+	/// whether we want to initialize BF's list of nodes to update in the first frame
+	/// ordered by timesteps as in magnusson
+	bool useOrderedNodeListInBF_;
+
 	/// store cost of arcs, independent of whether they are enabled or not
 	std::map<ResidualArcCandidate, double> residualArcCost_;
 
@@ -181,13 +191,16 @@ private:
 	/// a mapping from original nodes to residual nodes
 	ResidualNodeMap residualNodeMap_;
 
-		/// the required and provided tokens per residual arc - persistent even if arcs are disabled (and hence removed)
+	/// the required and provided tokens per residual arc - persistent even if arcs are disabled (and hence removed)
 	std::map<ResidualArcCandidate, TokenSet> residualArcProvidesTokens_;
 	std::map<ResidualArcCandidate, TokenSet> residualArcForbidsTokens_;
 
 	/// the actual arc maps used by BellmanFord
 	TokenSetArcMap forbiddenTokenMap_;
 	TokenSetArcMap providedTokenMap_;
+
+	/// store an index for each node depending on when it should be updated
+	NodeUpdateOrderMap nodeUpdateOrderMap_;
 };
 
 } // end namespace dpct

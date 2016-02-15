@@ -7,18 +7,26 @@
 namespace dpct
 {
 
-ResidualGraph::ResidualGraph(const Graph& original, bool useBackArcs):
+ResidualGraph::ResidualGraph(
+		const Graph& original, 
+		const std::map<OriginalNode, size_t>& nodeTimestepMap, 
+		bool useBackArcs,
+		bool useOrderedNodeListInBF
+):
 	residualDistMap_(*this),
 	forbiddenTokenMap_(*this),
 	providedTokenMap_(*this),
+	nodeUpdateOrderMap_(*this),
 	originalGraph_(original),
-	useBackArcs_(useBackArcs)
+	useBackArcs_(useBackArcs),
+	useOrderedNodeListInBF_(useOrderedNodeListInBF)
 {
 	for(Graph::NodeIt origNode(original); origNode != lemon::INVALID; ++origNode)
 	{
 		Node n = addNode();
 		originMap_[n] = origNode;
 		residualNodeMap_[origNode] = n;
+		nodeUpdateOrderMap_.set(n, nodeTimestepMap.at(origNode));
 	}
 }
 
@@ -127,7 +135,10 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 
 	    BellmanFord bf(*this, residualDistMap_, providedTokenMap_, forbiddenTokenMap_);
 	    bf.init();
-	    bf.addSource(source);
+	    if(useOrderedNodeListInBF_)
+	    	bf.addSource(source, nodeUpdateOrderMap_);
+	   	else
+	   		bf.addSource(source);
 
 		// * limiting the number of iterations to 1000 reduces the runtime of drosophila 10x (3200sec -> 380sec)!!
 		// * checking for negative cycles each round brings runtime down to 82 secs

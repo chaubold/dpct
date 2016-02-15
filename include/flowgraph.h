@@ -42,7 +42,7 @@ public: // typedefs
 public: // API
 	FlowGraph();
 
-	FullNode addNode(const CostVector& costs);
+	FullNode addNode(const CostVector& costs, size_t timestep=0);
 
 	Arc addArc(Node source, Node target, const CostVector& costs);
 	Arc addArc(FullNode source, FullNode target, const CostVector& costs);
@@ -60,7 +60,8 @@ public: // API
 	void maxFlowMinCostTracking(
 		double initialStateEnergy=0.0, 
 		bool useBackArcs=true, 
-		size_t maxNumPaths=0);
+		size_t maxNumPaths=0,
+		bool useOrderedNodeListInBF=true);
 
 	Node getSource() const { return source_; }
 	Node getTarget() const { return target_; }
@@ -71,7 +72,7 @@ public: // API
 
 private:
 	/// create residual graph and set up all arc flows etc
-	void initializeResidualGraph(bool useBackArcs);
+	void initializeResidualGraph(bool useBackArcs, bool useOrderedNodeListInBF);
 
 	/// augment flow along a path or cycle, adding one unit of flow forward, and subtracting one backwards
 	void augmentUnitFlow(const Path& p);
@@ -117,6 +118,9 @@ private:
 
 	/// store a set of the arcs which are actually just used to emplace the node costs
 	std::set<Arc> intermediateArcs_;
+
+	/// store the (internal!) timestep of each node (including the duplicates)
+	std::map<Node, size_t> nodeTimestepMap_;
 };
 
 /**

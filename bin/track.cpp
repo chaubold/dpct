@@ -17,6 +17,7 @@ int main(int argc, char** argv) {
 	std::string outputFilename;
 	std::string method("flow");
 	bool swap = true;
+	bool useOrderedNodeListInBF = false;
 	size_t maxNumPaths = 0;
 
 	// Declare the supported options.
@@ -29,6 +30,7 @@ int main(int argc, char** argv) {
 	    ("method,e", po::value<std::string>(&method), "method to use for tracking: 'flow' (default) or 'magnusson'")
 	    ("swap,s", po::value<bool>(&swap), "whether swap arcs are enabled (default=true)")
 	    ("maxNumPaths,n", po::value<size_t>(&maxNumPaths), "maximum number of paths to find, default=0=no limit")
+	    ("orderNodes", po::value<bool>(&useOrderedNodeListInBF), "use ordered node list in BF? flow only. (default=false)")
 	;
 
 	po::variables_map variableMap;
@@ -55,7 +57,7 @@ int main(int argc, char** argv) {
 		    JsonGraphReader jsonReader(modelFilename, weightsFilename, &graphBuilder);
 		    jsonReader.createGraphFromJson();
 		    std::cout << "Model has state zero energy: " << jsonReader.getInitialStateEnergy() << std::endl;
-		    graph.maxFlowMinCostTracking(jsonReader.getInitialStateEnergy(), swap, maxNumPaths);
+		    graph.maxFlowMinCostTracking(jsonReader.getInitialStateEnergy(), swap, maxNumPaths, useOrderedNodeListInBF);
 		    jsonReader.saveResultJson(outputFilename);
 		}
 		else if(method == "magnusson")

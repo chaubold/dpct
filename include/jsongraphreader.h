@@ -37,7 +37,10 @@ public:
 	/**
 	 * @brief Specify in which timestep a node lies. Must be called before adding the respective node
 	 */
-	virtual void setNodeTimesteps(size_t id, std::pair<size_t, size_t> timesteps){}
+	void setNodeTimesteps(size_t id, std::pair<size_t, size_t> timesteps)
+	{
+		idToTimestepsMap_[id] = timesteps;
+	}
 
 	/**
 	 * @brief add a move arc between the given nodes with the specified cost deltas
@@ -69,6 +72,10 @@ public:
 	 * @return copy/move constructed division value map
 	 */
 	virtual DivisionValueMap getDivisionValues() = 0;
+
+protected:
+	/// mapping from id to timesteps
+	std::map<size_t, std::pair<size_t, size_t>> idToTimestepsMap_;
 };
 
 // ----------------------------------------------------------------------------------------
@@ -90,7 +97,7 @@ public:
 		const CostDeltaVector& appearanceCostDeltas, 
 		const CostDeltaVector& disappearanceCostDeltas)
 	{
-		FlowGraph::FullNode n = graph_->addNode(detectionCostDeltas);
+		FlowGraph::FullNode n = graph_->addNode(detectionCostDeltas, idToTimestepsMap_[id].second);
 		idToFlowGraphNodeMap_[id] = n;
 
 		if(appearanceCostDeltas.size() > 0)
@@ -174,11 +181,6 @@ public:
 	MagnussonGraphBuilder(Graph* graph):
 		graph_(graph)
 	{}
-
-	void setNodeTimesteps(size_t id, std::pair<size_t, size_t> timesteps)
-	{
-		idToTimestepsMap_[id] = timesteps;
-	}
 
 	/**
 	 * @brief Magnusson performs score maximization, so we have to multiply our cost deltas by -1
@@ -395,9 +397,6 @@ public:
 private:
 	/// pointer to magnusson's graph
 	Graph* graph_;
-
-	/// mapping from id to timesteps
-	std::map<size_t, std::pair<size_t, size_t>> idToTimestepsMap_;
 
 	/// mapping from id to nodes
 	std::map<size_t, Graph::NodePtr> idToGraphNodeMap_;

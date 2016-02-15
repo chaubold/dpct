@@ -11,10 +11,12 @@ FlowGraph::FlowGraph():
 	capacityMap_(baseGraph_)
 {
 	source_ = baseGraph_.addNode();
+	nodeTimestepMap_[source_] = 0;
 	target_ = baseGraph_.addNode();
+	nodeTimestepMap_[target_] = 1;
 }
 
-FlowGraph::FullNode FlowGraph::addNode(const CostVector& costs)
+FlowGraph::FullNode FlowGraph::addNode(const CostVector& costs, size_t timestep)
 {
 	assert(costs.size() > 0);
 	
@@ -23,6 +25,10 @@ FlowGraph::FullNode FlowGraph::addNode(const CostVector& costs)
 	f.v = baseGraph_.addNode();
 	f.a = addArc(f.u, f.v, costs);
 	intermediateArcs_.insert(f.a);
+	nodeTimestepMap_[f.u] = timestep * 2 + 1;
+	nodeTimestepMap_[f.v] = timestep * 2 + 2;
+	if(timestep * 2 + 2 >= nodeTimestepMap_[target_])
+		nodeTimestepMap_[target_] = timestep * 2 + 3;
 
 	return f;
 }
@@ -52,6 +58,7 @@ FlowGraph::Arc FlowGraph::allowMitosis(FlowGraph::FullNode parent,
 {
 	// set up duplicate with disabled in arc
 	Node duplicate = baseGraph_.addNode();
+	nodeTimestepMap_[duplicate] = nodeTimestepMap_[parent.v];
 	Arc a = addArc(source_, duplicate, {divisionCost});
 
 	// copy all out arcs, but with capacity=1 only, and don't add disappearance arc
@@ -68,11 +75,15 @@ FlowGraph::Arc FlowGraph::allowMitosis(FlowGraph::FullNode parent,
 }
 
 /// start the tracking
-void FlowGraph::maxFlowMinCostTracking(double initialStateEnergy, bool useBackArcs, size_t maxNumPaths)
+void FlowGraph::maxFlowMinCostTracking(
+	double initialStateEnergy, 
+	bool useBackArcs, 
+	size_t maxNumPaths, 
+	bool useOrderedNodeListInBF)
 {
 	TimePoint startTime_ = std::chrono::high_resolution_clock::now();
 
-	initializeResidualGraph(useBackArcs);
+	initializeResidualGraph(useBackArcs, useOrderedNodeListInBF);
 
 	ResidualGraph::ShortestPathResult result;
 	size_t iter=0;
@@ -122,9 +133,9 @@ void FlowGraph::maxFlowMinCostTracking(double initialStateEnergy, bool useBackAr
 	LOG_MSG("Final energy: " << currentEnergy);
 }
 
-void FlowGraph::initializeResidualGraph(bool useBackArcs)
+void FlowGraph::initializeResidualGraph(bool useBackArcs, bool useOrderedNodeListInBF)
 {
-	residualGraph_ = std::make_shared<ResidualGraph>(baseGraph_, useBackArcs);
+	residualGraph_ = std::make_shared<ResidualGraph>(baseGraph_, nodeTimestepMap_, useBackArcs, useOrderedNodeListInBF);
 	
 	for(Graph::ArcIt a(baseGraph_); a != lemon::INVALID; ++a)
     {
@@ -338,11 +349,13 @@ void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p)
 		{
 			if(sumInFlow(source) == 1)
 			{
+				DEBUG_MSG("Enabling division of " << baseGraph_.id(source));
 				// we have exactly one unit of flow forward through a parent node -> allows division
 				toggleDivision(parentToDuplicateMap_[source], target, true);
 			}
 			else
 			{
+				DEBUG_MSG("Disabling division of " << baseGraph_.id(source));
 				// in all other cases, a division is not allowed
 				toggleDivision(parentToDuplicateMap_[source], target, false);
 			}
