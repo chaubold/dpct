@@ -32,69 +32,6 @@ ResidualGraph::ResidualGraph(
 	}
 }
 
-void ResidualGraph::updateArc(const OriginalArc& a, bool forward, double cost, int capacity)
-{
-	if(!useBackArcs_ && !forward)
-		return;
-	ResidualArcCandidate ac = undirectedArcToPair(a, forward);
-	updateResidualArc(ac, cost, capacity);
-}
-
-void ResidualGraph::updateResidualArc(const ResidualArcCandidate& ac, double cost, int capacity)
-{
-	DEBUG_MSG("Updating residual arc (" << id(ac.first) << ", " << id(ac.second) << ") with cost " 
-			<< cost << " and capacity " << capacity);
-	if(capacity > 0)
-	{
-		residualArcCost_[ac] = cost;
-		residualArcPresent_[ac] = true;
-	}
-	else
-	{
-		residualArcPresent_[ac] = false;
-	}
-	includeArc(ac);
-}
-
-void ResidualGraph::includeArc(const ResidualArcCandidate& ac)
-{
-	if(!residualArcPresent_[ac] || !residualArcEnabled_[ac])
-	{
-		DEBUG_MSG("disabling residual arc: " << id(ac.first) << ", " << id(ac.second));
-		Arc a = pairToResidualArc(ac);
-		if(a == lemon::INVALID)
-			return;
-		erase(a);
-	}
-	else
-	{
-		DEBUG_MSG("enabling residual arc: " << id(ac.first) << ", " << id(ac.second));
-		Arc a = pairToResidualArc(ac);
-		if(a == lemon::INVALID)
-		{
-			a = addArc(ac.first, ac.second);
-		}
-		residualDistMap_[a] = residualArcCost_[ac];
-		providedTokenMap_[a] = residualArcProvidesTokens_[ac];
-		forbiddenTokenMap_[a] = residualArcForbidsTokens_[ac];
-	}
-}
-
-void ResidualGraph::enableArc(const OriginalArc& a, bool state)
-{
-	// use the latest cost and flow states
-	ResidualArcCandidate ac = arcToPair(a);
-	residualArcEnabled_[ac] = state;
-	includeArc(ac);
-	
-	if(useBackArcs_)
-	{
-		ac = arcToInversePair(a);
-		residualArcEnabled_[ac] = state;
-		includeArc(ac);
-	}
-}
-
 /// find a shortest path or a negative cost cycle, and return it with flow direction and cost
 ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 	const OriginalNode& origSource, 
@@ -203,45 +140,6 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 	} while(!ret.first);
 
     return std::make_pair(p, pathCost);
-}
-
-/// configure required tokens of arcs
-void ResidualGraph::addForbiddenToken(const OriginalArc& a, bool forward, Token token)
-{
-	ResidualArcCandidate ac = undirectedArcToPair(a, forward);
-	residualArcForbidsTokens_[ac].insert(token);
-	Arc resArc = pairToResidualArc(ac);
-	if(resArc != lemon::INVALID)
-		forbiddenTokenMap_[resArc].insert(token);
-}
-
-void ResidualGraph::removeForbiddenToken(const OriginalArc& a, bool forward, Token token)
-{
-	ResidualArcCandidate ac = undirectedArcToPair(a, forward);
-	residualArcForbidsTokens_[ac].erase(token);
-	Arc resArc = pairToResidualArc(ac);
-	if(resArc != lemon::INVALID)
-		forbiddenTokenMap_[resArc].erase(token);
-}
-
-
-/// configure provided tokens of arcs
-void ResidualGraph::addProvidedToken(const OriginalArc& a, bool forward, Token token)
-{
-	ResidualArcCandidate ac = undirectedArcToPair(a, forward);
-	residualArcProvidesTokens_[ac].insert(token);
-	Arc resArc = pairToResidualArc(ac);
-	if(resArc != lemon::INVALID)
-		providedTokenMap_[resArc].insert(token);
-}
-
-void ResidualGraph::removeProvidedToken(const OriginalArc& a, bool forward, Token token)
-{
-	ResidualArcCandidate ac = undirectedArcToPair(a, forward);
-	residualArcProvidesTokens_[ac].erase(token);
-	Arc resArc = pairToResidualArc(ac);
-	if(resArc != lemon::INVALID)
-		providedTokenMap_[resArc].erase(token);
 }
 
 std::pair<bool, ResidualGraph::Token> ResidualGraph::pathSatisfiesTokenSpecs(const Path& p) const

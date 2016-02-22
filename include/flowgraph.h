@@ -11,6 +11,7 @@
 #include <chrono>
 
 #include "residualgraph.h"
+#include "log.h"
 
 namespace dpct
 {
@@ -80,6 +81,7 @@ private:
 	/// updates the arcEnabled map by checking which divisions should be enabled/disabled after this track
 	/// ATTENTION: assumes flow has been augmented for this path already!
 	void updateEnabledArcs(const Path& p);
+	void updateEnabledArc(const Arc& a);
 
 	/// enable an arc according to our division / appearance / disappearance constraints
 	void enableArc(const Arc& a, bool state);
@@ -94,6 +96,16 @@ private:
 	
 	void printPath(const Path& p);
 	void printAllFlows();
+
+	// define functions for enabling / disabling
+	void toggleOutArcs(const Node& n, bool state);
+	void toggleInArcs(const Node& n, bool state);
+	void toggleOutArcsBut(const Node& n, const Node& exception, bool state);
+	void toggleInArcsBut(const Node& n, const Node& exception, bool state);
+	void toggleDivision(const Node& div, const Node& target, bool divState);
+	void toggleAppearanceArc(const Node& n, bool state);
+	void toggleDisappearanceArc(const Node& n, bool state);
+
 private:
 	/// graph containing all nodes and arcs and duplicated parents of divisions
 	Graph baseGraph_;
@@ -122,6 +134,96 @@ private:
 	/// store the (internal!) timestep of each node (including the duplicates)
 	std::map<Node, size_t> nodeTimestepMap_;
 };
+
+// define functions for enabling / disabling
+inline void FlowGraph::toggleOutArcs(const Node& n, bool state)
+{
+	DEBUG_MSG("Setting out arcs of " << (baseGraph_.id(n)) << " to " << (state?"true":"false"));
+	for(Graph::OutArcIt oa(baseGraph_, n); oa != lemon::INVALID; ++oa)
+		enableArc(oa, state);
+}
+
+inline void FlowGraph::toggleInArcs(const Node& n, bool state)
+{
+	DEBUG_MSG("Setting in arcs of " << baseGraph_.id(n) << " to " << (state?"true":"false"));
+	for(Graph::InArcIt ia(baseGraph_, n); ia != lemon::INVALID; ++ia)
+		enableArc(ia, state);
+}
+
+inline void FlowGraph::toggleOutArcsBut(const Node& n, const Node& exception, bool state)
+{
+	DEBUG_MSG("Setting out arcs of " << baseGraph_.id(n) 
+		<< " but " << baseGraph_.id(exception) 
+		<< " to " << (state?"true":"false"));
+	for(Graph::OutArcIt oa(baseGraph_, n); oa != lemon::INVALID; ++oa)
+	{
+		if(baseGraph_.target(oa) != exception)
+			enableArc(oa, state);
+	}
+}
+
+inline void FlowGraph::toggleInArcsBut(const Node& n, const Node& exception, bool state)
+{
+	DEBUG_MSG("Setting in arcs of " << baseGraph_.id(n) 
+		<< " but " << baseGraph_.id(exception)
+		<< " to " << (state?"true":"false"));
+	for(Graph::InArcIt ia(baseGraph_, n); ia != lemon::INVALID; ++ia)
+	{
+		if(baseGraph_.source(ia) != exception)
+			enableArc(ia, state);
+	}
+}
+
+inline void FlowGraph::toggleDivision(const Node& div, const Node& target, bool divState)
+{
+	DEBUG_MSG("Setting division " << baseGraph_.id(div) << " to " << (divState?"true":"false"));
+	for(Graph::InArcIt ia(baseGraph_, div); ia != lemon::INVALID; ++ia)
+	{
+		DEBUG_MSG("\ttoggling division arc " << baseGraph_.id(baseGraph_.source(ia)) 
+				  << ", " << baseGraph_.id(baseGraph_.target(ia)));
+		enableArc(ia, divState);
+	}
+
+	for(Graph::OutArcIt oa(baseGraph_, div); oa != lemon::INVALID; ++oa)
+	{
+		if(baseGraph_.target(oa) == target)
+		{
+			DEBUG_MSG("\ttoggling move arc " << baseGraph_.id(baseGraph_.source(oa)) 
+					  << ", " << baseGraph_.id(baseGraph_.target(oa)));
+			enableArc(oa, !divState);
+			return;
+		}
+	}
+	DEBUG_MSG("was not able to find the arc to " << baseGraph_.id(target) << "!");
+}
+
+inline void FlowGraph::toggleAppearanceArc(const Node& n, bool state)
+{
+	for(Graph::InArcIt ia(baseGraph_, n); ia != lemon::INVALID; ++ia)
+	{
+		if(baseGraph_.source(ia) == source_)
+		{
+			DEBUG_MSG("Setting appearance of " << baseGraph_.id(n) << " to " << (state?"true":"false"));
+			enableArc(ia, state);
+			return;
+		}
+	}
+	DEBUG_MSG("Didn't find appearance arc of " << baseGraph_.id(n));
+}
+
+inline void FlowGraph::toggleDisappearanceArc(const Node& n, bool state)
+{
+	for(Graph::OutArcIt oa(baseGraph_, n); oa != lemon::INVALID; ++oa)
+	{
+		if(baseGraph_.target(oa) == target_)
+		{
+			DEBUG_MSG("Setting disappearance of " << baseGraph_.id(n) << " to " << (state?"true":"false"));
+			enableArc(oa, state);
+			return;
+		}
+	}
+	DEBUG_MSG("Didn't find disappearance arc of " << baseGraph_.id(n));
+}
 
 /**
  * @brief Output std vectors of stuff

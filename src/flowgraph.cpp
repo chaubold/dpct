@@ -244,158 +244,78 @@ void FlowGraph::updateArc(const Arc& a)
 /// which divisions should be enabled/disabled after this track
 void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p)
 {
-	// define functions for enabling / disabling
-	auto toggleOutArcs = [&](const Node& n, bool state)
-	{
-		DEBUG_MSG("Setting out arcs of " << (baseGraph_.id(n)) << " to " << (state?"true":"false"));
-		for(Graph::OutArcIt oa(baseGraph_, n); oa != lemon::INVALID; ++oa)
-			enableArc(oa, state);
-	};
-
-	auto toggleInArcs = [&](const Node& n, bool state)
-	{
-		DEBUG_MSG("Setting in arcs of " << baseGraph_.id(n) << " to " << (state?"true":"false"));
-		for(Graph::InArcIt ia(baseGraph_, n); ia != lemon::INVALID; ++ia)
-			enableArc(ia, state);
-	};
-
-	auto toggleOutArcsBut = [&](const Node& n, const Node& exception, bool state)
-	{
-		DEBUG_MSG("Setting out arcs of " << baseGraph_.id(n) 
-			<< " but " << baseGraph_.id(exception) 
-			<< " to " << (state?"true":"false"));
-		for(Graph::OutArcIt oa(baseGraph_, n); oa != lemon::INVALID; ++oa)
-		{
-			if(baseGraph_.target(oa) != exception)
-				enableArc(oa, state);
-		}
-	};
-
-	auto toggleInArcsBut = [&](const Node& n, const Node& exception, bool state)
-	{
-		DEBUG_MSG("Setting in arcs of " << baseGraph_.id(n) 
-			<< " but " << baseGraph_.id(exception)
-			<< " to " << (state?"true":"false"));
-		for(Graph::InArcIt ia(baseGraph_, n); ia != lemon::INVALID; ++ia)
-		{
-			if(baseGraph_.source(ia) != exception)
-				enableArc(ia, state);
-		}
-	};
-
-	auto toggleDivision = [&](const Node& div, const Node& target, bool divState)
-	{
-		DEBUG_MSG("Setting division " << baseGraph_.id(div) << " to " << (divState?"true":"false"));
-		for(Graph::InArcIt ia(baseGraph_, div); ia != lemon::INVALID; ++ia)
-		{
-			DEBUG_MSG("\ttoggling division arc " << baseGraph_.id(baseGraph_.source(ia)) 
-					  << ", " << baseGraph_.id(baseGraph_.target(ia)));
-			enableArc(ia, divState);
-		}
-
-		for(Graph::OutArcIt oa(baseGraph_, div); oa != lemon::INVALID; ++oa)
-		{
-			if(baseGraph_.target(oa) == target)
-			{
-				DEBUG_MSG("\ttoggling move arc " << baseGraph_.id(baseGraph_.source(oa)) 
-						  << ", " << baseGraph_.id(baseGraph_.target(oa)));
-				enableArc(oa, !divState);
-				return;
-			}
-		}
-		DEBUG_MSG("was not able to find the arc to " << baseGraph_.id(target) << "!");
-	};
-
-	auto toggleAppearanceArc = [&](const Node& n, bool state)
-	{
-		for(Graph::InArcIt ia(baseGraph_, n); ia != lemon::INVALID; ++ia)
-		{
-			if(baseGraph_.source(ia) == source_)
-			{
-				DEBUG_MSG("Setting appearance of " << baseGraph_.id(n) << " to " << (state?"true":"false"));
-				enableArc(ia, state);
-				return;
-			}
-		}
-		DEBUG_MSG("Didn't find appearance arc of " << baseGraph_.id(n));
-	};
-
-	auto toggleDisappearanceArc = [&](const Node& n, bool state)
-	{
-		for(Graph::OutArcIt oa(baseGraph_, n); oa != lemon::INVALID; ++oa)
-		{
-			if(baseGraph_.target(oa) == target_)
-			{
-				DEBUG_MSG("Setting disappearance of " << baseGraph_.id(n) << " to " << (state?"true":"false"));
-				enableArc(oa, state);
-				return;
-			}
-		}
-		DEBUG_MSG("Didn't find disappearance arc of " << baseGraph_.id(n));
-	};
-
-	// check all arcs on path whether they toggle other arc states
 	for(const std::pair<Arc, int>& af : p)
 	{
 		bool forward = af.second > 0;
 		Node source = baseGraph_.source(af.first);
 		Node target = baseGraph_.target(af.first);
-
 		DEBUG_MSG("Updating stuff for " << (forward? "forward" : "backward") << " edge from " 
 			<< baseGraph_.id(source) << " to " << baseGraph_.id(target));
 
-		// division updates: enable if mother cell is used exactly once, but flow is not disappearing
-		if(parentToDuplicateMap_.find(source) != parentToDuplicateMap_.end() && target != target_)
-		{
-			if(sumInFlow(source) == 1)
-			{
-				DEBUG_MSG("Enabling division of " << baseGraph_.id(source));
-				// we have exactly one unit of flow forward through a parent node -> allows division
-				toggleDivision(parentToDuplicateMap_[source], target, true);
-			}
-			else
-			{
-				DEBUG_MSG("Disabling division of " << baseGraph_.id(source));
-				// in all other cases, a division is not allowed
-				toggleDivision(parentToDuplicateMap_[source], target, false);
-			}
-		}
-		// division used/unused -> toggle mother cell's in and out arcs
-		else if(duplicateToParentMap_.find(target) != duplicateToParentMap_.end())
-		{
-			if(flowMap_[af.first] == 1)
-			{
-				// adding flow through division -> parent cannot be undone
-				toggleOutArcs(duplicateToParentMap_[target], false);
-			}
-			else
-			{
-				// removing flow from division -> parent can be undone again
-				toggleOutArcs(duplicateToParentMap_[target], true);
-			}
-		}
-
-		// forbid partial appearance/disappearance
-		if(source == source_)
-		{
-			// changing usage of appearance arc, enable/disable all other incomings to target
-			toggleInArcsBut(target, source, sumInFlow(target) == 0);
-		}
-		else if(target == target_)
-		{
-			// changing usage of disappearance arc, enable/disable all other outgoings of source
-			toggleOutArcsBut(source, target, sumOutFlow(source) == 0);
-		}
-		else if(intermediateArcs_.count(af.first) == 0)
-		{
-			// we did not use an appearance or disappearance arc! 
-			// enable those if no other in-/out- flow at that arc yet
-			toggleDisappearanceArc(source, sumOutFlow(source) == 0);
-			toggleAppearanceArc(target, sumInFlow(target) == 0);
-		}
-
-		// TODO: exclusion constraints
+		updateEnabledArc(af.first);
 	}
+}
+
+void FlowGraph::updateEnabledArc(const FlowGraph::Arc& a)
+{
+	Node source = baseGraph_.source(a);
+	Node target = baseGraph_.target(a);
+
+	DEBUG_MSG("Updating stuff for " << (forward? "forward" : "backward") << " edge from " 
+		<< baseGraph_.id(source) << " to " << baseGraph_.id(target));
+
+	// division updates: enable if mother cell is used exactly once, but flow is not disappearing
+	if(parentToDuplicateMap_.find(source) != parentToDuplicateMap_.end() && target != target_)
+	{
+		if(sumInFlow(source) == 1)
+		{
+			DEBUG_MSG("Enabling division of " << baseGraph_.id(source));
+			// we have exactly one unit of flow forward through a parent node -> allows division
+			toggleDivision(parentToDuplicateMap_[source], target, true);
+		}
+		else
+		{
+			DEBUG_MSG("Disabling division of " << baseGraph_.id(source));
+			// in all other cases, a division is not allowed
+			toggleDivision(parentToDuplicateMap_[source], target, false);
+		}
+	}
+	// division used/unused -> toggle mother cell's in and out arcs
+	else if(duplicateToParentMap_.find(target) != duplicateToParentMap_.end())
+	{
+		if(flowMap_[a] == 1)
+		{
+			// adding flow through division -> parent cannot be undone
+			toggleOutArcs(duplicateToParentMap_[target], false);
+		}
+		else
+		{
+			// removing flow from division -> parent can be undone again
+			// FIXME: but not disappearance!
+			toggleOutArcs(duplicateToParentMap_[target], true);
+		}
+	}
+
+	// forbid partial appearance/disappearance
+	if(source == source_)
+	{
+		// changing usage of appearance arc, enable/disable all other incomings to target
+		toggleInArcsBut(target, source, sumInFlow(target) == 0);
+	}
+	else if(target == target_)
+	{
+		// changing usage of disappearance arc, enable/disable all other outgoings of source
+		toggleOutArcsBut(source, target, sumOutFlow(source) == 0);
+	}
+	else if(intermediateArcs_.count(a) == 0)
+	{
+		// we did not use an appearance or disappearance arc! 
+		// enable those if no other in-/out- flow at that arc yet
+		toggleDisappearanceArc(source, sumOutFlow(source) == 0);
+		toggleAppearanceArc(target, sumInFlow(target) == 0);
+	}
+
+	// TODO: exclusion constraints
 }
 
 void FlowGraph::printAllFlows()

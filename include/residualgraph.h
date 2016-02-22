@@ -4,6 +4,7 @@
 #include <lemon/list_graph.h>
 #include <lemon/maps.h>
 #include "early_stopping_bellman_ford.h"
+#include "log.h"
 #include <map>
 #include <memory>
 #include <assert.h>
@@ -208,6 +209,111 @@ private:
 	BfDistMap bfDistMap_;
 	BfPredMap bfPredMap_;
 };
+
+
+inline void ResidualGraph::updateArc(const OriginalArc& a, bool forward, double cost, int capacity)
+{
+	if(!useBackArcs_ && !forward)
+		return;
+	ResidualArcCandidate ac = undirectedArcToPair(a, forward);
+	updateResidualArc(ac, cost, capacity);
+}
+
+inline void ResidualGraph::updateResidualArc(const ResidualArcCandidate& ac, double cost, int capacity)
+{
+	DEBUG_MSG("Updating residual arc (" << id(ac.first) << ", " << id(ac.second) << ") with cost " 
+			<< cost << " and capacity " << capacity);
+	if(capacity > 0)
+	{
+		residualArcCost_[ac] = cost;
+		residualArcPresent_[ac] = true;
+	}
+	else
+	{
+		residualArcPresent_[ac] = false;
+	}
+	includeArc(ac);
+}
+
+inline void ResidualGraph::includeArc(const ResidualArcCandidate& ac)
+{
+	if(!residualArcPresent_[ac] || !residualArcEnabled_[ac])
+	{
+		DEBUG_MSG("disabling residual arc: " << id(ac.first) << ", " << id(ac.second));
+		Arc a = pairToResidualArc(ac);
+		if(a == lemon::INVALID)
+			return;
+		erase(a);
+	}
+	else
+	{
+		DEBUG_MSG("enabling residual arc: " << id(ac.first) << ", " << id(ac.second));
+		Arc a = pairToResidualArc(ac);
+		if(a == lemon::INVALID)
+		{
+			a = addArc(ac.first, ac.second);
+		}
+		residualDistMap_[a] = residualArcCost_[ac];
+		providedTokenMap_[a] = residualArcProvidesTokens_[ac];
+		forbiddenTokenMap_[a] = residualArcForbidsTokens_[ac];
+	}
+}
+
+inline void ResidualGraph::enableArc(const OriginalArc& a, bool state)
+{
+	// use the latest cost and flow states
+	ResidualArcCandidate ac = arcToPair(a);
+	residualArcEnabled_[ac] = state;
+	includeArc(ac);
+	
+	if(useBackArcs_)
+	{
+		ac = arcToInversePair(a);
+		residualArcEnabled_[ac] = state;
+		includeArc(ac);
+	}
+}
+
+
+/// configure required tokens of arcs
+inline void ResidualGraph::addForbiddenToken(const OriginalArc& a, bool forward, Token token)
+{
+	ResidualArcCandidate ac = undirectedArcToPair(a, forward);
+	residualArcForbidsTokens_[ac].insert(token);
+	Arc resArc = pairToResidualArc(ac);
+	if(resArc != lemon::INVALID)
+		forbiddenTokenMap_[resArc].insert(token);
+}
+
+inline void ResidualGraph::removeForbiddenToken(const OriginalArc& a, bool forward, Token token)
+{
+	ResidualArcCandidate ac = undirectedArcToPair(a, forward);
+	residualArcForbidsTokens_[ac].erase(token);
+	Arc resArc = pairToResidualArc(ac);
+	if(resArc != lemon::INVALID)
+		forbiddenTokenMap_[resArc].erase(token);
+}
+
+
+/// configure provided tokens of arcs
+inline void ResidualGraph::addProvidedToken(const OriginalArc& a, bool forward, Token token)
+{
+	ResidualArcCandidate ac = undirectedArcToPair(a, forward);
+	residualArcProvidesTokens_[ac].insert(token);
+	Arc resArc = pairToResidualArc(ac);
+	if(resArc != lemon::INVALID)
+		providedTokenMap_[resArc].insert(token);
+}
+
+inline void ResidualGraph::removeProvidedToken(const OriginalArc& a, bool forward, Token token)
+{
+	ResidualArcCandidate ac = undirectedArcToPair(a, forward);
+	residualArcProvidesTokens_[ac].erase(token);
+	Arc resArc = pairToResidualArc(ac);
+	if(resArc != lemon::INVALID)
+		providedTokenMap_[resArc].erase(token);
+}
+
 
 } // end namespace dpct
 
