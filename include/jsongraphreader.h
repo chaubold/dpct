@@ -158,6 +158,42 @@ public:
 		return divisionValueMap;
 	}
 
+	void setNodeValues(const NodeValueMap& nodeValueMap)
+	{
+		FlowGraph::FlowMap& flowMap = graph_->getFlowMap();
+		for(auto iter : idToFlowGraphNodeMap_)
+		{
+			if(nodeValueMap.find(iter.first) != nodeValueMap.end())
+				flowMap[iter.second.a] = nodeValueMap.at(iter.first);
+			else
+				flowMap[iter.second.a] = 0;
+		}
+	}
+
+	void setArcValues(const ArcValueMap& arcValueMap)
+	{
+		FlowGraph::FlowMap& flowMap = graph_->getFlowMap();
+		for(auto iter : idTupleToFlowGraphArcMap_)
+		{
+			if(arcValueMap.find(iter.first) != arcValueMap.end())
+				flowMap[iter.second] = arcValueMap.at(iter.first);
+			else
+				flowMap[iter.second] = 0;
+		}
+	}
+
+	void setDivisionValues(const DivisionValueMap& divisionValueMap)
+	{
+		FlowGraph::FlowMap& flowMap = graph_->getFlowMap();
+		for(auto iter : idToFlowGraphDivisionArcMap_)
+		{
+			if(divisionValueMap.find(iter.first) != divisionValueMap.end())
+				flowMap[iter.second] = divisionValueMap.at(iter.first) ? 1 : 0;
+			else
+				flowMap[iter.second] = 0;
+		}
+	}
+
 private:
 	/// pointer to original flow graph
 	FlowGraph* graph_;

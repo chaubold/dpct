@@ -58,7 +58,7 @@ public: // API
 	 * @param useBackArcs whether the residual graph should contain the edges that allow backward flow
 	 * @param maxNumPaths if >0 this  limits the number of augmenting shortest paths that should be found
 	 */
-	void maxFlowMinCostTracking(
+	double maxFlowMinCostTracking(
 		double initialStateEnergy=0.0, 
 		bool useBackArcs=true, 
 		size_t maxNumPaths=0,
@@ -69,7 +69,7 @@ public: // API
 	int sumOutFlow(Node n) const;
 	int sumInFlow(Node n) const;
 
-	const FlowMap& getFlowMap() const { return flowMap_; }
+	FlowMap& getFlowMap() { return flowMap_; }
 
 private:
 	/// create residual graph and set up all arc flows etc

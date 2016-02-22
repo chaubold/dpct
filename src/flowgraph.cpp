@@ -75,7 +75,7 @@ FlowGraph::Arc FlowGraph::allowMitosis(FlowGraph::FullNode parent,
 }
 
 /// start the tracking
-void FlowGraph::maxFlowMinCostTracking(
+double FlowGraph::maxFlowMinCostTracking(
 	double initialStateEnergy, 
 	bool useBackArcs, 
 	size_t maxNumPaths, 
@@ -131,6 +131,7 @@ void FlowGraph::maxFlowMinCostTracking(
 	std::chrono::duration<double> elapsed_seconds = endTime_ - startTime_;
 	LOG_MSG("Tracking took " << elapsed_seconds.count() << " secs and " << iter << " iterations");
 	LOG_MSG("Final energy: " << currentEnergy);
+	return currentEnergy;
 }
 
 void FlowGraph::initializeResidualGraph(bool useBackArcs, bool useOrderedNodeListInBF)
@@ -139,14 +140,13 @@ void FlowGraph::initializeResidualGraph(bool useBackArcs, bool useOrderedNodeLis
 	
 	for(Graph::ArcIt a(baseGraph_); a != lemon::INVALID; ++a)
     {
-    	enableArc(a, true);
     	updateArc(a);
+    	enableArc(a, true);
 
     	// division arcs are disabled at the beginning.
     	// Tokens are provided on division forward arcs, and forbidden on the corresponding mother backward arc
     	if(duplicateToParentMap_.find(baseGraph_.target(a)) != duplicateToParentMap_.end())
     	{
-    		enableArc(a, false);
     		residualGraph_->addProvidedToken(a, ResidualGraph::Forward, 
     										 baseGraph_.id(duplicateToParentMap_[baseGraph_.target(a)]));
     	}
@@ -154,6 +154,12 @@ void FlowGraph::initializeResidualGraph(bool useBackArcs, bool useOrderedNodeLis
     	{
     		residualGraph_->addForbiddenToken(a, ResidualGraph::Backward, baseGraph_.id(baseGraph_.target(a)));
     	}
+    }
+
+    // enable all arcs depending on their flow
+    for(Graph::ArcIt a(baseGraph_); a != lemon::INVALID; ++a)
+    {
+    	updateEnabledArc(a);
     }
 }
 
