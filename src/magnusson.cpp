@@ -141,13 +141,12 @@ double Magnusson::track(Solution& paths)
         // add path to solution
         paths.push_back(p);
         score += scoreDelta;
-        std::chrono::time_point<std::chrono::high_resolution_clock> td = std::chrono::high_resolution_clock::now();
-        std::cout << "\rFound " << paths.size() << " paths... overall score=" << score;
-        std::cout.flush();
+        // std::chrono::time_point<std::chrono::high_resolution_clock> td = std::chrono::high_resolution_clock::now();
+        std::cout << "Found " << paths.size() << " paths... overall score=" << score << " after " << toc() << " secs" << std::endl;
     }
 
     // done
-    removeSwapArcs();
+    removeSwapArcs(); // TODO: try leaving this out, looks like this takes 100 seconds for rapoport?!
     toc();
 
     return score;
