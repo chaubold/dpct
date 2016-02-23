@@ -299,7 +299,8 @@ namespace lemon {
     typedef typename Digraph::template NodeMap<bool> MaskMap;
     MaskMap *_mask;
 
-    std::vector<Node> _process;
+    std::vector<Node>& _process;
+    std::vector<Node>& _nextProcess;
 
     // Creates the maps if necessary.
     void create_maps() {
@@ -403,6 +404,8 @@ namespace lemon {
     /// \param length The length map used by the algorithm.
     EarlyStoppingBellmanFord(const Digraph& g, 
         const LengthMap& length,
+        std::vector<Node>& process,
+        std::vector<Node>& nextProcess,
         const TokenSetArcMap& providedTokens,
         const TokenSetArcMap& forbiddenTokens) :
       _gr(&g), 
@@ -412,7 +415,9 @@ namespace lemon {
       _pred(0), _local_pred(false),
       _collectedTokens(0), _local_collectedTokens(false),
       _dist(0), _local_dist(false), 
-      _mask(0) {}
+      _mask(0),
+      _process(process), _nextProcess(nextProcess)
+       {}
 
     ///Destructor.
     ~EarlyStoppingBellmanFord() {
@@ -500,7 +505,8 @@ namespace lemon {
         _dist->set(it, value);
       }
       _process.clear();
-      _process.reserve(lemon::countNodes(*_gr));
+      // _process.reserve(lemon::countNodes(*_gr));
+      // _nextProcess.reserve(lemon::countNodes(*_gr));
       if (OperationTraits::less(value, OperationTraits::infinity())) {
         for (NodeIt it(*_gr); it != INVALID; ++it) {
           _process.push_back(it);
@@ -592,58 +598,47 @@ namespace lemon {
       _collectedTokens->set(target, newTokens);
     }
 
-    /// \brief Executes one round from the Bellman-Ford algorithm.
+    /// \brief Executes one weak round from the Bellman-Ford algorithm.
     ///
-    /// If the algoritm calculated the distances in the previous round
-    /// exactly for the paths of at most \c k arcs, then this function
-    /// will calculate the distances exactly for the paths of at most
-    /// <tt>k+1</tt> arcs. Performing \c k iterations using this function
-    /// calculates the shortest path distances exactly for the paths
-    /// consisting of at most \c k arcs.
-    ///
-    /// \warning The paths with limited arc number cannot be retrieved
-    /// easily with \ref path() or \ref predArc() functions. If you also
-    /// need the shortest paths and not only the distances, you should
-    /// store the \ref predMap() "predecessor map" after each iteration
-    /// and build the path manually.
+    /// If the algorithm calculated the distances in the previous round
+    /// at least for the paths of at most \c k arcs, then this function
+    /// will calculate the distances at least for the paths of at most
+    /// <tt>k+1</tt> arcs.
+    /// This function does not make it possible to calculate the shortest
+    /// path distances exactly for paths consisting of at most \c k arcs,
+    /// this is why it is called weak round.
     ///
     /// \return \c true when the algorithm have not found more shorter
     /// paths.
     ///
     /// \see ActiveIt
-    bool processNextRound(bool useTokens = false) {
+    bool processNextWeakRoundWithTokens() {
       for (int i = 0; i < int(_process.size()); ++i) {
         _mask->set(_process[i], false);
       }
-      std::vector<Node> nextProcess;
-      std::vector<Value> values(_process.size());
-      for (int i = 0; i < int(_process.size()); ++i) {
-        values[i] = (*_dist)[_process[i]];
-      }
+      _nextProcess.clear();
       for (int i = 0; i < int(_process.size()); ++i) {
         for (OutArcIt it(*_gr, _process[i]); it != INVALID; ++it) {
           Node target = _gr->target(it);
-          Value relaxed = OperationTraits::plus(values[i], (*_length)[it]);
-          if (OperationTraits::less(relaxed, (*_dist)[target]) && 
-              (!useTokens || checkTokenDemands(it))) {
+          Value relaxed =
+            OperationTraits::plus((*_dist)[_process[i]], (*_length)[it]);
+          if (OperationTraits::less(relaxed, (*_dist)[target]) && checkTokenDemands(it)) {
             _pred->set(target, it);
             _dist->set(target, relaxed);
-
-            if(useTokens)
-              updateTokenListAtTarget(it);
-
+            
+            updateTokenListAtTarget(it);
+            
             if (!(*_mask)[target]) {
               _mask->set(target, true);
-              nextProcess.push_back(target);
+              _nextProcess.push_back(target);
             }
           }
         }
       }
-      _process.swap(nextProcess);
+
+      _process.swap(_nextProcess);
       return _process.empty();
     }
-
-    bool _didNoticeCycle;
 
     /// \brief Executes one weak round from the Bellman-Ford algorithm.
     ///
@@ -659,33 +654,30 @@ namespace lemon {
     /// paths.
     ///
     /// \see ActiveIt
-    bool processNextWeakRound(bool useTokens = false) {
+    bool processNextWeakRound() {
       for (int i = 0; i < int(_process.size()); ++i) {
         _mask->set(_process[i], false);
       }
-      std::vector<Node> nextProcess;
+      _nextProcess.clear();
       for (int i = 0; i < int(_process.size()); ++i) {
-        for (OutArcIt it(*_gr, _process[i]); it != INVALID; ++it) {
+        Node& element = _process[i];
+        for (OutArcIt it(*_gr, element); it != INVALID; ++it) {
           Node target = _gr->target(it);
           Value relaxed =
-            OperationTraits::plus((*_dist)[_process[i]], (*_length)[it]);
-          if (OperationTraits::less(relaxed, (*_dist)[target]) && 
-              (!useTokens || checkTokenDemands(it))) {
+            OperationTraits::plus((*_dist)[element], (*_length)[it]);
+          if (OperationTraits::less(relaxed, (*_dist)[target])) {
             _pred->set(target, it);
             _dist->set(target, relaxed);
             
-            if(useTokens)
-              updateTokenListAtTarget(it);
-            
             if (!(*_mask)[target]) {
               _mask->set(target, true);
-              nextProcess.push_back(target);
+              _nextProcess.push_back(target);
             }
           }
         }
       }
 
-      _process.swap(nextProcess);
+      _process.swap(_nextProcess);
       return _process.empty();
     }
 
@@ -728,8 +720,12 @@ namespace lemon {
     bool checkedStart(int numIterationsBetweenNegativeCycleChecks, int numIterations, bool useTokens=false) {
       int num = (numIterations <= 0) ? countNodes(*_gr) : numIterations;
 
+      bool result;
       for (int i = 0; i < num; ++i) {
-        bool result = processNextWeakRound(useTokens);
+        if(useTokens)
+          result = processNextWeakRoundWithTokens();
+        else
+          result = processNextWeakRound();
 
         if((*_pred)[_source] != INVALID)
         {
@@ -757,32 +753,6 @@ namespace lemon {
       return _process.empty();
     }
 
-    /// \brief Executes the algorithm with arc number limit.
-    ///
-    /// Executes the algorithm with arc number limit.
-    ///
-    /// This method runs the Bellman-Ford algorithm from the root node(s)
-    /// in order to compute the shortest path distance for each node
-    /// using only the paths consisting of at most \c num arcs.
-    ///
-    /// The algorithm computes
-    /// - the limited distance of each node from the root(s),
-    /// - the predecessor arc for each node.
-    ///
-    /// \warning The paths with limited arc number cannot be retrieved
-    /// easily with \ref path() or \ref predArc() functions. If you also
-    /// need the shortest paths and not only the distances, you should
-    /// store the \ref predMap() "predecessor map" after each iteration
-    /// and build the path manually.
-    ///
-    /// \pre init() must be called and at least one root node should be
-    /// added with addSource() before using this function.
-    void limitedStart(int num) {
-      for (int i = 0; i < num; ++i) {
-        if (processNextRound()) break;
-      }
-    }
-
     /// \brief Runs the algorithm from the given root node.
     ///
     /// This method runs the Bellman-Ford algorithm from the given root
@@ -802,35 +772,6 @@ namespace lemon {
       init();
       addSource(s);
       start();
-    }
-
-    /// \brief Runs the algorithm from the given root node with arc
-    /// number limit.
-    ///
-    /// This method runs the Bellman-Ford algorithm from the given root
-    /// node \c s in order to compute the shortest path distance for each
-    /// node using only the paths consisting of at most \c num arcs.
-    ///
-    /// The algorithm computes
-    /// - the limited distance of each node from the root(s),
-    /// - the predecessor arc for each node.
-    ///
-    /// \warning The paths with limited arc number cannot be retrieved
-    /// easily with \ref path() or \ref predArc() functions. If you also
-    /// need the shortest paths and not only the distances, you should
-    /// store the \ref predMap() "predecessor map" after each iteration
-    /// and build the path manually.
-    ///
-    /// \note bf.run(s, num) is just a shortcut of the following code.
-    /// \code
-    ///   bf.init();
-    ///   bf.addSource(s);
-    ///   bf.limitedStart(num);
-    /// \endcode
-    void run(Node s, int num) {
-      init();
-      addSource(s);
-      limitedStart(num);
     }
 
     ///@}

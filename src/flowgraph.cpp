@@ -136,6 +136,7 @@ double FlowGraph::maxFlowMinCostTracking(
 
 void FlowGraph::initializeResidualGraph(bool useBackArcs, bool useOrderedNodeListInBF)
 {
+	std::cout << "Initializing Residual Graph ..." << std::flush;
 	residualGraph_ = std::make_shared<ResidualGraph>(baseGraph_, nodeTimestepMap_, useBackArcs, useOrderedNodeListInBF);
 	
 	for(Graph::ArcIt a(baseGraph_); a != lemon::INVALID; ++a)
@@ -161,6 +162,7 @@ void FlowGraph::initializeResidualGraph(bool useBackArcs, bool useOrderedNodeLis
     {
     	updateEnabledArc(a);
     }
+    std::cout << " done" << std::endl;
 }
 
 void FlowGraph::printPath(const Path& p)
@@ -267,7 +269,7 @@ void FlowGraph::updateEnabledArc(const FlowGraph::Arc& a)
 	Node source = baseGraph_.source(a);
 	Node target = baseGraph_.target(a);
 
-	DEBUG_MSG("Updating stuff for " << (forward? "forward" : "backward") << " edge from " 
+	DEBUG_MSG("Updating stuff for" << " edge from " 
 		<< baseGraph_.id(source) << " to " << baseGraph_.id(target));
 
 	// division updates: enable if mother cell is used exactly once, but flow is not disappearing

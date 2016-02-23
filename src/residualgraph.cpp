@@ -30,6 +30,8 @@ ResidualGraph::ResidualGraph(
 		residualNodeMap_[origNode] = n;
 		nodeUpdateOrderMap_.set(n, nodeTimestepMap.at(origNode));
 	}
+	bfProcess_.reserve(lemon::countNodes(*this));
+	bfNextProcess_.reserve(lemon::countNodes(*this));
 }
 
 /// find a shortest path or a negative cost cycle, and return it with flow direction and cost
@@ -47,6 +49,10 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 	double pathCost = 0.0;
 	int flow = 0;
 	std::pair<bool, Token> ret = std::make_pair(true, 0);
+
+	BellmanFord bf(*this, residualDistMap_, bfProcess_, bfNextProcess_, providedTokenMap_, forbiddenTokenMap_);
+    bf.distMap(bfDistMap_);
+    bf.predMap(bfPredMap_);
 
 	do{
 		// if the last path found a token violation, we'll remove the back arc of the mother for this iteration
@@ -70,9 +76,7 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 			<< " nodes and " << lemon::countArcs(*this) << " arcs");
 		}
 
-	    BellmanFord bf(*this, residualDistMap_, providedTokenMap_, forbiddenTokenMap_);
-	    bf.distMap(bfDistMap_);
-	    bf.predMap(bfPredMap_);
+	    
 	    bf.init();
 	    if(useOrderedNodeListInBF_)
 	    	bf.addSource(source, nodeUpdateOrderMap_);

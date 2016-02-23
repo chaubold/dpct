@@ -30,6 +30,7 @@ public: // typedefs
     typedef Graph::ArcMap<double> DistMap;
     typedef Graph::NodeMap<Arc> BfPredMap;
     typedef Graph::NodeMap<double> BfDistMap;
+    typedef std::vector<Node> BfProcess;
     typedef Graph::ArcMap<int> FlowMap;
     typedef Graph::ArcMap<bool> ArcEnabledMap;
     typedef lemon::IterableValueMap<Graph, Node, size_t> NodeUpdateOrderMap;
@@ -208,6 +209,8 @@ private:
 	/// create the node distance and predecessor maps only once and pass them to BF in each iteration
 	BfDistMap bfDistMap_;
 	BfPredMap bfPredMap_;
+	BfProcess bfProcess_;
+	BfProcess bfNextProcess_;
 };
 
 
