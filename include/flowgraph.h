@@ -157,6 +157,16 @@ inline void FlowGraph::toggleInArcs(const Node& n, bool state)
 		enableArc(ia, state);
 }
 
+inline void FlowGraph::restrictOutArcCapacity(const Node& n, bool state)
+{
+	DEBUG_MSG("Restricting Out arc capacities of " << baseGraph_.id(n) << ": " << (state?"true":"false"));
+	for(Graph::OutArcIt oa(baseGraph_, n); oa != lemon::INVALID; ++oa)
+	{
+		capacityMap_[oa] = (state ? 1 : arcCosts_[oa].size());
+		updateArc(oa);
+	}
+}
+
 inline void FlowGraph::toggleOutArcsBut(const Node& n, const Node& exception, bool state)
 {
 	DEBUG_MSG("Setting out arcs of " << baseGraph_.id(n) 
@@ -191,17 +201,17 @@ inline void FlowGraph::toggleDivision(const Node& div, const Node& target, bool 
 		enableArc(ia, divState);
 	}
 
-	for(Graph::OutArcIt oa(baseGraph_, div); oa != lemon::INVALID; ++oa)
-	{
-		if(baseGraph_.target(oa) == target)
-		{
-			DEBUG_MSG("\ttoggling move arc " << baseGraph_.id(baseGraph_.source(oa)) 
-					  << ", " << baseGraph_.id(baseGraph_.target(oa)));
-			enableArc(oa, !divState);
-			return;
-		}
-	}
-	DEBUG_MSG("was not able to find the arc to " << baseGraph_.id(target) << "!");
+	// for(Graph::OutArcIt oa(baseGraph_, div); oa != lemon::INVALID; ++oa)
+	// {
+	// 	if(baseGraph_.target(oa) == target)
+	// 	{
+	// 		DEBUG_MSG("\ttoggling move arc " << baseGraph_.id(baseGraph_.source(oa)) 
+	// 				  << ", " << baseGraph_.id(baseGraph_.target(oa)));
+	// 		enableArc(oa, !divState);
+	// 		return;
+	// 	}
+	// }
+	// DEBUG_MSG("was not able to find the arc to " << baseGraph_.id(target) << "!");
 }
 
 inline void FlowGraph::toggleAppearanceArc(const Node& n, bool state)

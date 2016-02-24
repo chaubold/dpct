@@ -319,20 +319,19 @@ void FlowGraph::updateEnabledArc(const FlowGraph::Arc& a)
 		if(flowMap_[a] == 1)
 		{
 			// adding flow through division -> parent cannot be undone
-			toggleInArcs(duplicateToParentMap_[target], false);
-			restrictOutArcCapacity(duplicateToParentMap_[target], true);
+			toggleOutArcs(duplicateToParentMap_[target], false);
+			// restrictOutArcCapacity(duplicateToParentMap_[target], true);
 		}
 		else
 		{
 			// removing flow from division -> parent can be undone again
 			// FIXME: but not disappearance!
-			toggleInArcs(duplicateToParentMap_[target], true);
-			restrictOutArcCapacity(duplicateToParentMap_[target], false);
+			toggleOutArcs(duplicateToParentMap_[target], true);
+			// restrictOutArcCapacity(duplicateToParentMap_[target], false);
 		}
 	}
-
 	// forbid partial appearance/disappearance
-	if(source == source_)
+	else if(source == source_)
 	{
 		// changing usage of appearance arc, enable/disable all other incomings to target
 		toggleInArcsBut(target, source, flowMap_[a] == 0);
@@ -342,7 +341,8 @@ void FlowGraph::updateEnabledArc(const FlowGraph::Arc& a)
 		// changing usage of disappearance arc, enable/disable all other outgoings of source
 		toggleOutArcsBut(source, target, flowMap_[a] == 0);
 	}
-	else if(intermediateArcs_.count(a) == 0)
+	
+	if(source != source_ && target != target_ && intermediateArcs_.count(a) == 0)
 	{
 		// we did not use an appearance or disappearance arc! 
 		// enable those if no other in-/out- flow at that arc yet
