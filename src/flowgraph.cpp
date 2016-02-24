@@ -174,6 +174,30 @@ void FlowGraph::printPath(const Path& p)
     }
 }
 
+void FlowGraph::synchronizeDivisionDuplicateArcFlows()
+{
+	for(auto coupledNodeIt : parentToDuplicateMap_)
+	{
+		for(Graph::OutArcIt oa(baseGraph_, coupledNodeIt.first); oa != lemon::INVALID; ++oa)
+		{
+			int origFlow = flowMap_[oa];
+
+			for(Graph::OutArcIt duplicateOa(baseGraph_, coupledNodeIt.second); duplicateOa != lemon::INVALID; ++duplicateOa)
+			{
+				if(baseGraph_.target(oa) == baseGraph_.target(duplicateOa))
+				{
+					int duplicateFlow = flowMap_[duplicateOa];
+					int flow = std::max(origFlow, duplicateFlow);
+
+					flowMap_[duplicateOa] = std::min(flow, int(1));
+					flowMap_[oa] = flow;
+					break;
+				}
+			}
+		}
+	}
+}
+
 /// augment flow along a path or cycle, adding one unit of flow forward, and subtracting one backwards
 void FlowGraph::augmentUnitFlow(const FlowGraph::Path& p)
 {
@@ -233,6 +257,7 @@ double FlowGraph::getArcCost(const Arc& a, int flow)
 void FlowGraph::updateArc(const Arc& a)
 {
 	int flow = flowMap_[a];
+	DEBUG_MSG("Found " << flow << " flow along arc " << baseGraph_.id(baseGraph_.source(a)) << "->" << baseGraph_.id(baseGraph_.target(a)));
 	int capacity = capacityMap_[a];
 	if(flow < 0)
 		throw std::runtime_error("Found Arc with negative flow!");
@@ -294,13 +319,15 @@ void FlowGraph::updateEnabledArc(const FlowGraph::Arc& a)
 		if(flowMap_[a] == 1)
 		{
 			// adding flow through division -> parent cannot be undone
-			toggleOutArcs(duplicateToParentMap_[target], false);
+			toggleInArcs(duplicateToParentMap_[target], false);
+			restrictOutArcCapacity(duplicateToParentMap_[target], true);
 		}
 		else
 		{
 			// removing flow from division -> parent can be undone again
 			// FIXME: but not disappearance!
-			toggleOutArcs(duplicateToParentMap_[target], true);
+			toggleInArcs(duplicateToParentMap_[target], true);
+			restrictOutArcCapacity(duplicateToParentMap_[target], false);
 		}
 	}
 
@@ -308,12 +335,12 @@ void FlowGraph::updateEnabledArc(const FlowGraph::Arc& a)
 	if(source == source_)
 	{
 		// changing usage of appearance arc, enable/disable all other incomings to target
-		toggleInArcsBut(target, source, sumInFlow(target) == 0);
+		toggleInArcsBut(target, source, flowMap_[a] == 0);
 	}
 	else if(target == target_)
 	{
 		// changing usage of disappearance arc, enable/disable all other outgoings of source
-		toggleOutArcsBut(source, target, sumOutFlow(source) == 0);
+		toggleOutArcsBut(source, target, flowMap_[a] == 0);
 	}
 	else if(intermediateArcs_.count(a) == 0)
 	{

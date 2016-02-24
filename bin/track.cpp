@@ -134,6 +134,7 @@ int main(int argc, char** argv) {
 		    flowGraphBuilder.setDivisionValues(graphBuilder.getDivisionValues());
 		    flowGraphBuilder.setAppearanceValues(graphBuilder.getAppearanceValues());
 		    flowGraphBuilder.setDisappearanceValues(graphBuilder.getDisappearanceValues());
+		    flowGraph.synchronizeDivisionDuplicateArcFlows();
 
 		    // track flow
 		    std::cout << "beginning tracking" << std::endl;

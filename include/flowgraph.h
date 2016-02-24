@@ -74,6 +74,12 @@ public: // API
 	/// get the graph (used in test)
 	Graph& getGraph() { return baseGraph_; }
 
+	/**
+	 * @brief when specifying a flow map from the outside, call this method to make sure flows
+	 *        of out arcs of duplicated division nodes are in sync with those of the parent
+	 */
+	void synchronizeDivisionDuplicateArcFlows();
+
 private:
 	/// create residual graph and set up all arc flows etc
 	void initializeResidualGraph(bool useBackArcs, bool useOrderedNodeListInBF);
@@ -105,6 +111,7 @@ private:
 	void toggleDivision(const Node& div, const Node& target, bool divState);
 	void toggleAppearanceArc(const Node& n, bool state);
 	void toggleDisappearanceArc(const Node& n, bool state);
+	void restrictOutArcCapacity(const Node& n, bool state);
 
 private:
 	/// graph containing all nodes and arcs and duplicated parents of divisions
