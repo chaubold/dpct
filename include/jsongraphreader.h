@@ -166,7 +166,10 @@ public:
 		for(auto iter : idToFlowGraphNodeMap_)
 		{
 			if(nodeValueMap.find(iter.first) != nodeValueMap.end())
+			{
 				flowMap[iter.second.a] = nodeValueMap.at(iter.first);
+				DEBUG_MSG("Setting use count of node " << iter.first << " to " << flowMap[iter.second.a]);
+			}
 			else
 				flowMap[iter.second.a] = 0;
 		}
@@ -178,7 +181,10 @@ public:
 		for(auto iter : idTupleToFlowGraphArcMap_)
 		{
 			if(arcValueMap.find(iter.first) != arcValueMap.end())
+			{
 				flowMap[iter.second] = arcValueMap.at(iter.first);
+				DEBUG_MSG("Setting flow of arc " << iter.first.first << "->" << iter.first.second << " to " << flowMap[iter.second]);
+			}
 			else
 				flowMap[iter.second] = 0;
 		}
@@ -190,7 +196,10 @@ public:
 		for(auto iter : idToFlowGraphDivisionArcMap_)
 		{
 			if(divisionValueMap.find(iter.first) != divisionValueMap.end())
+			{
 				flowMap[iter.second] = divisionValueMap.at(iter.first) ? 1 : 0;
+				DEBUG_MSG("Setting division flow of node " << iter.first << " to " << flowMap[iter.second]);
+			}
 			else
 				flowMap[iter.second] = 0;
 		}
@@ -210,6 +219,7 @@ public:
 					{
 						found=true;
 						flowMap[ia] = appearanceValueMap.at(iter.first);
+						DEBUG_MSG("Setting appearance of node " << iter.first << " to " << flowMap[ia]);
 						break;
 					}
 				}
@@ -233,6 +243,7 @@ public:
 					{
 						found=true;
 						flowMap[oa] = disappearanceValueMap.at(iter.first);
+						DEBUG_MSG("Setting disappearance of node " << iter.first << " to " << flowMap[oa]);
 						break;
 					}
 				}
