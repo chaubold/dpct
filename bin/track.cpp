@@ -99,6 +99,7 @@ int main(int argc, char** argv) {
 			Graph::Configuration config(true, true, true);
     		Graph graph(config);
 		    MagnussonGraphBuilder graphBuilder(&graph);
+		    std::vector<TrackingAlgorithm::Path> paths;
 
 		    { // scope needed due to weird model scores that show up otherwise
 			    JsonGraphReader jsonReader(modelFilename, weightsFilename, &graphBuilder);
@@ -111,7 +112,6 @@ int main(int argc, char** argv) {
 			    if(maxNumPaths > 0)
 			    	tracker.setMaxNumberOfPaths(maxNumPaths);
 			    
-			    std::vector<TrackingAlgorithm::Path> paths;
 			    score = tracker.track(paths);
 			    std::cout << "\nTracking finished in " << tracker.getElapsedSeconds() << " secs with score " 
 			    		  << zeroEnergy - score << std::endl;
@@ -129,11 +129,19 @@ int main(int argc, char** argv) {
 
 		    // initialize flow with magnusson's result
 		    std::cout << "initializing flow solver" << std::endl;
-		    flowGraphBuilder.setNodeValues(graphBuilder.getNodeValues());
-		    flowGraphBuilder.setArcValues(graphBuilder.getArcValues());
-		    flowGraphBuilder.setDivisionValues(graphBuilder.getDivisionValues());
-		    flowGraphBuilder.setAppearanceValues(graphBuilder.getAppearanceValues());
-		    flowGraphBuilder.setDisappearanceValues(graphBuilder.getDisappearanceValues());
+		    // flowGraphBuilder.setNodeValues(graphBuilder.getNodeValues());
+		    // flowGraphBuilder.setArcValues(graphBuilder.getArcValues());
+		    // flowGraphBuilder.setDivisionValues(graphBuilder.getDivisionValues());
+		    // flowGraphBuilder.setAppearanceValues(graphBuilder.getAppearanceValues());
+		    // flowGraphBuilder.setDisappearanceValues(graphBuilder.getDisappearanceValues());
+		    flowGraph.initializeResidualGraph(true, useOrderedNodeListInBF);
+
+		    auto flowPaths = graphBuilder.translateSolution(paths, flowGraphBuilder);
+		    for(auto p : flowPaths)
+		    {
+		    	flowGraph.augmentUnitFlow(p);
+		    	flowGraph.updateEnabledArcs(p);
+		    }
 		    flowGraph.synchronizeDivisionDuplicateArcFlows();
 
 		    // track flow
