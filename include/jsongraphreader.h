@@ -253,6 +253,53 @@ public:
 		}
 	}
 
+	FlowGraph::Arc getAppearanceArc(size_t nodeId)
+	{
+		for(FlowGraph::Graph::InArcIt ia(graph_->getGraph(), idToFlowGraphNodeMap_[nodeId].u); ia != lemon::INVALID; ++ia)
+		{
+			if(graph_->getGraph().source(ia) == graph_->getSource())
+			{
+				return ia;
+			}
+		}
+		throw std::runtime_error("could not find appearance arc");
+	}
+
+	FlowGraph::Arc getDisappearanceArc(size_t nodeId)
+	{
+		for(FlowGraph::Graph::OutArcIt oa(graph_->getGraph(), idToFlowGraphNodeMap_[nodeId].v); oa != lemon::INVALID; ++oa)
+		{
+			if(graph_->getGraph().target(oa) == graph_->getTarget())
+			{
+				return oa;
+			}
+		}
+		throw std::runtime_error("could not find disappearance arc");
+	}
+
+	FlowGraph::Arc getNodeArc(size_t nodeId)
+	{
+		return idToFlowGraphNodeMap_[nodeId].a;
+	}
+
+	FlowGraph::Arc getMoveArc(std::pair<size_t, size_t> ids)
+	{
+		return idTupleToFlowGraphArcMap_[ids];
+	}
+
+	std::pair<FlowGraph::Arc, FlowGraph::Arc> getDivisionArcs(size_t parent, size_t child)
+	{
+		for(FlowGraph::Graph::OutArcIt oa(graph_->getGraph(), graph_->getGraph().target(idToFlowGraphDivisionArcMap_[parent])); 
+			oa != lemon::INVALID; ++oa)
+		{
+			if(graph_->getGraph().target(oa) == idToFlowGraphNodeMap_[child].u)
+			{
+				return std::make_pair(idToFlowGraphDivisionArcMap_[parent], oa);
+			}
+		}
+		throw std::runtime_error("could not find division arc");
+	}
+
 private:
 	/// pointer to original flow graph
 	FlowGraph* graph_;
@@ -301,6 +348,7 @@ public:
 		size_t timestep = idToTimestepsMap_[id].second;
 		Graph::NodePtr n = graph_->addNode(timestep, flipSign(detectionCosts), flipSign(appearanceCostDeltas), flipSign(disappearanceCostDeltas), false, false);
 		idToGraphNodeMap_[id] = n;
+		graphNodeToIdMap_[n] = id;
 	}
 
 	void addArc(size_t srcId, size_t destId, const CostDeltaVector& costDeltas)
@@ -402,6 +450,94 @@ public:
 		}
 
 		return disappearanceValueMap;
+	}
+
+	std::vector<FlowGraph::Path> translateSolution(const std::vector<TrackingAlgorithm::Path>& paths, FlowGraphBuilder& builder)
+	{
+		std::vector<FlowGraph::Path> flowPaths;
+		flowPaths.reserve(paths.size());
+
+	    for(const TrackingAlgorithm::Path& p : paths)
+	    {
+	    	FlowGraph::Path flowPath;
+	        // a path starts at the dummy-source and goes to the dummy-sink. these arcs are of type dummy, and thus skipped
+	        bool first_arc_on_path = true;
+	        for(const Arc* a : p)
+	        {
+	            assert(a != nullptr);
+	            assert(a->getSourceNode() != nullptr);
+	            assert(a->getTargetNode() != nullptr);
+
+	            switch(a->getType())
+	            {
+	                case Arc::Move:
+	                {
+	                    // send one cell through the nodes
+	                    if(first_arc_on_path)
+	                    {
+	                        flowPath.push_back(std::make_pair(builder.getAppearanceArc(graphNodeToIdMap_[a->getSourceNode()->getSharedPtr()]), 1));
+	                        flowPath.push_back(std::make_pair(builder.getNodeArc(graphNodeToIdMap_[a->getSourceNode()->getSharedPtr()]), 1));
+	                        first_arc_on_path = false;
+	                    }
+
+	                    // set arc to active
+	                    flowPath.push_back(std::make_pair(
+	                    	builder.getMoveArc(std::make_pair(graphNodeToIdMap_[a->getSourceNode()->getSharedPtr()], 
+	                    									  graphNodeToIdMap_[a->getTargetNode()->getSharedPtr()])), 
+	                    	1));
+	                    flowPath.push_back(std::make_pair(builder.getNodeArc(graphNodeToIdMap_[a->getTargetNode()->getSharedPtr()]), 1));
+	                }
+	                break;
+	                case Arc::Appearance:
+	                {
+	                    // the node that appeared is set active here, so detections without further path are active as well
+	                    flowPath.push_back(std::make_pair(builder.getAppearanceArc(graphNodeToIdMap_[a->getTargetNode()->getSharedPtr()]), 1));
+                        flowPath.push_back(std::make_pair(builder.getNodeArc(graphNodeToIdMap_[a->getTargetNode()->getSharedPtr()]), 1));
+	                    first_arc_on_path = false;
+	                    
+	                }
+	                break;
+	                case Arc::Disappearance:
+	                {
+	                    if(first_arc_on_path)
+	                    {
+	                    	flowPath.push_back(std::make_pair(builder.getAppearanceArc(graphNodeToIdMap_[a->getSourceNode()->getSharedPtr()]), 1));
+	                        flowPath.push_back(std::make_pair(builder.getNodeArc(graphNodeToIdMap_[a->getSourceNode()->getSharedPtr()]), 1));
+	                    }
+	                    first_arc_on_path = false;
+	                    flowPath.push_back(std::make_pair(builder.getDisappearanceArc(graphNodeToIdMap_[a->getSourceNode()->getSharedPtr()]), 1));
+	                }
+	                break;
+	                case Arc::Division:
+	                {
+	                	assert(a->getObservedNode() != nullptr);
+	                	auto flowArcs = builder.getDivisionArcs(graphNodeToIdMap_[a->getObservedNode()->getSharedPtr()], graphNodeToIdMap_[a->getTargetNode()->getSharedPtr()]);
+	                	flowPath.push_back(std::make_pair(flowArcs.first, 1));
+	                	flowPath.push_back(std::make_pair(flowArcs.second, 1));
+
+	                    flowPath.push_back(std::make_pair(builder.getNodeArc(graphNodeToIdMap_[a->getTargetNode()->getSharedPtr()]), 1));
+	                    first_arc_on_path = false;
+	                }
+	                break;
+	                case Arc::Swap:
+	                {
+	                    throw std::runtime_error("Got a swap arc even though it should have been cleaned up!");
+	                }
+	                break;
+	                case Arc::Dummy:
+	                {
+	                    // do nothing
+	                } break;
+	                default:
+	                {
+	                    throw std::runtime_error("Unkown arc type");
+	                }
+	                break;
+	            } // switch
+	        } // for all arcs
+	        flowPaths.push_back(flowPath);
+	    } // for all paths
+	    return flowPaths;
 	}
 
 	void getSolutionFromPaths(const std::vector<TrackingAlgorithm::Path>& paths)
@@ -541,6 +677,7 @@ private:
 
 	/// mapping from id to nodes
 	std::map<size_t, Graph::NodePtr> idToGraphNodeMap_;
+	std::map<Graph::NodePtr, size_t> graphNodeToIdMap_;
 
 	/// mapping from id to division arc
 	std::map<size_t, Graph::NodePtr> idToGraphDivisionMap_;
