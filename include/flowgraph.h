@@ -74,22 +74,27 @@ public: // API
 	/// get the graph (used in test)
 	Graph& getGraph() { return baseGraph_; }
 
+	/// augment flow along a path or cycle, adding one unit of flow forward, and subtracting one backwards
+	void augmentUnitFlow(const Path& p);
+
+	/// updates the arc availability in residual graph for each arc on the path
+	/// by checking which divisions should be enabled/disabled after this track
+	/// ATTENTION: assumes flow has been augmented for this path already!
+	void updateEnabledArcs(const Path& p);
+
 	/**
 	 * @brief when specifying a flow map from the outside, call this method to make sure flows
 	 *        of out arcs of duplicated division nodes are in sync with those of the parent
 	 */
 	void synchronizeDivisionDuplicateArcFlows();
 
-private:
 	/// create residual graph and set up all arc flows etc
 	void initializeResidualGraph(bool useBackArcs, bool useOrderedNodeListInBF);
 
-	/// augment flow along a path or cycle, adding one unit of flow forward, and subtracting one backwards
-	void augmentUnitFlow(const Path& p);
-
-	/// updates the arcEnabled map by checking which divisions should be enabled/disabled after this track
+private:
+	/// updates the arc availability in residual graph for this arc
+	/// by checking which divisions should be enabled/disabled after this track
 	/// ATTENTION: assumes flow has been augmented for this path already!
-	void updateEnabledArcs(const Path& p);
 	void updateEnabledArc(const Arc& a);
 
 	/// enable an arc according to our division / appearance / disappearance constraints

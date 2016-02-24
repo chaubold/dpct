@@ -83,7 +83,8 @@ double FlowGraph::maxFlowMinCostTracking(
 {
 	TimePoint startTime_ = std::chrono::high_resolution_clock::now();
 
-	initializeResidualGraph(useBackArcs, useOrderedNodeListInBF);
+	if(!residualGraph_)
+		initializeResidualGraph(useBackArcs, useOrderedNodeListInBF);
 
 	ResidualGraph::ShortestPathResult result;
 	size_t iter=0;
