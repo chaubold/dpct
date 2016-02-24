@@ -362,20 +362,4 @@ void FlowGraph::printAllFlows()
 	}
 }
 
-int FlowGraph::sumOutFlow(Node n) const
-{
-	int flow = 0;
-	for(Graph::OutArcIt oa(baseGraph_, n); oa != lemon::INVALID; ++oa)
-		flow += flowMap_[oa];
-	return flow;
-}
-
-int FlowGraph::sumInFlow(Node n) const
-{
-	int flow = 0;
-	for(Graph::InArcIt ia(baseGraph_, n); ia != lemon::INVALID; ++ia)
-		flow += flowMap_[ia];
-	return flow;
-}
-
 } // end namespace dpct

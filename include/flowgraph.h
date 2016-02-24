@@ -232,6 +232,22 @@ inline void FlowGraph::toggleDisappearanceArc(const Node& n, bool state)
 	DEBUG_MSG("Didn't find disappearance arc of " << baseGraph_.id(n));
 }
 
+inline int FlowGraph::sumOutFlow(Node n) const
+{
+	int flow = 0;
+	for(Graph::OutArcIt oa(baseGraph_, n); oa != lemon::INVALID; ++oa)
+		flow += flowMap_[oa];
+	return flow;
+}
+
+inline int FlowGraph::sumInFlow(Node n) const
+{
+	int flow = 0;
+	for(Graph::InArcIt ia(baseGraph_, n); ia != lemon::INVALID; ++ia)
+		flow += flowMap_[ia];
+	return flow;
+}
+
 /**
  * @brief Output std vectors of stuff
  * 
