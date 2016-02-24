@@ -21,6 +21,8 @@ public:
 	typedef std::vector<ValueType> CostDeltaVector;
 	typedef std::map<size_t, size_t> NodeValueMap;
 	typedef std::map<size_t, bool> DivisionValueMap;
+	typedef std::map<size_t, size_t> AppearanceValueMap;
+	typedef std::map<size_t, size_t> DisappearanceValueMap;
 	typedef std::map<std::pair<size_t, size_t>, size_t> ArcValueMap;
 
 
@@ -194,6 +196,52 @@ public:
 		}
 	}
 
+	void setAppearanceValues(const AppearanceValueMap& appearanceValueMap)
+	{
+		FlowGraph::FlowMap& flowMap = graph_->getFlowMap();
+		for(auto iter : idToFlowGraphNodeMap_)
+		{
+			if(appearanceValueMap.find(iter.first) != appearanceValueMap.end())
+			{
+				bool found = false;
+				for(FlowGraph::Graph::InArcIt ia(graph_->getGraph(), iter.second.u); ia != lemon::INVALID; ++ia)
+				{
+					if(graph_->getGraph().source(ia) == graph_->getSource())
+					{
+						found=true;
+						flowMap[ia] = appearanceValueMap.at(iter.first);
+						break;
+					}
+				}
+				if(!found)
+					throw std::runtime_error("could not find appearance arc to activate!");
+			}
+		}
+	}
+
+	void setDisappearanceValues(const DisappearanceValueMap& disappearanceValueMap)
+	{
+		FlowGraph::FlowMap& flowMap = graph_->getFlowMap();
+		for(auto iter : idToFlowGraphNodeMap_)
+		{
+			if(disappearanceValueMap.find(iter.first) != disappearanceValueMap.end())
+			{
+				bool found = false;
+				for(FlowGraph::Graph::OutArcIt oa(graph_->getGraph(), iter.second.v); oa != lemon::INVALID; ++oa)
+				{
+					if(graph_->getGraph().target(oa) == graph_->getTarget())
+					{
+						found=true;
+						flowMap[oa] = disappearanceValueMap.at(iter.first);
+						break;
+					}
+				}
+				if(!found)
+					throw std::runtime_error("could not find disappearance arc to activate!");
+			}
+		}
+	}
+
 private:
 	/// pointer to original flow graph
 	FlowGraph* graph_;
@@ -319,6 +367,32 @@ public:
 		return divisionValueMap;
 	}
 
+	AppearanceValueMap getAppearanceValues()
+	{
+		AppearanceValueMap appearanceValueMap;
+		
+		for(auto iter : idToGraphNodeMap_)
+		{
+			if(magnussonAppearanceValueMap_.find(iter.second.get()) != magnussonAppearanceValueMap_.end())
+				appearanceValueMap[iter.first] = magnussonAppearanceValueMap_[iter.second.get()];
+		}
+
+		return appearanceValueMap;
+	}
+
+	DisappearanceValueMap getDisappearanceValues()
+	{
+		DisappearanceValueMap disappearanceValueMap;
+		
+		for(auto iter : idToGraphNodeMap_)
+		{
+			if(magnussonDisappearanceValueMap_.find(iter.second.get()) != magnussonDisappearanceValueMap_.end())
+				disappearanceValueMap[iter.first] = magnussonDisappearanceValueMap_[iter.second.get()];
+		}
+
+		return disappearanceValueMap;
+	}
+
 	void getSolutionFromPaths(const std::vector<TrackingAlgorithm::Path>& paths)
 	{
 		if(paths.size() == 0)
@@ -330,6 +404,8 @@ public:
 		magnussonNodeValueMap_.clear();
 		magnussonArcValueMap_.clear();
 		magnussonDivisionValueMap_.clear();
+		magnussonAppearanceValueMap_.clear();
+		magnussonDisappearanceValueMap_.clear();
 
 		auto increase_object_count = [&](const Node* n){
 			if(magnussonNodeValueMap_.find(n) == magnussonNodeValueMap_.end())
@@ -344,6 +420,22 @@ public:
 				magnussonArcValueMap_[a] = 1;
 			else
 				magnussonArcValueMap_[a] += 1;
+		};
+
+		auto activate_appearance = [&](const Node* n)
+		{
+			if(magnussonAppearanceValueMap_.find(n) == magnussonAppearanceValueMap_.end())
+				magnussonAppearanceValueMap_[n] = 1;
+			else
+				magnussonAppearanceValueMap_[n] += 1;
+		};
+
+		auto activate_disappearance = [&](const Node* n)
+		{
+			if(magnussonDisappearanceValueMap_.find(n) == magnussonDisappearanceValueMap_.end())
+				magnussonDisappearanceValueMap_[n] = 1;
+			else
+				magnussonDisappearanceValueMap_[n] += 1;
 		};
 
 		// fill solution vectors from the given paths
@@ -379,6 +471,7 @@ public:
 	                    // the node that appeared is set active here, so detections without further path are active as well
 	                    increase_object_count(a->getTargetNode());
 	                    first_arc_on_path = false;
+	                    activate_appearance(a->getTargetNode());
 	                }
 	                break;
 	                case Arc::Disappearance:
@@ -388,6 +481,7 @@ public:
 	                        increase_object_count(a->getSourceNode());
 	                    }
 	                    first_arc_on_path = false;
+	                    activate_disappearance(a->getSourceNode());
 	                    // nothing to do, last node on path was already set active by previous move or appearance
 	                }
 	                break;
@@ -450,6 +544,8 @@ private:
 	std::map<const Node*, size_t> magnussonNodeValueMap_;
 	std::map<const Arc*, size_t> magnussonArcValueMap_;
 	std::map<const Node*, size_t> magnussonDivisionValueMap_;
+	std::map<const Node*, size_t> magnussonAppearanceValueMap_;
+	std::map<const Node*, size_t> magnussonDisappearanceValueMap_;
 };
 
 

@@ -132,6 +132,8 @@ int main(int argc, char** argv) {
 		    flowGraphBuilder.setNodeValues(graphBuilder.getNodeValues());
 		    flowGraphBuilder.setArcValues(graphBuilder.getArcValues());
 		    flowGraphBuilder.setDivisionValues(graphBuilder.getDivisionValues());
+		    flowGraphBuilder.setAppearanceValues(graphBuilder.getAppearanceValues());
+		    flowGraphBuilder.setDisappearanceValues(graphBuilder.getDisappearanceValues());
 
 		    // track flow
 		    std::cout << "beginning tracking" << std::endl;
