@@ -71,6 +71,9 @@ public: // API
 
 	FlowMap& getFlowMap() { return flowMap_; }
 
+	/// get the graph (used in test)
+	Graph& getGraph() { return baseGraph_; }
+
 private:
 	/// create residual graph and set up all arc flows etc
 	void initializeResidualGraph(bool useBackArcs, bool useOrderedNodeListInBF);
@@ -90,9 +93,6 @@ private:
 	void updateArc(const Arc& a);
 
 	double getArcCost(const Arc& a, int flow);
-
-	/// get the graph (used in test)
-	Graph& getGraph() { return baseGraph_; }
 	
 	void printPath(const Path& p);
 	void printAllFlows();
