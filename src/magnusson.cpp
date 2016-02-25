@@ -146,7 +146,7 @@ double Magnusson::track(Solution& paths)
     }
 
     // done
-    removeSwapArcs(); // TODO: try leaving this out, looks like this takes 100 seconds for rapoport?!
+    // removeSwapArcs(); // TODO: try leaving this out, looks like this takes 100 seconds for rapoport?!
     toc();
 
     return score;

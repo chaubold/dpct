@@ -138,6 +138,7 @@ double FlowGraph::maxFlowMinCostTracking(
 void FlowGraph::initializeResidualGraph(bool useBackArcs, bool useOrderedNodeListInBF)
 {
 	std::cout << "Initializing Residual Graph ..." << std::flush;
+	TimePoint initStartTime = std::chrono::high_resolution_clock::now();
 	residualGraph_ = std::make_shared<ResidualGraph>(baseGraph_, nodeTimestepMap_, useBackArcs, useOrderedNodeListInBF);
 	
 	for(Graph::ArcIt a(baseGraph_); a != lemon::INVALID; ++a)
@@ -163,7 +164,11 @@ void FlowGraph::initializeResidualGraph(bool useBackArcs, bool useOrderedNodeLis
     {
     	updateEnabledArc(a);
     }
-    std::cout << " done" << std::endl;
+
+    TimePoint initEndTime = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> elapsed_seconds = initEndTime - initStartTime;
+    std::cout << " done in " << elapsed_seconds.count() << " secs" << std::endl;
+
 }
 
 void FlowGraph::printPath(const Path& p)

@@ -60,6 +60,7 @@ public: // API
 
 	/// enable / disable both residual arcs of the original arc
 	void enableArc(const OriginalArc& a, bool state);
+	bool getArcEnabledState(const OriginalArc& a);
 
 	/// save graph to dot file
 	void fullGraphToDot(const std::string& filename, const Path& p) const;
@@ -260,6 +261,13 @@ inline void ResidualGraph::includeArc(const ResidualArcCandidate& ac)
 		providedTokenMap_[a] = residualArcProvidesTokens_[ac];
 		forbiddenTokenMap_[a] = residualArcForbidsTokens_[ac];
 	}
+}
+
+inline bool ResidualGraph::getArcEnabledState(const OriginalArc& a)
+{
+	// use the latest cost and flow states
+	ResidualArcCandidate ac = arcToPair(a);
+	return residualArcEnabled_[ac];
 }
 
 inline void ResidualGraph::enableArc(const OriginalArc& a, bool state)

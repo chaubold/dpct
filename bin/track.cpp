@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
 			    		  << zeroEnergy - score << std::endl;
 
 			    std::cout << "Extracting solution" << std::endl;
-			    graphBuilder.getSolutionFromPaths(paths);
+			    // graphBuilder.getSolutionFromPaths(paths);
 			}
 
 		    // set up flow
