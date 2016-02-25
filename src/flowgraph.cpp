@@ -332,7 +332,7 @@ void FlowGraph::updateEnabledArc(const FlowGraph::Arc& a)
 		{
 			// removing flow from division -> parent can be undone again
 			// FIXME: but not disappearance!
-			toggleOutArcs(duplicateToParentMap_[target], true);
+			toggleOutArcsBut(duplicateToParentMap_[target], target_, true);
 			// restrictOutArcCapacity(duplicateToParentMap_[target], false);
 		}
 	}
