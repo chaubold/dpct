@@ -34,7 +34,8 @@ public:
 		const CostDeltaVector& detectionCosts,
 		const CostDeltaVector& detectionCostDeltas, 
 		const CostDeltaVector& appearanceCostDeltas, 
-		const CostDeltaVector& disappearanceCostDeltas) = 0;
+		const CostDeltaVector& disappearanceCostDeltas,
+		size_t targetIdx) = 0;
 
 	/**
 	 * @brief Specify in which timestep a node lies. Must be called before adding the respective node
@@ -97,7 +98,8 @@ public:
 		const CostDeltaVector& detectionCosts,
 		const CostDeltaVector& detectionCostDeltas, 
 		const CostDeltaVector& appearanceCostDeltas, 
-		const CostDeltaVector& disappearanceCostDeltas)
+		const CostDeltaVector& disappearanceCostDeltas,
+		size_t targetIdx=0)
 	{
 		FlowGraph::FullNode n = graph_->addNode(detectionCostDeltas, idToTimestepsMap_[id].second);
 		idToFlowGraphNodeMap_[id] = n;
@@ -106,7 +108,7 @@ public:
 			graph_->addArc(graph_->getSource(), n.u, appearanceCostDeltas);
 
 		if(disappearanceCostDeltas.size() > 0)
-			graph_->addArc(n.v, graph_->getTarget(), disappearanceCostDeltas);
+			graph_->addArc(n.v, graph_->getTarget(targetIdx), disappearanceCostDeltas);
 	}
 
 	void addArc(size_t srcId, size_t destId, const CostDeltaVector& costDeltas)
@@ -269,7 +271,7 @@ public:
 	{
 		for(FlowGraph::Graph::OutArcIt oa(graph_->getGraph(), idToFlowGraphNodeMap_[nodeId].v); oa != lemon::INVALID; ++oa)
 		{
-			if(graph_->getGraph().target(oa) == graph_->getTarget())
+			if(graph_->isTarget(graph_->getGraph().target(oa)))
 			{
 				return oa;
 			}
@@ -340,7 +342,8 @@ public:
 		const CostDeltaVector& detectionCosts,
 		const CostDeltaVector& detectionCostDeltas, 
 		const CostDeltaVector& appearanceCostDeltas, 
-		const CostDeltaVector& disappearanceCostDeltas)
+		const CostDeltaVector& disappearanceCostDeltas,
+		size_t targetIdx=0)
 	{
 		if(idToTimestepsMap_.find(id) == idToTimestepsMap_.end())
 			throw std::runtime_error("Node timesteps must be set for Magnusson to work");
@@ -727,6 +730,7 @@ private:
 		DivisionFeatures,
 		AppearanceFeatures,
 		DisappearanceFeatures,
+		DisappearanceTarget,
 		Weights,
 		// settings-related
 		Settings,

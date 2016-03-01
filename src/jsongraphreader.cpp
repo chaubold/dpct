@@ -21,6 +21,7 @@ std::map<JsonGraphReader::JsonTypes, std::string> JsonGraphReader::JsonTypeNames
 	{JsonTypes::DivisionFeatures, "divisionFeatures"},
 	{JsonTypes::AppearanceFeatures, "appearanceFeatures"},
 	{JsonTypes::DisappearanceFeatures, "disappearanceFeatures"},
+	{JsonTypes::DisappearanceTarget, "disappTarget"},
 	{JsonTypes::Weights, "weights"},
 	{JsonTypes::StatesShareWeights, "statesShareWeights"},
 	{JsonTypes::Settings, "settings"},
@@ -152,7 +153,13 @@ void JsonGraphReader::createGraphFromJson()
 		if(jsonHyp.isMember(JsonTypeNames[JsonTypes::DisappearanceFeatures]))
 			disappearanceCostDeltas = costsToScoreDeltas(weightedSumOfFeatures(extractFeatures(jsonHyp, JsonTypes::DisappearanceFeatures), weights, disWeightOffset, statesShareWeights));
 
-		graphBuilder_->addNode(id, detCosts, detCostDeltas, appearanceCostDeltas, disappearanceCostDeltas);
+		size_t targetIdx = 0;
+		if(jsonHyp.isMember(JsonTypeNames[JsonTypes::DisappearanceTarget]))
+		{
+			targetIdx = jsonHyp[JsonTypeNames[JsonTypes::DisappearanceTarget]].asUInt();
+		}
+
+		graphBuilder_->addNode(id, detCosts, detCostDeltas, appearanceCostDeltas, disappearanceCostDeltas, targetIdx);
 	}
 
 	// read linking hypotheses
