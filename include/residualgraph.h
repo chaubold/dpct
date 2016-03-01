@@ -69,7 +69,7 @@ public: // API
 	/// find the shortest augmenting path/circle (if any)
 	ShortestPathResult findShortestPath(
 		const OriginalNode& origSource, 
-		const OriginalNode& origTarget);
+		const std::vector<OriginalNode>& origTargets);
 
 	/// configure forbidden tokens of arcs
 	void addForbiddenToken(const OriginalArc& a, bool forward, Token token);

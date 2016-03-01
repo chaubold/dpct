@@ -65,7 +65,8 @@ public: // API
 		bool useOrderedNodeListInBF=true);
 
 	Node getSource() const { return source_; }
-	Node getTarget() const { return target_; }
+	Node getTarget(size_t index=0);
+	bool isTarget(Node t) const;
 	int sumOutFlow(Node n) const;
 	int sumInFlow(Node n) const;
 
@@ -112,6 +113,7 @@ private:
 	void toggleOutArcs(const Node& n, bool state);
 	void toggleInArcs(const Node& n, bool state);
 	void toggleOutArcsBut(const Node& n, const Node& exception, bool state);
+	void toggleOutArcsButTarget(const Node& n, bool state);
 	void toggleInArcsBut(const Node& n, const Node& exception, bool state);
 	void toggleDivision(const Node& div, const Node& target, bool divState);
 	void toggleAppearanceArc(const Node& n, bool state);
@@ -122,7 +124,7 @@ private:
 	/// graph containing all nodes and arcs and duplicated parents of divisions
 	Graph baseGraph_;
 	Node source_;
-	Node target_;
+	std::vector<Node> targets_;
 
 	/// residual graph
 	std::shared_ptr<ResidualGraph> residualGraph_;
@@ -184,6 +186,18 @@ inline void FlowGraph::toggleOutArcsBut(const Node& n, const Node& exception, bo
 	}
 }
 
+inline void FlowGraph::toggleOutArcsButTarget(const Node& n, bool state)
+{
+	DEBUG_MSG("Setting out arcs of " << baseGraph_.id(n) 
+		<< " but " << baseGraph_.id(exception) 
+		<< " to " << (state?"true":"false"));
+	for(Graph::OutArcIt oa(baseGraph_, n); oa != lemon::INVALID; ++oa)
+	{
+		if(!isTarget(baseGraph_.target(oa)))
+			enableArc(oa, state);
+	}
+}
+
 inline void FlowGraph::toggleInArcsBut(const Node& n, const Node& exception, bool state)
 {
 	DEBUG_MSG("Setting in arcs of " << baseGraph_.id(n) 
@@ -237,7 +251,7 @@ inline void FlowGraph::toggleDisappearanceArc(const Node& n, bool state)
 {
 	for(Graph::OutArcIt oa(baseGraph_, n); oa != lemon::INVALID; ++oa)
 	{
-		if(baseGraph_.target(oa) == target_)
+		if(isTarget(baseGraph_.target(oa)))
 		{
 			DEBUG_MSG("Setting disappearance of " << baseGraph_.id(n) << " to " << (state?"true":"false"));
 			enableArc(oa, state);
@@ -261,6 +275,24 @@ inline int FlowGraph::sumInFlow(Node n) const
 	for(Graph::InArcIt ia(baseGraph_, n); ia != lemon::INVALID; ++ia)
 		flow += flowMap_[ia];
 	return flow;
+}
+
+inline FlowGraph::Node FlowGraph::getTarget(size_t index)
+{
+	while(index >= targets_.size())
+	{
+		targets_.push_back(baseGraph_.addNode());
+		nodeTimestepMap_[targets_.back()] = nodeTimestepMap_[targets_.front()];
+	}
+
+ 	return targets_[index];
+}
+
+inline bool FlowGraph::isTarget(Node t) const
+{
+	for(auto n : targets_)
+		if(t == n) return true;
+	return false;
 }
 
 /**

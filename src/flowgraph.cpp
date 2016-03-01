@@ -12,8 +12,8 @@ FlowGraph::FlowGraph():
 {
 	source_ = baseGraph_.addNode();
 	nodeTimestepMap_[source_] = 0;
-	target_ = baseGraph_.addNode();
-	nodeTimestepMap_[target_] = 1;
+	targets_.push_back(baseGraph_.addNode());
+	nodeTimestepMap_[targets_.front()] = 1;
 }
 
 FlowGraph::FullNode FlowGraph::addNode(const CostVector& costs, size_t timestep)
@@ -27,8 +27,13 @@ FlowGraph::FullNode FlowGraph::addNode(const CostVector& costs, size_t timestep)
 	intermediateArcs_.insert(f.a);
 	nodeTimestepMap_[f.u] = timestep * 2 + 1;
 	nodeTimestepMap_[f.v] = timestep * 2 + 2;
-	if(timestep * 2 + 2 >= nodeTimestepMap_[target_])
-		nodeTimestepMap_[target_] = timestep * 2 + 3;
+
+	// update target timestep such that it is higher than any node timestep
+	if(timestep * 2 + 2 >= nodeTimestepMap_[targets_.front()])
+	{
+		for(auto t : targets_)
+			nodeTimestepMap_[t] = timestep * 2 + 3;
+	}
 
 	return f;
 }
@@ -64,7 +69,7 @@ FlowGraph::Arc FlowGraph::allowMitosis(FlowGraph::FullNode parent,
 	// copy all out arcs, but with capacity=1 only, and don't add disappearance arc
 	for(Graph::OutArcIt oa(baseGraph_, parent.v); oa != lemon::INVALID; ++oa)
 	{
-		if(baseGraph_.target(oa) != target_)
+		if(!isTarget(baseGraph_.target(oa)))
 			addArc(duplicate, baseGraph_.target(oa), {arcCosts_[oa][0]});
 	}
 
@@ -96,7 +101,7 @@ double FlowGraph::maxFlowMinCostTracking(
 		DEBUG_MSG("Current Flow:");
 		printAllFlows();
 
-		result = residualGraph_->findShortestPath(source_, target_);
+		result = residualGraph_->findShortestPath(source_, targets_);
 
 		DEBUG_MSG("\tFound path or cycle"
 				<< " of length " << result.first.size() 
@@ -304,7 +309,7 @@ void FlowGraph::updateEnabledArc(const FlowGraph::Arc& a)
 		<< baseGraph_.id(source) << " to " << baseGraph_.id(target));
 
 	// division updates: enable if mother cell is used exactly once, but flow is not disappearing
-	if(parentToDuplicateMap_.find(source) != parentToDuplicateMap_.end() && target != target_)
+	if(parentToDuplicateMap_.find(source) != parentToDuplicateMap_.end() && !isTarget(target))
 	{
 		if(sumInFlow(source) == 1)
 		{
@@ -332,7 +337,7 @@ void FlowGraph::updateEnabledArc(const FlowGraph::Arc& a)
 		{
 			// removing flow from division -> parent can be undone again
 			// FIXME: but not disappearance!
-			toggleOutArcsBut(duplicateToParentMap_[target], target_, true);
+			toggleOutArcsButTarget(duplicateToParentMap_[target], true);
 			// restrictOutArcCapacity(duplicateToParentMap_[target], false);
 		}
 	}
@@ -342,13 +347,13 @@ void FlowGraph::updateEnabledArc(const FlowGraph::Arc& a)
 		// changing usage of appearance arc, enable/disable all other incomings to target
 		toggleInArcsBut(target, source, flowMap_[a] == 0);
 	}
-	else if(target == target_)
+	else if(isTarget(target))
 	{
 		// changing usage of disappearance arc, enable/disable all other outgoings of source
 		toggleOutArcsBut(source, target, flowMap_[a] == 0);
 	}
 	
-	if(source != source_ && target != target_ && intermediateArcs_.count(a) == 0)
+	if(source != source_ && !isTarget(target) && intermediateArcs_.count(a) == 0)
 	{
 		// we did not use an appearance or disappearance arc! 
 		// enable those if no other in-/out- flow at that arc yet

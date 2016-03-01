@@ -37,10 +37,9 @@ ResidualGraph::ResidualGraph(
 /// find a shortest path or a negative cost cycle, and return it with flow direction and cost
 ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 	const OriginalNode& origSource, 
-	const OriginalNode& origTarget)
+	const std::vector<OriginalNode>& origTargets)
 {
 	Node source = residualNodeMap_.at(origSource);
-	Node target = residualNodeMap_.at(origTarget);
 
 	DEBUG_MSG("Searching shortest path in graph with " << lemon::countNodes(*this)
 			<< " nodes and " << lemon::countArcs(*this) << " arcs");
@@ -91,6 +90,18 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 		if(foundPath)
 	    {	
 	    	DEBUG_MSG("Found path");
+
+	    	// we are fine if we reach any target, use the one with the lowest cost
+	    	std::vector<double> targetDistances;
+	    	for(auto ot : origTargets)
+	    	{
+		    	Node target = residualNodeMap_.at(ot);
+		    	targetDistances.push_back(bf.dist(target));
+		    }
+
+		    size_t targetIndex = std::distance(targetDistances.begin(), std::min_element(targetDistances.begin(), targetDistances.end()));
+		    Node target = residualNodeMap_.at(origTargets[targetIndex]);
+
 	    	// found path
 	        if(bf.reached(target))
 	        {
