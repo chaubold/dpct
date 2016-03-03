@@ -212,6 +212,7 @@ private:
 	BfPredMap bfPredMap_;
 	BfProcess bfProcess_;
 	BfProcess bfNextProcess_;
+	BellmanFord bf;
 };
 
 
