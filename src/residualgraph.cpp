@@ -40,11 +40,6 @@ ResidualGraph::ResidualGraph(
     bf.distMap(bfDistMap_);
     bf.predMap(bfPredMap_);
     source_ = residualNodeMap_.at(origSource);
-    bf.init();
-    if(useOrderedNodeListInBF_)
-    	bf.addSource(source_, nodeUpdateOrderMap_);
-   	else
-   		bf.addSource(source_);
 }
 
 /// find a shortest path or a negative cost cycle, and return it with flow direction and cost
@@ -85,15 +80,12 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 		if(firstPath_)
 		{
 			firstPath_ = false;
+			bf.init();
+		    if(useOrderedNodeListInBF_)
+		    	bf.addSource(source_, nodeUpdateOrderMap_);
+		   	else
+		   		bf.addSource(source_);
 		}
-		// else
-		// {
-		// 	bf.init();
-		//     if(useOrderedNodeListInBF_)
-		//     	bf.addSource(source_, nodeUpdateOrderMap_);
-		//    	else
-		//    		bf.addSource(source_);
-		// }
 		else if(!dirtyNodes_.empty())
 		{
 			LOG_MSG("Running BF Update for " << dirtyNodes_.size() << " nodes");
@@ -162,6 +154,10 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 	        	flow = arcForward.second ? 1 : -1;
 	            p.push_back(std::make_pair(arcForward.first, flow));
 	        }
+
+	        // we need to initialize BF again from scratch, as a neg weight cycle 
+	        // invalidates most of the distance map
+	        firstPath_ = true;
 	    }
 
 		// analyze the new path
