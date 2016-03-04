@@ -86,10 +86,11 @@ double FlowGraph::maxFlowMinCostTracking(
 	size_t maxNumPaths, 
 	bool useOrderedNodeListInBF)
 {
-	TimePoint startTime_ = std::chrono::high_resolution_clock::now();
 
 	if(!residualGraph_)
 		initializeResidualGraph(useBackArcs, useOrderedNodeListInBF);
+
+	TimePoint startTime_ = std::chrono::high_resolution_clock::now();
 
 	ResidualGraph::ShortestPathResult result;
 	size_t iter=0;
@@ -146,6 +147,10 @@ void FlowGraph::initializeResidualGraph(bool useBackArcs, bool useOrderedNodeLis
 	TimePoint initStartTime = std::chrono::high_resolution_clock::now();
 	residualGraph_ = std::make_shared<ResidualGraph>(baseGraph_, source_, nodeTimestepMap_, useBackArcs, useOrderedNodeListInBF);
 	
+	TimePoint initEndTime = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> elapsed_seconds = initEndTime - initStartTime;
+    std::cout << " constructor finished in " << elapsed_seconds.count() << " secs ... " << std::endl;
+
 	for(Graph::ArcIt a(baseGraph_); a != lemon::INVALID; ++a)
     {
     	updateArc(a);
@@ -170,8 +175,8 @@ void FlowGraph::initializeResidualGraph(bool useBackArcs, bool useOrderedNodeLis
     	updateEnabledArc(a);
     }
 
-    TimePoint initEndTime = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double> elapsed_seconds = initEndTime - initStartTime;
+    initEndTime = std::chrono::high_resolution_clock::now();
+	elapsed_seconds = initEndTime - initStartTime;
     std::cout << " done in " << elapsed_seconds.count() << " secs" << std::endl;
 
 }
