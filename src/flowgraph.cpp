@@ -101,7 +101,7 @@ double FlowGraph::maxFlowMinCostTracking(
 		DEBUG_MSG("Current Flow:");
 		printAllFlows();
 
-		result = residualGraph_->findShortestPath(source_, targets_);
+		result = residualGraph_->findShortestPath(targets_);
 
 		DEBUG_MSG("\tFound path or cycle"
 				<< " of length " << result.first.size() 
@@ -144,7 +144,7 @@ void FlowGraph::initializeResidualGraph(bool useBackArcs, bool useOrderedNodeLis
 {
 	std::cout << "Initializing Residual Graph ..." << std::flush;
 	TimePoint initStartTime = std::chrono::high_resolution_clock::now();
-	residualGraph_ = std::make_shared<ResidualGraph>(baseGraph_, nodeTimestepMap_, useBackArcs, useOrderedNodeListInBF);
+	residualGraph_ = std::make_shared<ResidualGraph>(baseGraph_, source_, nodeTimestepMap_, useBackArcs, useOrderedNodeListInBF);
 	
 	for(Graph::ArcIt a(baseGraph_); a != lemon::INVALID; ++a)
     {

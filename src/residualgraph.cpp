@@ -9,6 +9,7 @@ namespace dpct
 
 ResidualGraph::ResidualGraph(
 		const Graph& original, 
+		const OriginalNode& origSource, 
 		const std::map<OriginalNode, size_t>& nodeTimestepMap, 
 		bool useBackArcs,
 		bool useOrderedNodeListInBF
@@ -22,7 +23,8 @@ ResidualGraph::ResidualGraph(
 	bfPredMap_(*this),
 	bfDistMap_(*this),
 	useOrderedNodeListInBF_(useOrderedNodeListInBF),
-	bf(*this, residualDistMap_, bfProcess_, bfNextProcess_, providedTokenMap_, forbiddenTokenMap_)
+	bf(*this, residualDistMap_, bfProcess_, bfNextProcess_, providedTokenMap_, forbiddenTokenMap_),
+	firstPath_(true)
 {
 	for(Graph::NodeIt origNode(original); origNode != lemon::INVALID; ++origNode)
 	{
@@ -33,18 +35,22 @@ ResidualGraph::ResidualGraph(
 	}
 	bfProcess_.reserve(lemon::countNodes(*this));
 	bfNextProcess_.reserve(lemon::countNodes(*this));
+	dirtyNodes_.reserve(lemon::countNodes(*this));
 
     bf.distMap(bfDistMap_);
     bf.predMap(bfPredMap_);
+    source_ = residualNodeMap_.at(origSource);
+    bf.init();
+    if(useOrderedNodeListInBF_)
+    	bf.addSource(source_, nodeUpdateOrderMap_);
+   	else
+   		bf.addSource(source_);
 }
 
 /// find a shortest path or a negative cost cycle, and return it with flow direction and cost
 ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
-	const OriginalNode& origSource, 
 	const std::vector<OriginalNode>& origTargets)
 {
-	Node source = residualNodeMap_.at(origSource);
-
 	DEBUG_MSG("Searching shortest path in graph with " << lemon::countNodes(*this)
 			<< " nodes and " << lemon::countArcs(*this) << " arcs");
 
@@ -75,12 +81,26 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 			<< " nodes and " << lemon::countArcs(*this) << " arcs");
 		}
 
+    	// prepare for new iteration
+		if(firstPath_)
+		{
+			firstPath_ = false;
+		}
+		// else
+		// {
+		// 	bf.init();
+		//     if(useOrderedNodeListInBF_)
+		//     	bf.addSource(source_, nodeUpdateOrderMap_);
+		//    	else
+		//    		bf.addSource(source_);
+		// }
+		else if(!dirtyNodes_.empty())
+		{
+			LOG_MSG("Running BF Update for " << dirtyNodes_.size() << " nodes");
+			bf.update(dirtyNodes_, nodeUpdateOrderMap_);
+		}
+		dirtyNodes_.clear();
 	    
-	    bf.init();
-	    if(useOrderedNodeListInBF_)
-	    	bf.addSource(source, nodeUpdateOrderMap_);
-	   	else
-	   		bf.addSource(source);
 
 		// * limiting the number of iterations to 1000 reduces the runtime of drosophila 10x (3200sec -> 380sec)!!
 		// * checking for negative cycles each round brings runtime down to 82 secs

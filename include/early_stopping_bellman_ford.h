@@ -519,6 +519,75 @@ namespace lemon {
       }
     }
 
+    void update(const std::vector<typename Digraph::Node>& dirtyNodes, 
+      IterableValueMap<Digraph, typename Digraph::Node, size_t>& nodeUpdateOrderMap)
+    {
+      // unmask all nodes
+      for(NodeIt it(*_gr); it != INVALID; ++it) {
+        _mask->set(it, false);
+      }
+      _process.clear();
+
+      // mark dirty nodes and put them into process, and reset source
+      for(auto n : dirtyNodes)
+      {
+        _dist->set(n, OperationTraits::infinity());
+        _pred->set(n, INVALID);
+        if(n != _source)
+        {
+          _mask->set(n, true);
+          _process.push_back(n);
+        }
+      }
+
+      // invalidate all nodes on shortest paths from dirty nodes,
+      // because we mask nodes that have been updated already, 
+      // each node can only be part of _process once
+      while(!_process.empty())
+      {
+        Node u = _process.back();
+        _process.pop_back();
+
+        for(OutArcIt outArcIt(*_gr, u); outArcIt != INVALID; ++outArcIt)
+        {
+          Node t = _gr->target(outArcIt);
+          if((*_pred)[t] == outArcIt && !(*_mask)[t])
+          {
+            _dist->set(t, OperationTraits::infinity());
+            _pred->set(t, INVALID);
+            _mask->set(t, true);
+            _process.push_back(t);
+          }
+        }
+      }
+      _dist->set(_source, 0);
+
+      // fill process for the next run of BF:
+      for(auto v_it = nodeUpdateOrderMap.beginValue(); 
+          v_it != nodeUpdateOrderMap.endValue(); 
+          ++ v_it)
+      {
+        // std::cout << "Inserting value " << *v_it << std::endl; 
+        typename IterableValueMap<Digraph, typename Digraph::Node, size_t>::ItemIt i_it(nodeUpdateOrderMap, *v_it);
+        for (; i_it != lemon::INVALID; ++i_it)
+        {
+          for(OutArcIt outArcIt(*_gr, i_it); outArcIt != INVALID; ++outArcIt)
+          {
+            if((*_mask)[_gr->target(outArcIt)])
+            {
+              _process.push_back(i_it);
+              break;
+            }
+          }
+        }
+      }
+      for(NodeIt it(*_gr); it != INVALID; ++it) {
+        _mask->set(it, false);
+      }
+
+      std::cout << "After update: " << _process.size() << " nodes are about to be processed" << std::endl;
+    }
+
     /// \brief Adds a new source node.
     ///
     /// This function adds a new source node. The optional second parameter
@@ -543,6 +612,7 @@ namespace lemon {
           _mask->set(i_it, true);
         }
       }
+      // std::cout << "After adding source: " << _process.size() << " nodes are about to be processed" << std::endl;
 
       // if (!(*_mask)[source]) {
       //   _process.push_back(source);

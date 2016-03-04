@@ -50,6 +50,7 @@ public: // typedefs
 public: // API
 	ResidualGraph(
 		const Graph& original,
+		const OriginalNode& origSource, 
 		const std::map<OriginalNode, size_t>& nodeTimestepMap, 
 		bool useBackArcs=true,
 		bool useOrderedNodeListInBF=false);
@@ -68,7 +69,6 @@ public: // API
 
 	/// find the shortest augmenting path/circle (if any)
 	ShortestPathResult findShortestPath(
-		const OriginalNode& origSource, 
 		const std::vector<OriginalNode>& origTargets);
 
 	/// configure forbidden tokens of arcs
@@ -213,6 +213,11 @@ private:
 	BfProcess bfProcess_;
 	BfProcess bfNextProcess_;
 	BellmanFord bf;
+
+	/// set of nodes that have invalidated during this iteration
+	std::vector<Node> dirtyNodes_;
+	bool firstPath_;
+	Node source_;
 };
 
 
@@ -262,6 +267,8 @@ inline void ResidualGraph::includeArc(const ResidualArcCandidate& ac)
 		providedTokenMap_[a] = residualArcProvidesTokens_[ac];
 		forbiddenTokenMap_[a] = residualArcForbidsTokens_[ac];
 	}
+
+	dirtyNodes_.push_back(ac.second);
 }
 
 inline bool ResidualGraph::getArcEnabledState(const OriginalArc& a)
