@@ -80,7 +80,10 @@ if __name__ == '__main__':
             plt.scatter(points[:,0], points[:,1], label=label, color=colors[scatterIdx])
             scatterIdx += 1
         else:
-            plt.plot(points[:,0], points[:,1], label=label)
+            if label.startswith('flow'):
+                plt.plot(points[:,0], points[:,1], label=label, ls='--')
+            else:
+                plt.plot(points[:,0], points[:,1], label=label)
 
     padding = 0.01 * (upper - lower)
     plt.ylim([lower-padding, upper+10*padding])
