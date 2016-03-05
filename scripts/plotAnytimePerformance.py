@@ -1,5 +1,9 @@
 import argparse
 import numpy as np
+
+import matplotlib
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 
 # python plotAnytimePerformance.py --logs /Users/chaubold/hci/data/hufnagel2012-08-03/2016-01-29-flow-result-comparison/flow.log /Users/chaubold/hci/data/hufnagel2012-08-03/2016-01-29-flow-result-comparison/magnusson.log /Users/chaubold/hci/data/hufnagel2012-08-03/2016-01-29-flow-result-comparison/flow-ordered.log /Users/chaubold/hci/data/hufnagel2012-08-03/2016-01-29-flow-result-comparison/gurobi.log --labels flow magnusson flow-orderedNodes gurobi --out /Users/chaubold/Dropbox/VerbTeX/eccv16-divisibleCellFlow2/fig/anytime-drosophila.pdf
@@ -18,6 +22,9 @@ def parseFile(filename):
                 continue
             elif line.startswith('Explored') and line.endswith('seconds'):
                 time = float(line.split(' ')[-2])
+                continue
+            elif line.startswith('Total (root+branch&cut)'):
+                time = float(line.split('=')[1].split('s')[0].strip())
                 continue
             elif 'solution has energy:' in line:
                 energy = float(line.split(':')[-1])
@@ -59,18 +66,21 @@ if __name__ == '__main__':
     lower = np.infty
     upper = -np.infty
     maxTime = 0
+    colors = ['r', 'g', 'b', 'y', 'c', 'm', 'k']
+    scatterIdx = 0
+
     for log, label in zip(args.logs, args.labels):
         points = parseFile(log)
-        if points.shape[0] == 1:
-            func = plt.scatter
-        else:
-            func = plt.plot
 
         lower = min(points[:,1].min(), lower)
         upper = max(points[:,1].max(), upper)
         maxTime = max(points[:,0].max(), maxTime)
 
-        func(points[:,0], points[:,1], label=label)
+        if points.shape[0] == 1:
+            plt.scatter(points[:,0], points[:,1], label=label, color=colors[scatterIdx])
+            scatterIdx += 1
+        else:
+            plt.plot(points[:,0], points[:,1], label=label)
 
     padding = 0.01 * (upper - lower)
     plt.ylim([lower-padding, upper+10*padding])
