@@ -62,7 +62,8 @@ public: // API
 		double initialStateEnergy=0.0, 
 		bool useBackArcs=true, 
 		size_t maxNumPaths=0,
-		bool useOrderedNodeListInBF=true);
+		bool useOrderedNodeListInBF=true,
+		bool partialBFUpdates=true);
 
 	Node getSource() const { return source_; }
 	Node getTarget(size_t index=0);

@@ -84,7 +84,8 @@ double FlowGraph::maxFlowMinCostTracking(
 	double initialStateEnergy, 
 	bool useBackArcs, 
 	size_t maxNumPaths, 
-	bool useOrderedNodeListInBF)
+	bool useOrderedNodeListInBF,
+	bool partialBFUpdates)
 {
 
 	if(!residualGraph_)
@@ -102,7 +103,7 @@ double FlowGraph::maxFlowMinCostTracking(
 		DEBUG_MSG("Current Flow:");
 		printAllFlows();
 
-		result = residualGraph_->findShortestPath(targets_);
+		result = residualGraph_->findShortestPath(targets_, partialBFUpdates);
 
 		DEBUG_MSG("\tFound path or cycle"
 				<< " of length " << result.first.size() 
