@@ -117,6 +117,7 @@ double FlowGraph::maxFlowMinCostTracking(
 
 		if(result.first.size() > 0 && result.second < 0.0)
 		{
+			TimePoint iterationBetweenTime = std::chrono::high_resolution_clock::now();
 #ifdef DEBUG_LOG
 			printPath(result.first); std::cout << std::endl;
 			// std::stringstream outName;
@@ -126,6 +127,9 @@ double FlowGraph::maxFlowMinCostTracking(
 			augmentUnitFlow(result.first);
 			updateEnabledArcs(result.first);
 			currentEnergy += result.second; // decrease energy
+			TimePoint afterAugmentationTime = std::chrono::high_resolution_clock::now();
+			std::chrono::duration<double> elapsed_seconds = afterAugmentationTime - iterationBetweenTime;
+			LOG_MSG("augmenting flow and updating constraints took " << elapsed_seconds.count() << " secs");
 		}
 		TimePoint iterationEndTime = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> elapsed_seconds = iterationEndTime - iterationStartTime;
@@ -296,11 +300,13 @@ void FlowGraph::updateEnabledArcs(const FlowGraph::Path& p)
 {
 	for(const std::pair<Arc, int>& af : p)
 	{
+#ifdef DEBUG_LOG
 		bool forward = af.second > 0;
 		Node source = baseGraph_.source(af.first);
 		Node target = baseGraph_.target(af.first);
 		DEBUG_MSG("Updating stuff for " << (forward? "forward" : "backward") << " edge from " 
 			<< baseGraph_.id(source) << " to " << baseGraph_.id(target));
+#endif
 
 		updateEnabledArc(af.first);
 	}

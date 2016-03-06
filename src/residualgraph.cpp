@@ -2,6 +2,7 @@
 #include <limits>
 #include <fstream>
 #include <set>
+#include <chrono>
 #include "log.h"
 
 namespace dpct
@@ -47,6 +48,7 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 	const std::vector<OriginalNode>& origTargets,
 	bool partialBFUpdates)
 {
+	typedef std::chrono::time_point<std::chrono::high_resolution_clock> TimePoint;
 	DEBUG_MSG("Searching shortest path in graph with " << lemon::countNodes(*this)
 			<< " nodes and " << lemon::countArcs(*this) << " arcs");
 
@@ -78,6 +80,7 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 		}
 
     	// prepare for new iteration
+    	TimePoint iterationInitTime = std::chrono::high_resolution_clock::now();
 		if(firstPath_ or !partialBFUpdates)
 		{
 			firstPath_ = false;
@@ -99,7 +102,14 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 		// * checking for negative cycles each round brings runtime down to 82 secs
 		// * checking for negative cycles every 100 iterations yields runtime of 53secs!
 		// BUT: the number of paths found changes, which means we are not finding the same things... (different negative cycles?)
+		TimePoint iterationStartTime = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double> elapsed_seconds = iterationStartTime - iterationInitTime;
+		LOG_MSG("initializing BF took " << elapsed_seconds.count() << " secs");
 		bool foundPath = bf.checkedStart(300, 2000);
+		TimePoint iterationEndTime = std::chrono::high_resolution_clock::now();
+		elapsed_seconds = iterationEndTime - iterationStartTime;
+		LOG_MSG("BF took " << elapsed_seconds.count() << " secs");
+
 		if(foundPath)
 	    {	
 	    	DEBUG_MSG("Found path");
@@ -160,6 +170,10 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 	        // invalidates most of the distance map
 	        firstPath_ = true;
 	    }
+
+	    TimePoint pathExtractionTime = std::chrono::high_resolution_clock::now();
+		elapsed_seconds = pathExtractionTime - iterationEndTime;
+		LOG_MSG("extracting path took " << elapsed_seconds.count() << " secs");
 
 		// analyze the new path
 	    ret = pathSatisfiesTokenSpecs(p);
