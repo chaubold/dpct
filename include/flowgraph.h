@@ -296,6 +296,21 @@ inline bool FlowGraph::isTarget(Node t) const
 	return false;
 }
 
+inline void FlowGraph::enableArc(const Arc& a, bool state)
+{
+	residualGraph_->enableArc(a, state);
+}
+
+inline double FlowGraph::getArcCost(const Arc& a, int flow)
+{
+	if(flow >= 0 && flow < arcCosts_[a].size())
+	{
+		return arcCosts_[a][flow];
+	}
+	else
+		return std::numeric_limits<double>::infinity();
+}
+
 /**
  * @brief Output std vectors of stuff
  * 

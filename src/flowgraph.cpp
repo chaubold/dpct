@@ -260,21 +260,6 @@ void FlowGraph::augmentUnitFlow(const FlowGraph::Path& p)
 	}
 }
 
-void FlowGraph::enableArc(const Arc& a, bool state)
-{
-	residualGraph_->enableArc(a, state);
-}
-
-double FlowGraph::getArcCost(const Arc& a, int flow)
-{
-	if(flow >= 0 && flow < arcCosts_[a].size())
-	{
-		return arcCosts_[a][flow];
-	}
-	else
-		return std::numeric_limits<double>::infinity();
-}
-
 void FlowGraph::updateArc(const Arc& a)
 {
 	int flow = flowMap_[a];
