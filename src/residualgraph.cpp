@@ -27,6 +27,9 @@ ResidualGraph::ResidualGraph(
 	bf(*this, residualDistMap_, bfProcess_, bfNextProcess_, providedTokenMap_, forbiddenTokenMap_),
 	firstPath_(true)
 {
+	reserveNode(lemon::countNodes(original));
+	reserveArc(2 * lemon::countArcs(original));
+
 	for(Graph::NodeIt origNode(original); origNode != lemon::INVALID; ++origNode)
 	{
 		Node n = addNode();
