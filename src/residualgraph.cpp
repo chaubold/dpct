@@ -42,12 +42,8 @@ ResidualGraph::ResidualGraph(
 		residualArcProvidesTokens_[arcToInversePair(origArc)] = {};
 		residualArcForbidsTokens_[arcToPair(origArc)] = {};
 		residualArcForbidsTokens_[arcToInversePair(origArc)] = {};
-		residualArcEnabled_[arcToPair(origArc)] = true;
-		residualArcEnabled_[arcToInversePair(origArc)] = true;
-		residualArcPresent_[arcToPair(origArc)] = true;
-		residualArcPresent_[arcToInversePair(origArc)] = true;
-		residualArcCost_[arcToPair(origArc)] = std::numeric_limits<double>::infinity();
-		residualArcCost_[arcToInversePair(origArc)] = std::numeric_limits<double>::infinity();
+		residualArcMap_[arcToPair(origArc)] = ResidualArcProperties();
+		residualArcMap_[arcToInversePair(origArc)] = ResidualArcProperties();
 	}
 
 	bfProcess_.reserve(lemon::countNodes(*this));
@@ -87,8 +83,9 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 			{
 				std::cout << "Disabling in-arc " << originalGraph_.id(originalGraph_.source(a)) << " -> " << ret.second << std::endl;
 				ResidualArcCandidate ac = arcToInversePair(a);
-				residualArcEnabled_[ac] = false;
-				includeArc(ac);
+				ResidualArcProperties& arcProps = residualArcMap_[ac];
+				arcProps.enabled = false;
+				includeArc(ac, arcProps);
 			}
 
 			LOG_MSG("Searching shortest path in graph with " << lemon::countNodes(*this)
@@ -176,7 +173,7 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 	        {
 	        	DEBUG_MSG("\t residual arc (" << id(this->source(a)) << ", " << id(this->target(a)) << ")");
 	        	ac = residualArcToPair(a);
-	        	pathCost += residualArcCost_.at(ac);
+	        	pathCost += residualArcMap_.at(ac).cost;
 	            std::pair<Arc, bool> arcForward = pairToOriginalArc(ac);
 	        	flow = arcForward.second ? 1 : -1;
 	            p.push_back(std::make_pair(arcForward.first, flow));
@@ -254,7 +251,7 @@ void ResidualGraph::fullGraphToDot(const std::string& filename, const Path& p) c
 	{
 		ResidualArcCandidate ac = residualArcToPair(a);
 		out_file << "\t" << id(source(a)) << " -> " << id(target(a)) << " [ label=\"" 
-			<< "cost=" << residualArcCost_.at(ac) << "\" ";
+			<< "cost=" << residualArcMap_.at(ac).cost << "\" ";
 
 		// highlight arcs on the given path
 		for(const std::pair<OriginalArc, int>& af : p)
@@ -302,7 +299,7 @@ void ResidualGraph::toDot(const std::string& filename, const Path& p, Node& s, N
 			continue;
 
 		out_file << "\t" << id(ac.first) << " -> " << id(ac.second) << " [ label=\"" 
-			<< "cost=" << residualArcCost_.at(ac) 
+			<< "cost=" << residualArcMap_.at(ac).cost
 			<< " originSource=" << originalGraph_.id(originMap_.at(ac.first))
 			<< " originTarget=" << originalGraph_.id(originMap_.at(ac.second))
 			<< "\" ";

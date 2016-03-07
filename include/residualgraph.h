@@ -31,8 +31,6 @@ public: // typedefs
     typedef Graph::NodeMap<Arc> BfPredMap;
     typedef Graph::NodeMap<double> BfDistMap;
     typedef std::vector<Node> BfProcess;
-    typedef Graph::ArcMap<int> FlowMap;
-    typedef Graph::ArcMap<bool> ArcEnabledMap;
     typedef lemon::IterableValueMap<Graph, Node, size_t> NodeUpdateOrderMap;
     typedef std::map<Node, Node> OriginMap;
     typedef std::map<Node, Node> ResidualNodeMap;
@@ -42,7 +40,22 @@ public: // typedefs
     typedef std::vector< std::pair<OriginalArc, int> > Path; // combines arc with flow delta (direction)
     typedef std::pair<Path, double> ShortestPathResult;
     typedef std::pair<Node, Node> ResidualArcCandidate;
-    typedef std::map<ResidualArcCandidate, Arc> ResidualArcMap;
+
+    struct ResidualArcProperties 
+	{
+		double cost;
+		bool enabled;
+		bool present;
+		Arc arc;
+
+		ResidualArcProperties(double c=std::numeric_limits<double>::infinity(), 
+								bool e=true, 
+								bool p=true, 
+								Arc a=lemon::INVALID):
+			cost(c), enabled(e), present(p), arc(a)
+		{}
+	};
+    typedef std::map<ResidualArcCandidate, ResidualArcProperties> ResidualArcMap;
 
 	static const bool Forward = true;
 	static const bool Backward = false;
@@ -82,7 +95,7 @@ public: // API
 
 private:
 	/// include/exclude an arc in this residual graph
-	void includeArc(const ResidualArcCandidate& a);
+	void includeArc(const ResidualArcCandidate& a, ResidualArcProperties& arcProps);
 
 	/// set arc cost for the residual arc
 	void updateResidualArc(const ResidualArcCandidate& a, double cost, int capacity);
@@ -178,16 +191,6 @@ private:
 	/// ordered by timesteps as in magnusson
 	bool useOrderedNodeListInBF_;
 
-	/// store cost of arcs, independent of whether they are enabled or not
-	std::map<ResidualArcCandidate, double> residualArcCost_;
-
-	/// last state of the arc depending on the flow values of the original graph.
-	/// if enableArc(graph,arc,false) is called, this map is not touched!
-	std::map<ResidualArcCandidate, bool> residualArcPresent_;
-
-	/// whether this arc is enabled according to constraints etc
-	std::map<ResidualArcCandidate, bool> residualArcEnabled_;
-
 	/// the distance(=cost) map of this residual graph used for shortest path computation
 	DistMap residualDistMap_;
 
@@ -233,42 +236,42 @@ inline void ResidualGraph::updateResidualArc(const ResidualArcCandidate& ac, dou
 {
 	DEBUG_MSG("Updating residual arc (" << id(ac.first) << ", " << id(ac.second) << ") with cost " 
 			<< cost << " and capacity " << capacity);
+
+	ResidualArcProperties& arcProps = residualArcMap_[ac];
 	if(capacity > 0)
 	{
-		residualArcCost_[ac] = cost;
-		residualArcPresent_[ac] = true;
+		arcProps.cost = cost;
+		arcProps.present = true;
 	}
 	else
 	{
-		residualArcPresent_[ac] = false;
+		arcProps.present = false;
 	}
-	includeArc(ac);
+	includeArc(ac, arcProps);
 }
 
-inline void ResidualGraph::includeArc(const ResidualArcCandidate& ac)
+inline void ResidualGraph::includeArc(const ResidualArcCandidate& ac, ResidualArcProperties& arcProps)
 {
-	if(!residualArcPresent_[ac] || !residualArcEnabled_[ac])
+	if(!arcProps.present || !arcProps.enabled)
 	{
 		DEBUG_MSG("disabling residual arc: " << id(ac.first) << ", " << id(ac.second));
-		auto it = residualArcMap_.find(ac);
-		if(it != residualArcMap_.end())
+		if(arcProps.arc != lemon::INVALID)
 		{
-			erase(it->second);
-			residualArcMap_.erase(it);
+			erase(arcProps.arc);
+			arcProps.arc = lemon::INVALID;
 		}
 	}
 	else
 	{
 		DEBUG_MSG("enabling residual arc: " << id(ac.first) << ", " << id(ac.second));
-		auto it = residualArcMap_.find(ac);
-		if(it == residualArcMap_.end())
+		if(arcProps.arc == lemon::INVALID)
 		{
 			Arc a = addArc(ac.first, ac.second);
-			residualArcMap_[ac] = a;
-			residualDistMap_[a] = residualArcCost_[ac];
+			arcProps.arc = a;
+			residualDistMap_[a] = arcProps.cost;
 		}
 		else
-			residualDistMap_[it->second] = residualArcCost_[ac];
+			residualDistMap_[arcProps.arc] = arcProps.cost;
 	}
 
 	dirtyNodes_.push_back(ac.second);
@@ -278,21 +281,24 @@ inline bool ResidualGraph::getArcEnabledState(const OriginalArc& a)
 {
 	// use the latest cost and flow states
 	ResidualArcCandidate ac = arcToPair(a);
-	return residualArcEnabled_[ac];
+	ResidualArcProperties& arcProps = residualArcMap_[ac];
+	return arcProps.enabled;
 }
 
 inline void ResidualGraph::enableArc(const OriginalArc& a, bool state)
 {
 	// use the latest cost and flow states
 	ResidualArcCandidate ac = arcToPair(a);
-	residualArcEnabled_[ac] = state;
-	includeArc(ac);
+	ResidualArcProperties& arcProps = residualArcMap_[ac];
+	arcProps.enabled = state;
+	includeArc(ac, arcProps);
 	
 	if(useBackArcs_)
 	{
 		ac = arcToInversePair(a);
-		residualArcEnabled_[ac] = state;
-		includeArc(ac);
+		ResidualArcProperties& arcProps = residualArcMap_[ac];
+		arcProps.enabled = state;
+		includeArc(ac, arcProps);
 	}
 }
 
