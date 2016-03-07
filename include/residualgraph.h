@@ -42,6 +42,7 @@ public: // typedefs
     typedef std::vector< std::pair<OriginalArc, int> > Path; // combines arc with flow delta (direction)
     typedef std::pair<Path, double> ShortestPathResult;
     typedef std::pair<Node, Node> ResidualArcCandidate;
+    typedef std::map<ResidualArcCandidate, Arc> ResidualArcMap;
 
 	static const bool Forward = true;
 	static const bool Backward = false;
@@ -196,6 +197,9 @@ private:
 	/// a mapping from original nodes to residual nodes
 	ResidualNodeMap residualNodeMap_;
 
+	/// a mapping from original arcs to residual arcs
+	ResidualArcMap residualArcMap_;
+
 	/// the required and provided tokens per residual arc - persistent even if arcs are disabled (and hence removed)
 	std::map<ResidualArcCandidate, TokenSet> residualArcProvidesTokens_;
 	std::map<ResidualArcCandidate, TokenSet> residualArcForbidsTokens_;
@@ -246,20 +250,25 @@ inline void ResidualGraph::includeArc(const ResidualArcCandidate& ac)
 	if(!residualArcPresent_[ac] || !residualArcEnabled_[ac])
 	{
 		DEBUG_MSG("disabling residual arc: " << id(ac.first) << ", " << id(ac.second));
-		Arc a = pairToResidualArc(ac);
-		if(a == lemon::INVALID)
-			return;
-		erase(a);
+		auto it = residualArcMap_.find(ac);
+		if(it != residualArcMap_.end())
+		{
+			erase(it->second);
+			residualArcMap_.erase(it);
+		}
 	}
 	else
 	{
 		DEBUG_MSG("enabling residual arc: " << id(ac.first) << ", " << id(ac.second));
-		Arc a = pairToResidualArc(ac);
-		if(a == lemon::INVALID)
+		auto it = residualArcMap_.find(ac);
+		if(it == residualArcMap_.end())
 		{
-			a = addArc(ac.first, ac.second);
+			Arc a = addArc(ac.first, ac.second);
+			residualArcMap_[ac] = a;
+			residualDistMap_[a] = residualArcCost_[ac];
 		}
-		residualDistMap_[a] = residualArcCost_[ac];
+		else
+			residualDistMap_[it->second] = residualArcCost_[ac];
 	}
 
 	dirtyNodes_.push_back(ac.second);
