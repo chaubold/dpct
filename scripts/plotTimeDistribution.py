@@ -12,6 +12,7 @@ def parseFile(filename):
     bfTimes = []
     pathTimes = []
     augmentTimes = []
+    constraintTimes = []
 
     with open(filename, 'r') as f:
         for line in f:
@@ -25,9 +26,11 @@ def parseFile(filename):
             elif 'extracting path took' in line:
                 t = float(line.split(' ')[-2])
                 pathTimes.append(t)
-            elif 'augmenting flow and updating' in line:
-                t = float(line.split(' ')[-2])
+            elif 'augmenting flow took' in line:
+                t = float(line.split(' ')[4])
+                t2 = float(line.split(' ')[-2])
                 augmentTimes.append(t)
+                constraintTimes.append(t2)
             elif '<<<Iteration' in line:
                 # parse flow solver log
                 a = line.split(' ')
@@ -36,7 +39,7 @@ def parseFile(filename):
             else:
                 continue
 
-    return np.array(initBfTimes), np.array(bfTimes), np.array(pathTimes), np.array(augmentTimes), np.array(iterationTimes)
+    return np.array(initBfTimes), np.array(bfTimes), np.array(pathTimes), np.array(augmentTimes), np.array(constraintTimes), np.array(iterationTimes)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="""
@@ -55,7 +58,7 @@ if __name__ == '__main__':
     colors = ['r', 'g', 'b', 'y', 'c', 'm', 'k']
 
     timeSeries = parseFile(args.log)
-    labels = ['BF init', 'BF', 'pathExtract', 'flowAugment', 'full iteration']
+    labels = ['BF init', 'BF', 'pathExtract', 'flowAugment', 'constraintUpdate', 'full iteration']
 
     for i, label in enumerate(labels):
         plt.plot(timeSeries[i], label=label, color=colors[i])

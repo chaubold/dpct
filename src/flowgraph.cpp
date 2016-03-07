@@ -125,11 +125,14 @@ double FlowGraph::maxFlowMinCostTracking(
 			// residualGraph_->toDot(outName.str(), result.first);
 #endif
 			augmentUnitFlow(result.first);
+			TimePoint afterAugmentationTime = std::chrono::high_resolution_clock::now();
+			std::chrono::duration<double> elapsed_seconds1 = afterAugmentationTime - iterationBetweenTime;
 			updateEnabledArcs(result.first);
 			currentEnergy += result.second; // decrease energy
-			TimePoint afterAugmentationTime = std::chrono::high_resolution_clock::now();
-			std::chrono::duration<double> elapsed_seconds = afterAugmentationTime - iterationBetweenTime;
-			LOG_MSG("augmenting flow and updating constraints took " << elapsed_seconds.count() << " secs");
+			TimePoint afterArcEnablingTime = std::chrono::high_resolution_clock::now();
+			std::chrono::duration<double> elapsed_seconds = afterArcEnablingTime - iterationBetweenTime;
+			LOG_MSG("augmenting flow took " << elapsed_seconds1.count() 
+				<< " and updating constraints took " << elapsed_seconds.count() << " secs");
 		}
 		TimePoint iterationEndTime = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> elapsed_seconds = iterationEndTime - iterationStartTime;
