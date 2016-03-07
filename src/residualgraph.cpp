@@ -42,6 +42,12 @@ ResidualGraph::ResidualGraph(
 		residualArcProvidesTokens_[arcToInversePair(origArc)] = {};
 		residualArcForbidsTokens_[arcToPair(origArc)] = {};
 		residualArcForbidsTokens_[arcToInversePair(origArc)] = {};
+		residualArcEnabled_[arcToPair(origArc)] = true;
+		residualArcEnabled_[arcToInversePair(origArc)] = true;
+		residualArcPresent_[arcToPair(origArc)] = true;
+		residualArcPresent_[arcToInversePair(origArc)] = true;
+		residualArcCost_[arcToPair(origArc)] = std::numeric_limits<double>::infinity();
+		residualArcCost_[arcToInversePair(origArc)] = std::numeric_limits<double>::infinity();
 	}
 
 	bfProcess_.reserve(lemon::countNodes(*this));
