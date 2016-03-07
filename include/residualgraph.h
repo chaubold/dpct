@@ -38,8 +38,7 @@ public: // typedefs
     typedef std::map<Node, Node> ResidualNodeMap;
     typedef size_t Token;
     typedef std::set<Token> TokenSet;
-    typedef Graph::ArcMap<TokenSet> TokenSetArcMap;
-    typedef lemon::EarlyStoppingBellmanFord<Graph, DistMap, Token> BellmanFord;
+    typedef lemon::EarlyStoppingBellmanFord<Graph, DistMap> BellmanFord;
     typedef std::vector< std::pair<OriginalArc, int> > Path; // combines arc with flow delta (direction)
     typedef std::pair<Path, double> ShortestPathResult;
     typedef std::pair<Node, Node> ResidualArcCandidate;
@@ -201,10 +200,6 @@ private:
 	std::map<ResidualArcCandidate, TokenSet> residualArcProvidesTokens_;
 	std::map<ResidualArcCandidate, TokenSet> residualArcForbidsTokens_;
 
-	/// the actual arc maps used by BellmanFord
-	TokenSetArcMap forbiddenTokenMap_;
-	TokenSetArcMap providedTokenMap_;
-
 	/// store an index for each node depending on when it should be updated
 	NodeUpdateOrderMap nodeUpdateOrderMap_;
 
@@ -265,8 +260,6 @@ inline void ResidualGraph::includeArc(const ResidualArcCandidate& ac)
 			a = addArc(ac.first, ac.second);
 		}
 		residualDistMap_[a] = residualArcCost_[ac];
-		providedTokenMap_[a] = residualArcProvidesTokens_[ac];
-		forbiddenTokenMap_[a] = residualArcForbidsTokens_[ac];
 	}
 
 	dirtyNodes_.push_back(ac.second);
@@ -300,18 +293,12 @@ inline void ResidualGraph::addForbiddenToken(const OriginalArc& a, bool forward,
 {
 	ResidualArcCandidate ac = undirectedArcToPair(a, forward);
 	residualArcForbidsTokens_[ac].insert(token);
-	Arc resArc = pairToResidualArc(ac);
-	if(resArc != lemon::INVALID)
-		forbiddenTokenMap_[resArc].insert(token);
 }
 
 inline void ResidualGraph::removeForbiddenToken(const OriginalArc& a, bool forward, Token token)
 {
 	ResidualArcCandidate ac = undirectedArcToPair(a, forward);
 	residualArcForbidsTokens_[ac].erase(token);
-	Arc resArc = pairToResidualArc(ac);
-	if(resArc != lemon::INVALID)
-		forbiddenTokenMap_[resArc].erase(token);
 }
 
 
@@ -320,18 +307,12 @@ inline void ResidualGraph::addProvidedToken(const OriginalArc& a, bool forward, 
 {
 	ResidualArcCandidate ac = undirectedArcToPair(a, forward);
 	residualArcProvidesTokens_[ac].insert(token);
-	Arc resArc = pairToResidualArc(ac);
-	if(resArc != lemon::INVALID)
-		providedTokenMap_[resArc].insert(token);
 }
 
 inline void ResidualGraph::removeProvidedToken(const OriginalArc& a, bool forward, Token token)
 {
 	ResidualArcCandidate ac = undirectedArcToPair(a, forward);
 	residualArcProvidesTokens_[ac].erase(token);
-	Arc resArc = pairToResidualArc(ac);
-	if(resArc != lemon::INVALID)
-		providedTokenMap_[resArc].erase(token);
 }
 
 

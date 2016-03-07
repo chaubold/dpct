@@ -16,15 +16,13 @@ ResidualGraph::ResidualGraph(
 		bool useOrderedNodeListInBF
 ):
 	residualDistMap_(*this),
-	forbiddenTokenMap_(*this),
-	providedTokenMap_(*this),
 	nodeUpdateOrderMap_(*this),
 	originalGraph_(original),
 	useBackArcs_(useBackArcs),
 	bfPredMap_(*this),
 	bfDistMap_(*this),
 	useOrderedNodeListInBF_(useOrderedNodeListInBF),
-	bf(*this, residualDistMap_, bfProcess_, bfNextProcess_, providedTokenMap_, forbiddenTokenMap_),
+	bf(*this, residualDistMap_, bfProcess_, bfNextProcess_),
 	firstPath_(true)
 {
 	reserveNode(lemon::countNodes(original));
@@ -37,6 +35,15 @@ ResidualGraph::ResidualGraph(
 		residualNodeMap_[origNode] = n;
 		nodeUpdateOrderMap_.set(n, nodeTimestepMap.at(origNode));
 	}
+
+	for(Graph::ArcIt origArc(original); origArc != lemon::INVALID; ++origArc)
+	{
+		residualArcProvidesTokens_[arcToPair(origArc)] = {};
+		residualArcProvidesTokens_[arcToInversePair(origArc)] = {};
+		residualArcForbidsTokens_[arcToPair(origArc)] = {};
+		residualArcForbidsTokens_[arcToInversePair(origArc)] = {};
+	}
+
 	bfProcess_.reserve(lemon::countNodes(*this));
 	bfNextProcess_.reserve(lemon::countNodes(*this));
 	dirtyNodes_.reserve(lemon::countNodes(*this));

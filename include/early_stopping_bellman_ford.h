@@ -91,7 +91,7 @@ namespace lemon {
   /// Default traits class of EarlyStoppingBellmanFord class.
   /// \param GR The type of the digraph.
   /// \param LEN The type of the length map.
-  template<typename GR, typename LEN, typename TOK>
+  template<typename GR, typename LEN>
   struct EarlyStoppingBellmanFordDefaultTraits {
     /// The type of the digraph the algorithm runs on.
     typedef GR Digraph;
@@ -104,33 +104,6 @@ namespace lemon {
 
     /// The type of the arc lengths.
     typedef typename LEN::Value Value;
-
-    // ---------------------------------------------------------
-    // NEW
-    
-    /// \brief The token datatype
-    typedef TOK Token;
-    
-    /// \brief A set of tokens
-    typedef std::set<Token> TokenSet;
-
-    /// \brief Store the set of tokens collected on the path to each node from the source
-    typedef typename GR::template NodeMap<TokenSet> TokenSetNodeMap;
-
-    /// \brief Set of tokens provided or forbidden on an arc
-    typedef typename GR::template ArcMap<TokenSet> TokenSetArcMap;
-
-    /// \brief Instantiates a \c TokenSetMap.
-    ///
-    /// This function instantiates a \ref TokenSetMap.
-    /// \param g is the digraph to which we would like to define the
-    /// \ref TokenSetMap.
-    static TokenSetNodeMap *createTokenSetNodeMap(const GR& g) {
-      return new TokenSetNodeMap(g);
-    }
-
-    // END NEW
-    // ---------------------------------------------------------
 
     /// \brief Operation traits for Bellman-Ford algorithm.
     ///
@@ -216,12 +189,11 @@ namespace lemon {
   /// In most cases, this parameter should not be set directly,
   /// consider to use the named template parameters instead.
 #ifdef DOXYGEN
-  template <typename GR, typename LEN, typename TOK, typename TR>
+  template <typename GR, typename LEN, typename TR>
 #else
   template <typename GR=ListDigraph,
             typename LEN=typename GR::template ArcMap<int>,
-            typename TOK=size_t,
-            typename TR=EarlyStoppingBellmanFordDefaultTraits<GR,LEN,TOK> >
+            typename TR=EarlyStoppingBellmanFordDefaultTraits<GR,LEN> >
 #endif
   class EarlyStoppingBellmanFord {
   public:
@@ -244,14 +216,6 @@ namespace lemon {
     /// "operation traits class" of the algorithm.
     typedef typename TR::OperationTraits OperationTraits;
 
-    // ---------------------------------------------------------
-    // NEW
-    typedef typename TR::TokenSetNodeMap TokenSetNodeMap;
-    typedef typename TR::TokenSetArcMap TokenSetArcMap;
-    typedef typename TR::TokenSet TokenSet;
-    typedef typename TR::Token Token;
-    // END NEW
-    // ---------------------------------------------------------
 
     ///\brief The \ref lemon::EarlyStoppingBellmanFordDefaultTraits "traits class"
     ///of the algorithm.
@@ -277,22 +241,6 @@ namespace lemon {
     // Indicates if _dist is locally allocated (true) or not.
     bool _local_dist;
 
-    // ---------------------------------------------------------
-    // NEW
-    // Pointer to the map of forbidden tokens per arc
-    const TokenSetArcMap *_forbiddenTokens;
-    
-    // Pointer to the map of provided tokens per arc
-    const TokenSetArcMap *_providedTokens;
-    
-    // set of collected tokens on the shortest path to a node
-    TokenSetNodeMap *_collectedTokens;
-    // whether the collectedTokens map is stored locally
-    bool _local_collectedTokens;
-
-    // END NEW
-    // ---------------------------------------------------------
-
     // Store (single = last added) source
     Node _source;
 
@@ -311,10 +259,6 @@ namespace lemon {
       if(!_dist) {
         _local_dist = true;
         _dist = Traits::createDistMap(*_gr);
-      }
-      if(!_collectedTokens) {
-        _local_collectedTokens = true;
-        _collectedTokens = Traits::createTokenSetNodeMap(*_gr);
       }
       if(!_mask) {
         _mask = new MaskMap(*_gr);
@@ -405,15 +349,10 @@ namespace lemon {
     EarlyStoppingBellmanFord(const Digraph& g, 
         const LengthMap& length,
         std::vector<Node>& process,
-        std::vector<Node>& nextProcess,
-        const TokenSetArcMap& providedTokens,
-        const TokenSetArcMap& forbiddenTokens) :
+        std::vector<Node>& nextProcess) :
       _gr(&g), 
       _length(&length),
-      _providedTokens(&providedTokens),
-      _forbiddenTokens(&forbiddenTokens),
       _pred(0), _local_pred(false),
-      _collectedTokens(0), _local_collectedTokens(false),
       _dist(0), _local_dist(false), 
       _mask(0),
       _process(process), _nextProcess(nextProcess)
@@ -423,7 +362,6 @@ namespace lemon {
     ~EarlyStoppingBellmanFord() {
       if(_local_pred) delete _pred;
       if(_local_dist) delete _dist;
-      if(_local_collectedTokens) delete _collectedTokens;
       if(_mask) delete _mask;
     }
 
@@ -468,18 +406,6 @@ namespace lemon {
         _local_dist=false;
       }
       _dist = &map;
-      return *this;
-    }
-
-    /// \brief Sets the map that stores the tokens of the nodes.
-    ///
-    /// \return <tt>(*this)</tt>
-    EarlyStoppingBellmanFord &collectedTokensMap(TokenSetNodeMap &map) {
-      if(_local_collectedTokens) {
-        delete _collectedTokens;
-        _local_collectedTokens=false;
-      }
-      _collectedTokens = &map;
       return *this;
     }
 
@@ -637,79 +563,6 @@ namespace lemon {
       }
     }
 
-    /**
-     * @brief Checks whether none of the tokens forbidden for this arc have been collected up to its source node
-     * @return true if the arc can be traversed
-     */
-    const bool checkTokenDemands(Arc it) const
-    {
-      Node source = _gr->source(it);
-      const TokenSet& forbiddenTokens = (*_forbiddenTokens)[it];
-      if(forbiddenTokens.size() == 0)
-        return true;
-      const TokenSet& collectedTokens = (*_collectedTokens)[source];
-      
-      bool contained = std::includes(collectedTokens.begin(), collectedTokens.end(), forbiddenTokens.begin(), forbiddenTokens.end());
-      // std::cout << "Checking whether " << collectedTokens << " contains " << forbiddenTokens << ": " << (contained?"yes":"no") << std::endl;
-      return !contained;
-    }
-
-    void updateTokenListAtTarget(Arc it)
-    {
-      Node source = _gr->source(it);
-      Node target = _gr->target(it);
-      const TokenSet& providedTokens = (*_providedTokens)[it];
-      const TokenSet& collectedTokens = (*_collectedTokens)[source];
-
-      TokenSet newTokens;
-      std::set_union(collectedTokens.begin(), collectedTokens.end(), 
-        providedTokens.begin(), providedTokens.end(), std::inserter(newTokens, newTokens.end()));
-
-      _collectedTokens->set(target, newTokens);
-    }
-
-    /// \brief Executes one weak round from the Bellman-Ford algorithm.
-    ///
-    /// If the algorithm calculated the distances in the previous round
-    /// at least for the paths of at most \c k arcs, then this function
-    /// will calculate the distances at least for the paths of at most
-    /// <tt>k+1</tt> arcs.
-    /// This function does not make it possible to calculate the shortest
-    /// path distances exactly for paths consisting of at most \c k arcs,
-    /// this is why it is called weak round.
-    ///
-    /// \return \c true when the algorithm have not found more shorter
-    /// paths.
-    ///
-    /// \see ActiveIt
-    bool processNextWeakRoundWithTokens() {
-      for (int i = 0; i < int(_process.size()); ++i) {
-        _mask->set(_process[i], false);
-      }
-      _nextProcess.clear();
-      for (int i = 0; i < int(_process.size()); ++i) {
-        for (OutArcIt it(*_gr, _process[i]); it != INVALID; ++it) {
-          Node target = _gr->target(it);
-          Value relaxed =
-            OperationTraits::plus((*_dist)[_process[i]], (*_length)[it]);
-          if (OperationTraits::less(relaxed, (*_dist)[target]) && checkTokenDemands(it)) {
-            _pred->set(target, it);
-            _dist->set(target, relaxed);
-            
-            updateTokenListAtTarget(it);
-            
-            if (!(*_mask)[target]) {
-              _mask->set(target, true);
-              _nextProcess.push_back(target);
-            }
-          }
-        }
-      }
-
-      _process.swap(_nextProcess);
-      return _process.empty();
-    }
-
     /// \brief Executes one weak round from the Bellman-Ford algorithm.
     ///
     /// If the algorithm calculated the distances in the previous round
@@ -787,15 +640,12 @@ namespace lemon {
     ///
     /// \pre init() must be called and at least one root node should be
     /// added with addSource() before using this function.
-    bool checkedStart(int numIterationsBetweenNegativeCycleChecks, int numIterations, bool useTokens=false) {
+    bool checkedStart(int numIterationsBetweenNegativeCycleChecks, int numIterations) {
       int num = (numIterations <= 0) ? countNodes(*_gr) : numIterations;
 
       bool result;
       for (int i = 0; i < num; ++i) {
-        if(useTokens)
-          result = processNextWeakRoundWithTokens();
-        else
-          result = processNextWeakRound();
+        result = processNextWeakRound();
 
         if((*_pred)[_source] != INVALID)
         {
