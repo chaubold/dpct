@@ -119,7 +119,6 @@ int main(int argc, char** argv) {
 			    		  << zeroEnergy - score << std::endl;
 
 			    std::cout << "Extracting solution" << std::endl;
-			    // graphBuilder.getSolutionFromPaths(paths);
 			}
 
 		    // set up flow
@@ -131,11 +130,6 @@ int main(int argc, char** argv) {
 
 		    // initialize flow with magnusson's result
 		    std::cout << "initializing flow solver" << std::endl;
-		    // flowGraphBuilder.setNodeValues(graphBuilder.getNodeValues());
-		    // flowGraphBuilder.setArcValues(graphBuilder.getArcValues());
-		    // flowGraphBuilder.setDivisionValues(graphBuilder.getDivisionValues());
-		    // flowGraphBuilder.setAppearanceValues(graphBuilder.getAppearanceValues());
-		    // flowGraphBuilder.setDisappearanceValues(graphBuilder.getDisappearanceValues());
 		    flowGraph.initializeResidualGraph(true, useOrderedNodeListInBF);
 
 		    auto flowPaths = graphBuilder.translateSolution(paths, flowGraphBuilder);
@@ -148,7 +142,7 @@ int main(int argc, char** argv) {
 
 		    // track flow
 		    std::cout << "beginning tracking" << std::endl;
-		    double energy = flowGraph.maxFlowMinCostTracking(zeroEnergy - score, true, maxNumPaths, useOrderedNodeListInBF, partialBFUpdates);
+			flowGraph.maxFlowMinCostTracking(zeroEnergy - score, true, maxNumPaths, useOrderedNodeListInBF, partialBFUpdates);
 		    flowJsonReader.saveResultJson(outputFilename);
 		}
 		else

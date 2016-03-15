@@ -84,7 +84,6 @@ protected:
 // ----------------------------------------------------------------------------------------
 /**
  * @brief Implementation of building methods for the flow graph
- * @details [long description]
  * 
  */
 class FlowGraphBuilder : public GraphBuilder {
@@ -160,99 +159,6 @@ public:
 		}
 
 		return divisionValueMap;
-	}
-
-	void setNodeValues(const NodeValueMap& nodeValueMap)
-	{
-		FlowGraph::FlowMap& flowMap = graph_->getFlowMap();
-		for(auto iter : idToFlowGraphNodeMap_)
-		{
-			if(nodeValueMap.find(iter.first) != nodeValueMap.end())
-			{
-				flowMap[iter.second.a] = nodeValueMap.at(iter.first);
-				DEBUG_MSG("Setting use count of node " << iter.first << " to " << flowMap[iter.second.a]);
-			}
-			else
-				flowMap[iter.second.a] = 0;
-		}
-	}
-
-	void setArcValues(const ArcValueMap& arcValueMap)
-	{
-		FlowGraph::FlowMap& flowMap = graph_->getFlowMap();
-		for(auto iter : idTupleToFlowGraphArcMap_)
-		{
-			if(arcValueMap.find(iter.first) != arcValueMap.end())
-			{
-				flowMap[iter.second] = arcValueMap.at(iter.first);
-				DEBUG_MSG("Setting flow of arc " << iter.first.first << "->" << iter.first.second << " to " << flowMap[iter.second]);
-			}
-			else
-				flowMap[iter.second] = 0;
-		}
-	}
-
-	void setDivisionValues(const DivisionValueMap& divisionValueMap)
-	{
-		FlowGraph::FlowMap& flowMap = graph_->getFlowMap();
-		for(auto iter : idToFlowGraphDivisionArcMap_)
-		{
-			if(divisionValueMap.find(iter.first) != divisionValueMap.end())
-			{
-				flowMap[iter.second] = divisionValueMap.at(iter.first) ? 1 : 0;
-				DEBUG_MSG("Setting division flow of node " << iter.first << " to " << flowMap[iter.second]);
-			}
-			else
-				flowMap[iter.second] = 0;
-		}
-	}
-
-	void setAppearanceValues(const AppearanceValueMap& appearanceValueMap)
-	{
-		FlowGraph::FlowMap& flowMap = graph_->getFlowMap();
-		for(auto iter : idToFlowGraphNodeMap_)
-		{
-			if(appearanceValueMap.find(iter.first) != appearanceValueMap.end())
-			{
-				bool found = false;
-				for(FlowGraph::Graph::InArcIt ia(graph_->getGraph(), iter.second.u); ia != lemon::INVALID; ++ia)
-				{
-					if(graph_->getGraph().source(ia) == graph_->getSource())
-					{
-						found=true;
-						flowMap[ia] = appearanceValueMap.at(iter.first);
-						DEBUG_MSG("Setting appearance of node " << iter.first << " to " << flowMap[ia]);
-						break;
-					}
-				}
-				if(!found)
-					throw std::runtime_error("could not find appearance arc to activate!");
-			}
-		}
-	}
-
-	void setDisappearanceValues(const DisappearanceValueMap& disappearanceValueMap)
-	{
-		FlowGraph::FlowMap& flowMap = graph_->getFlowMap();
-		for(auto iter : idToFlowGraphNodeMap_)
-		{
-			if(disappearanceValueMap.find(iter.first) != disappearanceValueMap.end())
-			{
-				bool found = false;
-				for(FlowGraph::Graph::OutArcIt oa(graph_->getGraph(), iter.second.v); oa != lemon::INVALID; ++oa)
-				{
-					if(graph_->getGraph().target(oa) == graph_->getTarget())
-					{
-						found=true;
-						flowMap[oa] = disappearanceValueMap.at(iter.first);
-						DEBUG_MSG("Setting disappearance of node " << iter.first << " to " << flowMap[oa]);
-						break;
-					}
-				}
-				if(!found)
-					throw std::runtime_error("could not find disappearance arc to activate!");
-			}
-		}
 	}
 
 	FlowGraph::Arc getAppearanceArc(size_t nodeId)

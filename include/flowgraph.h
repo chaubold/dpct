@@ -26,11 +26,16 @@ public: // typedefs
 	typedef lemon::ListDigraph Graph;
     typedef Graph::Node Node;
     typedef Graph::Arc Arc;
+
+    /**
+     * @brief Detections in the flow graph are represented as two nodes with a connected arc
+     */
     struct FullNode{
     	Node u;
     	Node v;
     	Arc a;
     };
+
     typedef Graph::ArcMap<double> DistMap;
     typedef Graph::ArcMap<int> FlowMap;
     typedef Graph::ArcMap<int> CapacityMap;
@@ -43,6 +48,7 @@ public: // typedefs
 public: // API
 	FlowGraph();
 
+	/// add a node to the graph at a certain timestep
 	FullNode addNode(const CostVector& costs, size_t timestep=0);
 
 	Arc addArc(Node source, Node target, const CostVector& costs);
@@ -57,6 +63,8 @@ public: // API
 	 * @param initialStateEnergy the energy of the system if no objects are sent through (state 0)
 	 * @param useBackArcs whether the residual graph should contain the edges that allow backward flow
 	 * @param maxNumPaths if >0 this  limits the number of augmenting shortest paths that should be found
+	 * @param useOrderedNodeListInBF uses the time steps of the nodes to infer a topological ordering
+	 * @param partialBFUpdates update only the nodes which might have changed in the last iteration
 	 */
 	double maxFlowMinCostTracking(
 		double initialStateEnergy=0.0, 
@@ -65,12 +73,18 @@ public: // API
 		bool useOrderedNodeListInBF=true,
 		bool partialBFUpdates=true);
 
+	/// get source node of the graph
 	Node getSource() const { return source_; }
+	/// get one of the targets: if the index > 0 this can lazily add additional target nodes (needed for duplicated graphs only)
 	Node getTarget(size_t index=0);
+	/// check whether this node is any of the target nodes
 	bool isTarget(Node t) const;
+	/// @return the sum of flow along out arcs of n
 	int sumOutFlow(Node n) const;
+	/// @return the sum of flow along in arcs of n
 	int sumInFlow(Node n) const;
 
+	/// return the full flow map, which can be indexed by arc
 	FlowMap& getFlowMap() { return flowMap_; }
 
 	/// get the graph (used in test)
@@ -110,7 +124,7 @@ private:
 	void printPath(const Path& p);
 	void printAllFlows();
 
-	// define functions for enabling / disabling
+	// define functions for enabling / disabling arcs (could be done easier by deriving the proper capacities)
 	void toggleOutArcs(const Node& n, bool state);
 	void toggleInArcs(const Node& n, bool state);
 	void toggleOutArcsBut(const Node& n, const Node& exception, bool state);
@@ -124,7 +138,11 @@ private:
 private:
 	/// graph containing all nodes and arcs and duplicated parents of divisions
 	Graph baseGraph_;
+
+	/// source node
 	Node source_;
+	
+	/// target nodes, contains at least one target!
 	std::vector<Node> targets_;
 
 	/// residual graph

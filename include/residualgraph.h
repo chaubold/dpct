@@ -210,7 +210,7 @@ private:
 	/// store an index for each node depending on when it should be updated
 	NodeUpdateOrderMap nodeUpdateOrderMap_;
 
-	/// create the node distance and predecessor maps only once and pass them to BF in each iteration
+	/// create the node distance and predecessor maps etc. only once and pass them to BF in each iteration
 	BfDistMap bfDistMap_;
 	BfPredMap bfPredMap_;
 	BfProcess bfProcess_;
