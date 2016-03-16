@@ -6,6 +6,8 @@
 #include "magnusson.h"
 #include "flowgraph.h"
 #include "jsongraphreader.h"
+#include "flowgraphbuilder.h"
+#include "magnussongraphbuilder.h"
 
 using namespace dpct;
 

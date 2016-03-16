@@ -1,5 +1,5 @@
 #include "jsongraphreader.h"
-
+#include <assert.h>
 #include <fstream>
 
 namespace dpct
