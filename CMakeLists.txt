@@ -3,7 +3,6 @@ project(dpct)
 
 # ------------------------------------------
 # user defined configuration
-set(WITH_PYTHON "false" CACHE BOOL "Build with python wrapper.")
 set(WITH_TESTS "false" CACHE BOOL "Build tests.")
 set(WITH_LOG "false" CACHE BOOL "Enable logs.")
 
@@ -66,8 +65,3 @@ if(WITH_TESTS)
 endif()
 
 add_subdirectory(bin)
-
-if(WITH_PYTHON)
-	add_subdirectory(python)
-endif()
-
