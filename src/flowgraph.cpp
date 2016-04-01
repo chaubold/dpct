@@ -111,7 +111,9 @@ double FlowGraph::maxFlowMinCostTracking(
 
 		if(result.second > -0.00000001)
 		{
+#ifdef DEBUG_LOG
 			printPath(result.first); std::cout << std::endl;
+#endif
 			break;
 		}
 
@@ -131,12 +133,12 @@ double FlowGraph::maxFlowMinCostTracking(
 			currentEnergy += result.second; // decrease energy
 			TimePoint afterArcEnablingTime = std::chrono::high_resolution_clock::now();
 			std::chrono::duration<double> elapsed_seconds = afterArcEnablingTime - iterationBetweenTime;
-			LOG_MSG("augmenting flow took " << elapsed_seconds1.count() 
+			DEBUG_MSG("augmenting flow took " << elapsed_seconds1.count() 
 				<< " and updating constraints took " << elapsed_seconds.count() << " secs");
 		}
 		TimePoint iterationEndTime = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> elapsed_seconds = iterationEndTime - iterationStartTime;
-		LOG_MSG("\t<<<Iteration " << iter << " done in " << elapsed_seconds.count() 
+		DEBUG_MSG("\t<<<Iteration " << iter << " done in " << elapsed_seconds.count() 
 				<< " secs, system Energy=" << currentEnergy);
 		iter++;
 	}
@@ -151,13 +153,13 @@ double FlowGraph::maxFlowMinCostTracking(
 
 void FlowGraph::initializeResidualGraph(bool useBackArcs, bool useOrderedNodeListInBF)
 {
-	std::cout << "Initializing Residual Graph ..." << std::flush;
+	LOG_MSG("Initializing Residual Graph ...");
 	TimePoint initStartTime = std::chrono::high_resolution_clock::now();
 	residualGraph_ = std::make_shared<ResidualGraph>(baseGraph_, source_, nodeTimestepMap_, useBackArcs, useOrderedNodeListInBF);
 	
 	TimePoint initEndTime = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed_seconds = initEndTime - initStartTime;
-    std::cout << " constructor finished in " << elapsed_seconds.count() << " secs ... " << std::endl;
+    DEBUG_MSG(" constructor finished in " << elapsed_seconds.count() << " secs ... ");
 
 	for(Graph::ArcIt a(baseGraph_); a != lemon::INVALID; ++a)
     {
@@ -185,8 +187,7 @@ void FlowGraph::initializeResidualGraph(bool useBackArcs, bool useOrderedNodeLis
 
     initEndTime = std::chrono::high_resolution_clock::now();
 	elapsed_seconds = initEndTime - initStartTime;
-    std::cout << " done in " << elapsed_seconds.count() << " secs" << std::endl;
-
+    DEBUG_MSG(" done in " << elapsed_seconds.count() << " secs");
 }
 
 void FlowGraph::printPath(const Path& p)

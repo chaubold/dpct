@@ -66,8 +66,7 @@ void Magnusson::batchFirstIteration(double& score, Solution& paths)
         // add to solution
         paths.push_back(p);
         DEBUG_MSG("Adding path of length " << p.size() << " has score: " << p.back()->getCurrentScore());
-        std::cout << "\rFound " << paths.size() << " paths...";
-        std::cout.flush();
+        DEBUG_MSG("\rFound " << paths.size() << " paths...");
     }
 
     // update only once
@@ -142,7 +141,7 @@ double Magnusson::track(Solution& paths)
         paths.push_back(p);
         score += scoreDelta;
         // std::chrono::time_point<std::chrono::high_resolution_clock> td = std::chrono::high_resolution_clock::now();
-        std::cout << "Found " << paths.size() << " paths... overall score=" << score << " after " << toc() << " secs" << std::endl;
+        LOG_MSG("Found " << paths.size() << " paths... overall score=" << score << " after " << toc() << " secs");
     }
 
     // done

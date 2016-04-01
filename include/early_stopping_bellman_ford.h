@@ -34,6 +34,8 @@
 #include <unordered_set>
 #include <set>
 
+#include "log.h"
+
 namespace lemon {
 
   /// \brief Default OperationTraits for the EarlyStoppingBellmanFord algorithm class.
@@ -510,8 +512,6 @@ namespace lemon {
       for(NodeIt it(*_gr); it != INVALID; ++it) {
         _mask->set(it, false);
       }
-
-      std::cout << "After update: " << _process.size() << " nodes are about to be processed" << std::endl;
     }
 
     /// \brief Adds a new source node.
@@ -649,7 +649,7 @@ namespace lemon {
 
         if((*_pred)[_source] != INVALID)
         {
-          std::cout << "\tCycle returned to source with negative cost " << (*_dist)[_source] << " in iteration " << i << std::endl;
+          LOG_MSG("\tCycle returned to source with negative cost " << (*_dist)[_source] << " in iteration " << i);
           return false;
         }
 
@@ -664,7 +664,7 @@ namespace lemon {
           lemon::Path<Digraph> cycle = negativeCycle();
           if(cycle.length() > 0)
           {
-              std::cout << "\t!!! Found negative cycle in iteration " << i << std::endl;
+              DEBUG_MSG("\t!!! Found negative cycle in iteration " << i);
               return false;
           }
         }

@@ -73,7 +73,7 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 		// if the last path found a token violation, we'll remove the back arc of the mother for this iteration
 		if(!ret.first)
 		{
-			std::cout << "Retrying to find shortest path..." << ret.second << std::endl;
+			DEBUG_MSG("Retrying to find shortest path..." << ret.second);
 			OriginalNode n = originalGraph_.nodeFromId(ret.second);
 			if(n == lemon::INVALID)
 				throw std::runtime_error("Could not find original arc that violated the token specs!");
@@ -81,14 +81,14 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 			// this should only be exactly one
 			for(Graph::InArcIt a(originalGraph_, n); a != lemon::INVALID; ++a)
 			{
-				std::cout << "Disabling in-arc " << originalGraph_.id(originalGraph_.source(a)) << " -> " << ret.second << std::endl;
+				DEBUG_MSG("Disabling in-arc " << originalGraph_.id(originalGraph_.source(a)) << " -> " << ret.second);
 				ResidualArcCandidate ac = arcToInversePair(a);
 				ResidualArcProperties& arcProps = residualArcMap_[ac];
 				arcProps.enabled = false;
 				includeArc(ac, arcProps);
 			}
 
-			LOG_MSG("Searching shortest path in graph with " << lemon::countNodes(*this)
+			DEBUG_MSG("Searching shortest path in graph with " << lemon::countNodes(*this)
 			<< " nodes and " << lemon::countArcs(*this) << " arcs");
 		}
 
@@ -105,7 +105,7 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 		}
 		else if(!dirtyNodes_.empty())
 		{
-			LOG_MSG("Running BF Update for " << dirtyNodes_.size() << " nodes");
+			DEBUG_MSG("Running BF Update for " << dirtyNodes_.size() << " nodes");
 			bf.update(dirtyNodes_, nodeUpdateOrderMap_);
 		}
 		dirtyNodes_.clear();
@@ -117,11 +117,11 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 		// BUT: the number of paths found changes, which means we are not finding the same things... (different negative cycles?)
 		TimePoint iterationStartTime = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> elapsed_seconds = iterationStartTime - iterationInitTime;
-		LOG_MSG("initializing BF took " << elapsed_seconds.count() << " secs");
+		DEBUG_MSG("initializing BF took " << elapsed_seconds.count() << " secs");
 		bool foundPath = bf.checkedStart(300, 2000);
 		TimePoint iterationEndTime = std::chrono::high_resolution_clock::now();
 		elapsed_seconds = iterationEndTime - iterationStartTime;
-		LOG_MSG("BF took " << elapsed_seconds.count() << " secs");
+		DEBUG_MSG("BF took " << elapsed_seconds.count() << " secs");
 
 		if(foundPath)
 	    {	
@@ -150,7 +150,7 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 	            	if(std::find(p.begin(), p.end(), std::make_pair(arcForward.first, flow)) != p.end())
 	            	{
 	            		// throw std::runtime_error("Found loop in path!");
-	            		LOG_MSG("Found loop in path!");
+	            		DEBUG_MSG("Found loop in path!");
 	            		p.push_back(std::make_pair(arcForward.first, flow));
 	            		return std::make_pair(p, std::numeric_limits<double>::infinity());
 	            		// p.clear();
@@ -186,13 +186,13 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 
 	    TimePoint pathExtractionTime = std::chrono::high_resolution_clock::now();
 		elapsed_seconds = pathExtractionTime - iterationEndTime;
-		LOG_MSG("extracting path took " << elapsed_seconds.count() << " secs");
+		DEBUG_MSG("extracting path took " << elapsed_seconds.count() << " secs");
 
 		// analyze the new path
 	    ret = pathSatisfiesTokenSpecs(p);
 	    if(!ret.first)
 	    {
-	    	std::cout << "############## Found path that violates the token specs! " << ret.second << std::endl;
+	    	DEBUG_MSG("############## Found path that violates the token specs! " << ret.second);
 	    	p.clear();
 	    	pathCost = 0.0;
 	    }
