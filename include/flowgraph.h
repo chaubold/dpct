@@ -208,7 +208,6 @@ inline void FlowGraph::toggleOutArcsBut(const Node& n, const Node& exception, bo
 inline void FlowGraph::toggleOutArcsButTarget(const Node& n, bool state)
 {
 	DEBUG_MSG("Setting out arcs of " << baseGraph_.id(n) 
-		<< " but " << baseGraph_.id(exception) 
 		<< " to " << (state?"true":"false"));
 	for(Graph::OutArcIt oa(baseGraph_, n); oa != lemon::INVALID; ++oa)
 	{

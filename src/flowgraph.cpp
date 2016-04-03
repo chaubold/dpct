@@ -96,6 +96,7 @@ double FlowGraph::maxFlowMinCostTracking(
 	ResidualGraph::ShortestPathResult result;
 	size_t iter=0;
 	double currentEnergy = initialStateEnergy;
+	LOG_MSG("Beginning tracking ...");
 	do
 	{
 		TimePoint iterationStartTime = std::chrono::high_resolution_clock::now();
@@ -187,7 +188,7 @@ void FlowGraph::initializeResidualGraph(bool useBackArcs, bool useOrderedNodeLis
 
     initEndTime = std::chrono::high_resolution_clock::now();
 	elapsed_seconds = initEndTime - initStartTime;
-    DEBUG_MSG(" done in " << elapsed_seconds.count() << " secs");
+    LOG_MSG(" done in " << elapsed_seconds.count() << " secs");
 }
 
 void FlowGraph::printPath(const Path& p)
