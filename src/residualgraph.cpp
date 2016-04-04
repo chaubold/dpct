@@ -118,7 +118,8 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 		TimePoint iterationStartTime = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> elapsed_seconds = iterationStartTime - iterationInitTime;
 		DEBUG_MSG("initializing BF took " << elapsed_seconds.count() << " secs");
-		bool foundPath = bf.checkedStart(300, 2000);
+		
+		bool foundPath = bf.checkedStart(300, 0);
 		TimePoint iterationEndTime = std::chrono::high_resolution_clock::now();
 		elapsed_seconds = iterationEndTime - iterationStartTime;
 		DEBUG_MSG("BF took " << elapsed_seconds.count() << " secs");
