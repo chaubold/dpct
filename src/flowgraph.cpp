@@ -1,6 +1,9 @@
 #include "flowgraph.h"
 #include "log.h"
 
+#include <lemon/capacity_scaling.h>
+#include <lemon/preflow.h>
+
 #include <assert.h>
 #include <limits>
 
@@ -79,6 +82,41 @@ FlowGraph::Arc FlowGraph::allowMitosis(FlowGraph::FullNode parent,
 	return a;
 }
 
+double FlowGraph::maxFlow()
+{
+ 	TimePoint startTime = std::chrono::high_resolution_clock::now();
+
+	// first find the max flow through the graph
+	lemon::Preflow<Graph, CapacityMap> maxFlow(baseGraph_, capacityMap_, source_, targets_[0]);
+	maxFlow.run();
+
+	// then use a min-cost flow implementation to find the flow map
+	lemon::CapacityScaling<Graph, int, double> minCostFlow(baseGraph_);
+	minCostFlow.upperMap(capacityMap_);
+
+	DistMap distMap(baseGraph_);
+	for(Graph::ArcIt a(baseGraph_); a != lemon::INVALID; ++a)
+	{
+		assert(arcCosts_[a].size() == 1);
+		distMap[a] = arcCosts_[a][0];
+	}
+	minCostFlow.costMap(distMap);
+
+	minCostFlow.stSupply(source_, targets_[0], maxFlow.flowValue());
+	if(minCostFlow.run() != minCostFlow.OPTIMAL)
+		THROW_RUNTIME_ERROR("Could not find the optimal min cost flow solution");
+
+	// fill flow map
+	for(Graph::ArcIt a(baseGraph_); a != lemon::INVALID; ++a)
+	{
+		flowMap_[a] = minCostFlow.flow(a);
+	}
+
+	TimePoint endTime = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> elapsed_seconds = endTime - startTime;
+	LOG_MSG("MaxFlow Tracking took " << elapsed_seconds.count() << " secs");
+}
+
 /// start the tracking
 double FlowGraph::maxFlowMinCostTracking(
 	double initialStateEnergy, 
@@ -91,7 +129,7 @@ double FlowGraph::maxFlowMinCostTracking(
 	if(!residualGraph_)
 		initializeResidualGraph(useBackArcs, useOrderedNodeListInBF);
 
-	TimePoint startTime_ = std::chrono::high_resolution_clock::now();
+	TimePoint startTime = std::chrono::high_resolution_clock::now();
 
 	ResidualGraph::ShortestPathResult result;
 	size_t iter=0;
@@ -145,8 +183,8 @@ double FlowGraph::maxFlowMinCostTracking(
 	}
 	while(result.first.size() > 0 && result.second < 0.0 && (maxNumPaths < 1 || iter < maxNumPaths));
 
-	TimePoint endTime_ = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double> elapsed_seconds = endTime_ - startTime_;
+	TimePoint endTime = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> elapsed_seconds = endTime - startTime;
 	LOG_MSG("Tracking took " << elapsed_seconds.count() << " secs and " << iter << " iterations");
 	LOG_MSG("Final energy: " << currentEnergy);
 	return currentEnergy;

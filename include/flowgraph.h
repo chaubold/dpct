@@ -51,6 +51,7 @@ public: // API
 	/// add a node to the graph at a certain timestep
 	FullNode addNode(const CostVector& costs, size_t timestep=0);
 
+	/// add an arc to the graph
 	Arc addArc(Node source, Node target, const CostVector& costs);
 	Arc addArc(FullNode source, FullNode target, const CostVector& costs);
 
@@ -72,6 +73,15 @@ public: // API
 		size_t maxNumPaths=0,
 		bool useOrderedNodeListInBF=true,
 		bool partialBFUpdates=true);
+
+	/**
+	 * @brief Instead of finding paths until the energy doesn't decrease any more, this method
+	 * first finds the maximum amount of possible flow, and then finds the min-cost way of sending
+	 * the maximum amount of flow though the graph. 
+	 * ATTENTION: assumes that the arc capacities are all equal to one!
+	 * @return cost of the flow, the flowMap is also filled.
+	 */
+	double maxFlow();
 
 	/// get source node of the graph
 	Node getSource() const { return source_; }
