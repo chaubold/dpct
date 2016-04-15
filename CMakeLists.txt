@@ -5,16 +5,11 @@ project(dpct)
 # user defined configuration
 set(WITH_TESTS "false" CACHE BOOL "Build tests.")
 set(WITH_LOG "false" CACHE BOOL "Enable logs.")
+set(WITH_PYTHON "true" CACHE BOOL "Build python wrapper.")
 
 if(WITH_LOG)
 	add_definitions(-DDEBUG_LOG)
 endif()
-
-# ------------------------------------------
-# find dependencies
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_extensions/)
-find_package( Lemon REQUIRED )
-include_directories(${LEMON_INCLUDE_DIR})
 
 # ------------------------------------------
 # global configuration
@@ -41,6 +36,12 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 endif()
 
 # ------------------------------------------
+# find dependencies
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_extensions/)
+find_package( Lemon REQUIRED )
+include_directories(${LEMON_INCLUDE_DIR})
+
+# ------------------------------------------
 # build library
 file(GLOB_RECURSE SOURCES src/*.cpp)
 file(GLOB_RECURSE HEADERS include/*.h)
@@ -62,6 +63,10 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/"
 if(WITH_TESTS)
 	enable_testing()
 	add_subdirectory(test)
+endif()
+
+if(WITH_PYTHON)
+  add_subdirectory(python)
 endif()
 
 add_subdirectory(bin)

@@ -3,6 +3,7 @@
 
 #include <json/json.h>
 
+#include "graphreader.h"
 #include "trackingalgorithm.h"
 #include "log.h"
 #include "graphbuilder.h"
@@ -16,45 +17,8 @@ namespace dpct
  * and stores a mapping from JSON ids to graph nodes
  * 
  */
-class JsonGraphReader
+class JsonGraphReader : public GraphReader
 {
-public:
-	typedef double ValueType;
-	typedef std::vector<ValueType> FeatureVector;
-	typedef std::vector<FeatureVector> StateFeatureVector;
-
-private:
-	/// Enumerate the strings for attributes used in the Json files
-	enum class JsonTypes {Segmentations, 
-		Links, 
-		Exclusions, 
-		LinkResults, 
-		DivisionResults,
-		DetectionResults,
-		SrcId, 
-		DestId, 
-		Value, 
-		Id, 
-		Timestep,
-		Features, 
-		DivisionFeatures,
-		AppearanceFeatures,
-		DisappearanceFeatures,
-		DisappearanceTarget,
-		Weights,
-		// settings-related
-		Settings,
-		StatesShareWeights,
-		OptimizerEpGap,
-		OptimizerVerbose,
-		OptimizerNumThreads,
-		AllowPartialMergerAppearance,
-		RequireSeparateChildrenOfDivision
-	};
-
-	/// mapping from JsonTypes to strings which are used in the Json files
-	static std::map<JsonTypes, std::string> JsonTypeNames;
-
 public:
 	/**
 	 * @brief Construct a json graph reader that reads from the specified files
@@ -83,10 +47,7 @@ public:
 
 private:
 	StateFeatureVector extractFeatures(const Json::Value& entry, JsonTypes type);
-	FeatureVector weightedSumOfFeatures(const StateFeatureVector& stateFeatures, const FeatureVector& weights, size_t offset, bool statesShareWeights);
 	FeatureVector readWeightsFromJson(const std::string& filename);
-	FeatureVector costsToScoreDeltas(const FeatureVector& costs);
-	ValueType costsToScoreDelta(const FeatureVector& costs);
 	size_t getNumWeights(const Json::Value& jsonHyp, JsonTypes type, bool statesShareWeights);
 
 private:
@@ -95,16 +56,6 @@ private:
 
 	/// filename where the wheights are stored in json
 	std::string weightsFilename_;
-
-	/// the weight vector loaded from file
-	FeatureVector weights_;
-
-	/// store the model's energy of the initial solution = all zeros
-	double initialStateEnergy_;
-
-	/// the graph builder instance which provides the graph specific node/arc 
-	/// creation methods as well as result parsing
-	GraphBuilder* graphBuilder_;
 };
 
 } // end namespace dpct
