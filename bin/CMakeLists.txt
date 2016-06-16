@@ -13,4 +13,8 @@ foreach(src ${BIN_SRCS})
     get_filename_component(bin_name ${src} NAME_WE)
     add_executable(${bin_name} ${src})
     target_link_libraries(${bin_name} dpct ${Boost_LIBRARIES})
+    install(TARGETS ${bin_name} 
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
+        RUNTIME DESTINATION bin)
 endforeach(src)
