@@ -86,6 +86,9 @@ double FlowGraph::maxFlow()
 {
  	TimePoint startTime = std::chrono::high_resolution_clock::now();
 
+ 	LOG_MSG("Running min cost max flow on a graph with " << lemon::countNodes(baseGraph_)
+ 			<< " nodes and " << lemon::countArcs(baseGraph_) << " edges");
+
 	// first find the max flow through the graph
 	lemon::Preflow<Graph, CapacityMap> maxFlow(baseGraph_, capacityMap_, source_, targets_[0]);
 	maxFlow.run();
@@ -93,6 +96,7 @@ double FlowGraph::maxFlow()
 	// then use a min-cost flow implementation to find the flow map
 	lemon::CapacityScaling<Graph, int, double> minCostFlow(baseGraph_);
 	minCostFlow.upperMap(capacityMap_);
+	LOG_MSG("Found MaxFlow value: " << maxFlow.flowValue());
 
 	DistMap distMap(baseGraph_);
 	for(Graph::ArcIt a(baseGraph_); a != lemon::INVALID; ++a)
