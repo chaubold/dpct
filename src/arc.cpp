@@ -21,9 +21,9 @@ Arc::Arc(Node* source,
 	type_(type),
 	scoreDeltas_(scoreDeltas),
 	currentScore_(scoreDeltas[0]),
-    dependsOnCellInNode_(dependsOnCellInNode),
+    enabled_(true),
     used_(0),
-    enabled_(true)
+    dependsOnCellInNode_(dependsOnCellInNode)
 {
 	assert(source != nullptr);
 	assert(target != nullptr);
@@ -97,6 +97,7 @@ std::string Arc::typeAsString() const
         case Division: return "Division";
         case Swap: return "Swap";
         case Dummy: return "Dummy";
+        default: throw std::runtime_error("Cannot return string representation of unknown type");
     }
 }
 

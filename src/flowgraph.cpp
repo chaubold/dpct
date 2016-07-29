@@ -119,6 +119,8 @@ double FlowGraph::maxFlow()
 	TimePoint endTime = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed_seconds = endTime - startTime;
 	LOG_MSG("MaxFlow Tracking took " << elapsed_seconds.count() << " secs");
+
+	return minCostFlow.totalCost();
 }
 
 /// start the tracking

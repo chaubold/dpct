@@ -330,7 +330,7 @@ inline void FlowGraph::enableArc(const Arc& a, bool state)
 
 inline double FlowGraph::getArcCost(const Arc& a, int flow)
 {
-	if(flow >= 0 && flow < arcCosts_[a].size())
+	if(flow >= 0 && (size_t)flow < arcCosts_[a].size())
 	{
 		return arcCosts_[a][flow];
 	}

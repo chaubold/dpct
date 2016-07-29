@@ -15,13 +15,13 @@ ResidualGraph::ResidualGraph(
 		bool useBackArcs,
 		bool useOrderedNodeListInBF
 ):
-	residualDistMap_(*this),
-	nodeUpdateOrderMap_(*this),
 	originalGraph_(original),
 	useBackArcs_(useBackArcs),
-	bfPredMap_(*this),
-	bfDistMap_(*this),
 	useOrderedNodeListInBF_(useOrderedNodeListInBF),
+	residualDistMap_(*this),
+	nodeUpdateOrderMap_(*this),
+	bfDistMap_(*this),
+	bfPredMap_(*this),
 	bf(*this, residualDistMap_, bfProcess_, bfNextProcess_),
 	firstPath_(true)
 {

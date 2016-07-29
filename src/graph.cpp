@@ -20,9 +20,9 @@ Graph::Configuration::Configuration(bool enableAppearance,
 
 Graph::Graph(const Graph::Configuration& config):
 	config_(config),
-    numNodes_(0),
+    sourceNode_(std::vector<double>(), std::make_shared<NameData>("Source")),
     sinkNode_(std::vector<double>(), std::make_shared<NameData>("Sink")),
-    sourceNode_(std::vector<double>(), std::make_shared<NameData>("Source"))
+    numNodes_(0)
 {
 }
 

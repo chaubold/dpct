@@ -306,7 +306,7 @@ BOOST_AUTO_TEST_CASE(test_full_magnusson_graph_constness)
     // Tracking
     Magnusson tracker(&g, true, true);
     std::vector<TrackingAlgorithm::Path> paths;
-    double score = tracker.track(paths);
+    tracker.track(paths);
 
     BOOST_CHECK_EQUAL(g.getNumArcs(), num_arcs);
     BOOST_CHECK_EQUAL(g.getNumNodes(), num_nodes);

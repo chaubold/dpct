@@ -14,15 +14,15 @@ namespace dpct
 Node::Node(const std::vector<double>& cellCountScore,
            UserDataPtr data):
     IUserDataHolder(data),
-    cellCountScore_(cellCountScore),
-    bestInArc_(nullptr),
     appearanceArc_(nullptr),
     disappearanceArc_(nullptr),
     cellCount_(0),
+    bestInArc_(nullptr),
+    cellCountScore_(cellCountScore),
     currentScore_(0.0),
     numActiveDivisions_(0),
-    numUsedMoveOutArcs_(0),
-    numUsedMoveInArcs_(0)
+    numUsedMoveInArcs_(0),
+    numUsedMoveOutArcs_(0)
 {
     if(cellCountScore_.size() > 1)
     {

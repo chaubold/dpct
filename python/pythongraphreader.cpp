@@ -52,7 +52,7 @@ void PythonGraphReader::createGraphFromPython()
 	size_t numLinkWeights = 0;
 
 	list segmentationHypotheses = extract<list>(graphDict_[GraphReader::JsonTypeNames[GraphReader::JsonTypes::Segmentations]]);
-	for(size_t i = 0; i < len(segmentationHypotheses); i++)
+	for(size_t i = 0; (int)i < len(segmentationHypotheses); i++)
 	{
 		dict jsonHyp = extract<dict>(segmentationHypotheses[i]);
 		numDetWeights = getNumWeights(jsonHyp, GraphReader::JsonTypes::Features, statesShareWeights);
@@ -68,7 +68,7 @@ void PythonGraphReader::createGraphFromPython()
 	}
 
 	list linkingHypotheses = extract<list>(graphDict_[GraphReader::JsonTypeNames[GraphReader::JsonTypes::Links]]);
-	for(size_t i = 0; i < len(linkingHypotheses); i++)
+	for(size_t i = 0; (int)i < len(linkingHypotheses); i++)
 	{
 		dict jsonHyp = extract<dict>(linkingHypotheses[i]);
 		if(jsonHyp.has_key(GraphReader::JsonTypeNames[GraphReader::JsonTypes::Features]))
@@ -93,7 +93,7 @@ void PythonGraphReader::createGraphFromPython()
 	// read segmentation hypotheses and add to flowgraph
 	std::cout << "\tcontains " << len(segmentationHypotheses) << " segmentation hypotheses" << std::endl;
 	
-	for(size_t i = 0; i < len(segmentationHypotheses); i++)
+	for(size_t i = 0; (int)i < len(segmentationHypotheses); i++)
 	{
 		dict jsonHyp = extract<dict>(segmentationHypotheses[i]);
 		
@@ -134,7 +134,7 @@ void PythonGraphReader::createGraphFromPython()
 
 	// read linking hypotheses
 	std::cout << "\tcontains " << len(linkingHypotheses) << " linking hypotheses" << std::endl;
-	for(size_t i = 0; i < len(linkingHypotheses); i++)
+	for(size_t i = 0; (int)i < len(linkingHypotheses); i++)
 	{
 		dict jsonHyp = extract<dict>(linkingHypotheses[i]);
 
@@ -144,7 +144,7 @@ void PythonGraphReader::createGraphFromPython()
 	}
 
 	// read divisions
-	for(size_t i = 0; i < len(segmentationHypotheses); i++)
+	for(size_t i = 0; (int)i < len(segmentationHypotheses); i++)
 	{
 		dict jsonHyp = extract<dict>(segmentationHypotheses[i]);
 		size_t id = extract<size_t>(jsonHyp[GraphReader::JsonTypeNames[GraphReader::JsonTypes::Id]]);
@@ -176,7 +176,7 @@ object PythonGraphReader::saveResult()
 	// save links
 	GraphBuilder::ArcValueMap arcValues = graphBuilder_->getArcValues();
 	list linkingHypotheses = extract<list>(graphDict_[GraphReader::JsonTypeNames[GraphReader::JsonTypes::Links]]);
-	for(size_t i = 0; i < len(linkingHypotheses); i++)
+	for(size_t i = 0; (int)i < len(linkingHypotheses); i++)
 	{
 		// store in graph
 		dict jsonHyp = extract<dict>(linkingHypotheses[i]);
@@ -198,7 +198,7 @@ object PythonGraphReader::saveResult()
 	GraphBuilder::NodeValueMap nodeValues = graphBuilder_->getNodeValues();
 	
 	list segmentationHypotheses = extract<list>(graphDict_[GraphReader::JsonTypeNames[GraphReader::JsonTypes::Segmentations]]);
-	for(size_t i = 0; i < len(segmentationHypotheses); i++)
+	for(size_t i = 0; (int)i < len(segmentationHypotheses); i++)
 	{
 		// store in graph
 		dict jsonHyp = extract<dict>(segmentationHypotheses[i]);
@@ -241,7 +241,7 @@ PythonGraphReader::StateFeatureVector PythonGraphReader::extractFeatures(boost::
 	// std::cout << "\tReading features for: " << GraphReader::JsonTypeNames[type] << std::endl;
 
 	// get the features per state
-	for(size_t i = 0; i < len(featuresPerState); i++)
+	for(size_t i = 0; (int)i < len(featuresPerState); i++)
 	{
 		// get features for the specific state
 		FeatureVector featVec;
@@ -251,7 +251,7 @@ PythonGraphReader::StateFeatureVector PythonGraphReader::extractFeatures(boost::
 		if(len(featuresForState) ==  0)
 			throw std::runtime_error("Features for state may not be empty for " + GraphReader::JsonTypeNames[type]);
 
-		for(size_t j = 0; j < len(featuresForState); j++)
+		for(size_t j = 0; (int)j < len(featuresForState); j++)
 		{
 			featVec.push_back(extract<double>(featuresForState[j]));
 		}
@@ -268,7 +268,7 @@ PythonGraphReader::FeatureVector PythonGraphReader::readWeightsFromPython(boost:
 {
 	list weightsList = extract<list>(weightsDict[GraphReader::GraphReader::JsonTypeNames[GraphReader::GraphReader::JsonTypes::Weights]]);
 	FeatureVector weights;
-	for(size_t i = 0; i < len(weightsList); i++)
+	for(size_t i = 0; (int)i < len(weightsList); i++)
 	{
 		weights.push_back(extract<GraphBuilder::ValueType>(weightsList[i]));
 	}

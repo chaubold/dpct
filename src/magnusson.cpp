@@ -17,9 +17,9 @@ Magnusson::Magnusson(Graph* graph, bool withSwap, bool usedArcsScoreZero, bool u
     TrackingAlgorithm(graph),
     withSwap_(withSwap),
     usedArcsScoreZero_(usedArcsScoreZero),
-    useFastFirstIter_(useFastFirstIter),
+    selectorFunction_( selectBestInArc ), // globally defined function
     maxNumPaths_(std::numeric_limits<size_t>::max()),
-    selectorFunction_( selectBestInArc ) // globally defined function
+    useFastFirstIter_(useFastFirstIter)
 {
     assert(usedArcsScoreZero == true);
 }
