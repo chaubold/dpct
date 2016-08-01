@@ -277,7 +277,7 @@ void FlowGraph::augmentUnitFlow(const FlowGraph::Path& p)
 		updateArc(af.first);
 
 		// see if this is a division duplicate pair, if yes, keep arc flows synchronized
-		auto coupledNodeIt = duplicateToParentMap_.find(baseGraph_.source(af.first));
+		std::map<Node, Node>::const_iterator coupledNodeIt = duplicateToParentMap_.find(baseGraph_.source(af.first));
 		if(coupledNodeIt != duplicateToParentMap_.end())
 		{
 			for(Graph::OutArcIt oa(baseGraph_, coupledNodeIt->second); oa != lemon::INVALID; ++oa)

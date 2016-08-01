@@ -109,7 +109,7 @@ void PythonGraphReader::createGraphFromPython()
 			list timeJson = extract<list>(jsonHyp[GraphReader::JsonTypeNames[GraphReader::JsonTypes::Timestep]]);
 			if(len(timeJson) != 2)
 				throw std::runtime_error("Node's Timestep is supposed to be a 2-element array");
-			auto timeRange = std::make_pair(extract<int>(timeJson[0])(), extract<int>(timeJson[1])());
+			std::pair<int, int> timeRange = std::make_pair(extract<int>(timeJson[0])(), extract<int>(timeJson[1])());
 			graphBuilder_->setNodeTimesteps(id, timeRange);
 		}
 

@@ -134,7 +134,7 @@ int main(int argc, char** argv) {
 		    std::cout << "initializing flow solver" << std::endl;
 		    flowGraph.initializeResidualGraph(true, useOrderedNodeListInBF);
 
-		    auto flowPaths = graphBuilder.translateSolution(paths, flowGraphBuilder);
+		    std::vector<FlowGraph::Path> flowPaths = graphBuilder.translateSolution(paths, flowGraphBuilder);
 		    for(auto p : flowPaths)
 		    {
 		    	flowGraph.augmentUnitFlow(p);

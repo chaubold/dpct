@@ -113,7 +113,7 @@ void JsonGraphReader::createGraphFromJson()
 			const Json::Value& timeJson = jsonHyp[JsonTypeNames[JsonTypes::Timestep]];
 			if(!timeJson.isArray() || timeJson.size() != 2)
 				throw std::runtime_error("Node's Timestep is supposed to be a 2-element array");
-			auto timeRange = std::make_pair(timeJson[0].asInt(), timeJson[1].asInt());
+			std::pair<int, int> timeRange = std::make_pair(timeJson[0].asInt(), timeJson[1].asInt());
 			graphBuilder_->setNodeTimesteps(id, timeRange);
 		}
 
