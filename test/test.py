@@ -31,7 +31,7 @@ graph = {
 	]
 }
 
-res = dpct.track(graph, weights)
+res = dpct.trackFlowBased(graph, weights)
 
 expectedResult = {'detectionResults': [{'id': 2, 'value': 1},
   {'id': 3, 'value': 1},
