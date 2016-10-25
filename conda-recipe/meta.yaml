@@ -36,5 +36,5 @@ test:
 
 about:
     home: https://github.com/chaubold/dpct
-    license: GNU General Public License (GPL)
+    license: MIT
     summary: 'Dynamic Programming Cell Tracking Solver Library'
