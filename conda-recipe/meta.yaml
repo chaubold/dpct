@@ -11,15 +11,13 @@ package:
     version: {{tagged_version}}
 
 source:
-    git_url: https://github.com/chaubold/dpct
-    git_tag: HEAD
+    path: ../
 
 build:
-  {% set build_num = 5 %}
-  number: {{ build_num }}
+  number: 0
   detect_binary_files_with_prefix: true
 
-  string: py{{CONDA_PY}}_{{build_num}}_g{{GIT_FULL_HASH[:7]}}
+  string: py{{CONDA_PY}}_{{PKG_BUILDNUM}}_g{{GIT_FULL_HASH[:7]}}
 
 requirements:
   build:
