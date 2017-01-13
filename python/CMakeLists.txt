@@ -24,7 +24,7 @@ else()
 endif()
 
 # include external headers as system includes so we do not have to cope with their warnings
-include_directories( SYSTEM ${Boost_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS}/python2.7 )
+include_directories( SYSTEM ${Boost_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS} )
 
 # pydpct
 set(PYDPCT_SRCS pydpct.cpp pythongraphreader.cpp)
@@ -43,7 +43,7 @@ endif()
 # make use of ${PYTHON_EXECUTABLE} instead of /usr/bin/python
 if(NOT DEFINED PYDPCT_INSTALL_DIR OR PYDPCT_INSTALL_DIR MATCHES "^$")
     execute_process(COMMAND ${PYTHON_EXECUTABLE} -c 
-                    "from distutils.sysconfig import *; print get_python_lib(1)"
+                    "from distutils.sysconfig import *; print(get_python_lib(1))"
                     OUTPUT_VARIABLE PYTHON_SITE_PACKAGES OUTPUT_STRIP_TRAILING_WHITESPACE)
     file(TO_CMAKE_PATH ${PYTHON_SITE_PACKAGES} PYDPCT_INSTALL_DIR)
 endif()

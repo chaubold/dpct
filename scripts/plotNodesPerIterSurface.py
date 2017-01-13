@@ -52,7 +52,7 @@ if __name__ == '__main__':
     print(surf.shape)
 
     from mpl_toolkits.mplot3d import Axes3D # for 3D surface plot
-    x, y = np.meshgrid(range(surf.shape[1]), range(surf.shape[0]))
+    x, y = np.meshgrid(list(range(surf.shape[1]), range(surf.shape[0])))
     print(x.shape)
     print(y.shape)
 
