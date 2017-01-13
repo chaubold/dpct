@@ -37,6 +37,9 @@ requirements:
     - python {{PY_VER}}*
 
 test:
+  source_files:
+    - test
+
   imports:
     - dpct
 
