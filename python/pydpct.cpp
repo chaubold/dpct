@@ -12,6 +12,21 @@
 using namespace dpct;
 using namespace boost::python;
 
+/**
+ * @brief Helper class to release / lock the Python GIL
+ */
+class ScopedGILRelease {
+public:
+    inline ScopedGILRelease() { threadState_ = PyEval_SaveThread(); }
+    inline ~ScopedGILRelease() 
+    {
+        PyEval_RestoreThread(threadState_);
+        threadState_ = NULL;
+    }
+private:
+    PyThreadState* threadState_;
+};
+
 object flowBasedTracking(object& graphDict, object& weightsDict)
 {
 	dict graph = extract<dict>(graphDict);
@@ -21,7 +36,12 @@ object flowBasedTracking(object& graphDict, object& weightsDict)
     FlowGraphBuilder graphBuilder(&flowGraph);
 	PythonGraphReader pyGraphReader(graph, weights, &graphBuilder);
 	pyGraphReader.createGraphFromPython();
-	flowGraph.maxFlowMinCostTracking();
+
+    {
+        ScopedGILRelease gilLock;
+        flowGraph.maxFlowMinCostTracking();
+    }
+
 	return pyGraphReader.saveResult();
 }
 
@@ -34,7 +54,12 @@ object maxFlowTracking(object& graphDict, object& weightsDict)
     FlowGraphBuilder graphBuilder(&flowGraph);
 	PythonGraphReader pyGraphReader(graph, weights, &graphBuilder);
 	pyGraphReader.createGraphFromPython();
-	flowGraph.maxFlow();
+
+    {
+        ScopedGILRelease gilLock;
+        flowGraph.maxFlow();
+    }
+
 	return pyGraphReader.saveResult();
 }
 
@@ -48,12 +73,16 @@ object magnussonTracking(object& graphDict, object& weightsDict)
     MagnussonGraphBuilder graphBuilder(&magnussonGraph);
     PythonGraphReader pyGraphReader(graph, weights, &graphBuilder);
 	pyGraphReader.createGraphFromPython();
-
-    Magnusson tracker(&magnussonGraph, true, true, false);
     std::vector<TrackingAlgorithm::Path> paths;
-    double score = tracker.track(paths);
-    std::cout << "\nTracking finished in " << tracker.getElapsedSeconds() 
-    		  << " secs with energy " << -score << std::endl;
+
+    {
+        ScopedGILRelease gilLock;
+        Magnusson tracker(&magnussonGraph, true, true, false);
+        double score = tracker.track(paths);
+        std::cout << "\nTracking finished in " << tracker.getElapsedSeconds() 
+        		  << " secs with energy " << -score << std::endl;
+    }
+
     graphBuilder.getSolutionFromPaths(paths);
 	return pyGraphReader.saveResult();
 }
