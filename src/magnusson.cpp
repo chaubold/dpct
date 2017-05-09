@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <sstream>
+#include <random>
 
 #include "magnusson.h"
 #include "trackingalgorithm.h"
