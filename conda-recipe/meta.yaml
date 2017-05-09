@@ -20,16 +20,15 @@ build:
 requirements:
   build:
     - gcc 4.8.5 # [linux]
-    - gcc 4.8.5 # [osx]
     - patchelf # [linux]
-    - boost 1.55.0
+    - boost 1.63.0
     - lemon
     - python {{PY_VER}}*
 
   run:
-    - libgcc 4.8.5
+    - libgcc 4.8.5 # [linux]
     - patchelf # [linux]
-    - boost 1.55.0
+    - boost 1.63.0
     - lemon
     - python {{PY_VER}}*
 
