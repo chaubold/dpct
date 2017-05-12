@@ -15,6 +15,9 @@ else
     LINKER_FLAGS="-Wl,-rpath-link,${PREFIX}/lib -L${PREFIX}/lib"
 fi
 
+PY_VER=$(python -c "import sys; print('{}.{}'.format(*sys.version_info[:2]))")
+PY_ABIFLAGS=$(python -c "import sys; print('' if sys.version_info.major == 2 else sys.abiflags)")
+PY_ABI=${PY_VER}${PY_ABIFLAGS}
 
 cmake .. \
     -DCMAKE_C_COMPILER=${CC} \
@@ -24,9 +27,9 @@ cmake .. \
     -DCMAKE_INSTALL_PREFIX=${PREFIX} \
     -DCMAKE_BUILD_TYPE=Release \
     -DPYTHON_EXECUTABLE=${PYTHON} \
-    -DPYTHON_LIBRARY=${PREFIX}/lib/libpython2.7.${DYLIB} \
-    -DPYTHON_INCLUDE_DIR=${PREFIX}/include/python2.7 \
-    -DPYTHON_INCLUDE_DIR2=${PREFIX}/include/python2.7 \
+    -DPYTHON_LIBRARY=${PREFIX}/lib/libpython${PY_ABI}.${DYLIB} \
+    -DPYTHON_INCLUDE_DIR=${PREFIX}/include/python${PY_ABI} \
+    -DPYTHON_INCLUDE_DIR2=${PREFIX}/include/python${PY_ABI} \
     -DWITH_LOG=OFF
 
 make -j${CPU_COUNT}
