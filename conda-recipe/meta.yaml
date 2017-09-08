@@ -26,7 +26,7 @@ requirements:
     - gcc 4.8.5 # [linux]
     - patchelf # [linux]
     - boost 1.55.0 # [py2k]
-    - boost 1.63.0 # [py3k]
+    - boost 1.63.0.* # [py3k]
     - lemon
     - python {{PY_VER}}*
 
@@ -34,7 +34,7 @@ requirements:
     - libgcc 4.8.5 # [linux]
     - patchelf # [linux]
     - boost 1.55.0 # [py2k]
-    - boost 1.63.0 # [py3k]
+    - boost 1.63.0.* # [py3k]
     - lemon
     - python {{PY_VER}}*
 
