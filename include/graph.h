@@ -1,6 +1,8 @@
 #ifndef DPCT_GRAPH_H
 #define DPCT_GRAPH_H
 
+#include "config.hpp"
+
 #include <memory>
 #include <functional>
 #include <map>
@@ -12,7 +14,7 @@
 namespace dpct
 {
 
-class Graph
+class DPCT_API Graph
 {
 public:
 	typedef std::shared_ptr<Node> NodePtr;
@@ -25,10 +27,10 @@ public:
 
 	typedef std::function<void(Node*)> VisitorFunction;
 
-	class Configuration
+	class DPCT_API Configuration
 	{
 	public:
-		Configuration(bool enableAppearance, 
+		Configuration(bool enableAppearance,
 					bool enableDisappearance, 
                     bool enableDivision);
 

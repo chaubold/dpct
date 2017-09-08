@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 message( "\nConfiguring bin:" )
 
+set(Boost_USE_STATIC_LIBS OFF)
 find_package(Boost REQUIRED program_options)
 
 include_directories(
@@ -13,7 +14,8 @@ foreach(src ${BIN_SRCS})
     get_filename_component(bin_name ${src} NAME_WE)
     add_executable(${bin_name} ${src})
     target_link_libraries(${bin_name} dpct ${Boost_LIBRARIES})
-    install(TARGETS ${bin_name} 
+    target_compile_definitions(${bin_name} PRIVATE -DBOOST_ALL_NO_LIB -DBOOST_ALL_DYN_LINK)
+    install(TARGETS ${bin_name}
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin)

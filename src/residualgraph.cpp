@@ -92,9 +92,9 @@ ResidualGraph::ShortestPathResult ResidualGraph::findShortestPath(
 			<< " nodes and " << lemon::countArcs(*this) << " arcs");
 		}
 
-    	// prepare for new iteration
-    	TimePoint iterationInitTime = std::chrono::high_resolution_clock::now();
-		if(firstPath_ or !partialBFUpdates)
+	// prepare for new iteration
+	TimePoint iterationInitTime = std::chrono::high_resolution_clock::now();
+		if(firstPath_ || !partialBFUpdates)
 		{
 			firstPath_ = false;
 			bf.init();

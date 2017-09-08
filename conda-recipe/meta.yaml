@@ -16,6 +16,10 @@ source:
 build:
   number: 0
   string: py{{CONDA_PY}}_{{PKG_BUILDNUM}}_g{{GIT_FULL_HASH[:7]}}
+  detect_binary_files_with_prefix: true
+  msvc_compiler: 14.0  # [win]
+  features:
+    - vc14 # [win]
 
 requirements:
   build:
