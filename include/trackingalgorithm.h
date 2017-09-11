@@ -1,6 +1,8 @@
 #ifndef DPCT_TRACKING_ALGORITHM_H
 #define DPCT_TRACKING_ALGORITHM_H
 
+#include "config.hpp"
+
 #include <vector>
 #include <functional>
 #include <memory>
@@ -13,7 +15,7 @@
 namespace dpct
 {
 
-class TrackingAlgorithm
+class DPCT_API TrackingAlgorithm
 {
 public:
     typedef std::vector<Arc*> Path;

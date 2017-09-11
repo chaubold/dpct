@@ -1,6 +1,8 @@
 #ifndef DPCT_MAGNUSSON_H
 #define DPCT_MAGNUSSON_H
 
+#include "config.hpp"
+
 #include <functional>
 
 #include "trackingalgorithm.h"
@@ -39,7 +41,7 @@ private:
 //     @ ISBI 2012
 // * Global linking of cell tracks using the Viterbi algorithm
 //     @ IEEE Transactions on Medical Imaging 2014
-class Magnusson : public TrackingAlgorithm
+class DPCT_API Magnusson : public TrackingAlgorithm
 {
 public:
     //--------------------------------------

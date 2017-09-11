@@ -1,5 +1,7 @@
 #ifndef JSON_GRAPH_READER
-#define JSON_GRAPH_READER 
+#define JSON_GRAPH_READER
+
+#include "config.hpp"
 
 #include <json/json.h>
 
@@ -15,9 +17,9 @@ namespace dpct
 /**
  * @brief A json graph reader provides functions to read a flow graph from json, 
  * and stores a mapping from JSON ids to graph nodes
- * 
+ *
  */
-class JsonGraphReader : public GraphReader
+class DPCT_API JsonGraphReader : public GraphReader
 {
 public:
 	/**

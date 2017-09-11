@@ -1,5 +1,7 @@
 #ifndef GRAPH_READER
-#define GRAPH_READER 
+#define GRAPH_READER
+
+#include "config.hpp"
 
 #include "log.h"
 #include <vector>
@@ -13,9 +15,9 @@ class GraphBuilder;
 // ----------------------------------------------------------------------------------------
 /**
  * @brief Base class for all graph readers implementing common constants and functions
- * 
+ *
  */
-class GraphReader
+class DPCT_API GraphReader
 {
 public:
 	typedef double ValueType;

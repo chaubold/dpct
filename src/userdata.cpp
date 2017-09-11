@@ -1,5 +1,6 @@
 #include "userdata.h"
 #include <stdexcept>
+#include <string>
 
 namespace dpct
 {

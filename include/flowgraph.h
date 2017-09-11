@@ -1,6 +1,8 @@
 #ifndef DPCT_FLOWGRAPH_H
 #define DPCT_FLOWGRAPH_H
 
+#include "config.hpp"
+
 #include <lemon/adaptors.h>
 #include <lemon/bellman_ford.h>
 #include <lemon/list_graph.h>
@@ -21,7 +23,7 @@ namespace dpct
  * It can run min cost max flow tracking based on the bellman ford shortest path algorithm,
  * but alters the residual graph in each iteration such that it obeys all consistency constraints.
  */
-class FlowGraph {
+class DPCT_API FlowGraph {
 public: // typedefs
 	typedef lemon::ListDigraph Graph;
     typedef Graph::Node Node;

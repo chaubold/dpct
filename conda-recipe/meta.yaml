@@ -16,13 +16,17 @@ source:
 build:
   number: 0
   string: py{{CONDA_PY}}_{{PKG_BUILDNUM}}_g{{GIT_FULL_HASH[:7]}}
+  detect_binary_files_with_prefix: true
+  msvc_compiler: 14.0  # [win]
+  features:
+    - vc14 # [win]
 
 requirements:
   build:
     - gcc 4.8.5 # [linux]
     - patchelf # [linux]
     - boost 1.55.0 # [py2k]
-    - boost 1.63.0 # [py3k]
+    - boost 1.63.0.* # [py3k]
     - lemon
     - python {{PY_VER}}*
 
@@ -30,7 +34,7 @@ requirements:
     - libgcc 4.8.5 # [linux]
     - patchelf # [linux]
     - boost 1.55.0 # [py2k]
-    - boost 1.63.0 # [py3k]
+    - boost 1.63.0.* # [py3k]
     - lemon
     - python {{PY_VER}}*
 
