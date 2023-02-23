@@ -1,4 +1,7 @@
 # Dynamic Programming Cell Tracking (DPCT)
+
+> *Note:* This repository is no longer maintained, find the maintained version: here https://github.com/ilastik/dpct/
+
 by Carsten Haubold, 2016
 
 This is a stand-alone tool for running tracking of divisible objects using a modified successive shortest paths solver.
